@@ -289,6 +289,14 @@ static int velodyne_remission_flag;
 static int draw_waypoints_flag;
 static int draw_robot_waypoints_flag;
 
+// Os dois do viewer do fork (astro/src/viewer_3D/viewer_3D.cpp:468 e :480). O padrao do
+// create_trajectory_drawer e 0,1 s, e o frenet_path_planner e o route_planner publicam mais
+// devagar que 10 Hz: qualquer quadro atrasado caia fora da janela e o caminho sumia ate a
+// proxima mensagem. O force_draw_old_messages ignora a janela de vez -- e o que mantem as rotas
+// na tela com o playback pausado. Ini: viewer_3D_force_draw_old_messages.
+static double time_to_consider_that_message_has_stopped = 0.3;
+static int force_draw_old_messages = 0;
+
 static int follow_car_flag;
 static int zero_z_flag;
 
@@ -1250,26 +1258,26 @@ draw_everything()
     if (show_plan_tree_flag)
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
-    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
-    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
     	if (semi_trailer_engaged)
         {
              for (int i = 0; i < semi_trailer_config.num_semi_trailers; i++)
             {
-    		draw_trajectory(offroad_semi_trailer_plan_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    		draw_trajectory(offroad_semi_trailer_plan_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
              }
         }
     }
 
     if (draw_obstacle_avoider_plan_flag)
-        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
     if (draw_motion_plan_flag)
-        draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+        draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
     if (draw_path_plan_flag)
-        draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+        draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
     if (draw_car_flag)
         draw_car_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
@@ -1546,10 +1554,10 @@ draw_everything()
     if (show_path_plans_flag)
 	{
 		for (unsigned int i = 0; i < path_plans_frenet_drawer.size(); i++)
-			draw_trajectory(path_plans_frenet_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+			draw_trajectory(path_plans_frenet_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
     	for (unsigned int i = 0; i < path_plans_nearby_lanes_drawer.size(); i++)
-    		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 	}
 
     if (!gps_fix_flag)
@@ -3335,9 +3343,9 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 			frenet_trajectory->host = message->host;
 
 			if (j == message->selected_path)
-				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 0.0, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0);
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 0.0, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0, time_to_consider_that_message_has_stopped);
 			else
-				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0);
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0, time_to_consider_that_message_has_stopped);
 			add_trajectory_message(path_plans_frenet_drawer[j], frenet_trajectory);
 		    free(path);
 		    free(frenet_trajectory);
@@ -3380,7 +3388,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				r = 1.0;
 			else
 				b = 1.0;
-			path_plans_nearby_lanes_drawer[j] = create_trajectory_drawer(r, 0.0, b, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+			path_plans_nearby_lanes_drawer[j] = create_trajectory_drawer(r, 0.0, b, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, time_to_consider_that_message_has_stopped);
 			add_trajectory_message(path_plans_nearby_lanes_drawer[j], nearby_trajectory);
 			free(path);
 			free(nearby_trajectory);
@@ -4014,9 +4022,9 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
 
     i_drawer = create_interface_drawer(window_width, window_height);
     m_drawer = create_map_drawer(argc, argv);
-    path_plan_drawer = create_trajectory_drawer(0.5, 0.5, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
-    motion_plan_drawer = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
-    obstacle_avoider_plan_drawer = create_trajectory_drawer(0.7, 0.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+    path_plan_drawer = create_trajectory_drawer(0.5, 0.5, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, time_to_consider_that_message_has_stopped);
+    motion_plan_drawer = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, time_to_consider_that_message_has_stopped);
+    obstacle_avoider_plan_drawer = create_trajectory_drawer(0.7, 0.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, time_to_consider_that_message_has_stopped);
     offroad_plan_drawer = create_trajectory_drawer(0.9, 0.9, 0.9, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
     offroad_semi_trailer_plan_drawer[0] = create_trajectory_drawer(1.0, 0.502, 0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
     offroad_semi_trailer_plan_drawer[1] = create_trajectory_drawer(0.0, 0.0, 0.647, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
@@ -4494,6 +4502,9 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	{
 			{(char *) "viewer_3D", (char *) "map_mode", CARMEN_PARAM_INT, &map_mode, 0, NULL},
             {(char *) "viewer_3D", (char *) "xyz_pointcloud_size", CARMEN_PARAM_INT, &xyz_pointcloud_size, 0, NULL}, 
+			// 1 = mantem rotas, frenets e faixas na tela por mais velhas que sejam (o
+			// force_draw_old_messages do fork; util com o playback pausado)
+			{(char *) "viewer_3D", (char *) "force_draw_old_messages", CARMEN_PARAM_INT, &force_draw_old_messages, 0, NULL},
 	};
 
 	num_items = sizeof(optional_param_list) / sizeof(optional_param_list[0]);
@@ -4645,28 +4656,28 @@ draw_while_picking()
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
         {
-    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
         }
 
-    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
     	if (semi_trailer_engaged)
         {
             for (int i = 0; i <semi_trailer_config.num_semi_trailers; i++){
     		
-                draw_trajectory(offroad_semi_trailer_plan_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+                draw_trajectory(offroad_semi_trailer_plan_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
             }
         }
 
     }
 
 	if (draw_obstacle_avoider_plan_flag)
-		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
 	if (draw_motion_plan_flag)
-		draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+		draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
 	if (draw_path_plan_flag)
-		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
 	if (draw_car_flag)
 	{

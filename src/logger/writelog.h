@@ -147,6 +147,11 @@ void carmen_logwrite_write_imu(carmen_imu_message *imu,
 			       carmen_FILE *outfile,
 			       double timestamp);
 
+void carmen_logwrite_write_lidar_imu(carmen_imu_message *imu,
+			       int id,
+			       carmen_FILE *outfile,
+			       double timestamp);
+
 
 void carmen_logwrite_write_robot_ackerman_vector_move(carmen_robot_ackerman_vector_move_message *msg,
 					carmen_FILE *outfile,

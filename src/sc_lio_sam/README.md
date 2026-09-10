@@ -180,24 +180,33 @@ Pontos em aberto (WIP) a serem endereçados:
 Este módulo foi trazido de um fork do CARMEN, onde o pacote da bridge se chamava
 de outro jeito. Além do rename para **`carmen_ipc_bridge`** (e do header
 `carmen_time.hpp`), quatro pontos precisaram de adaptação, porque dependiam de
-extensões de API que o fork tinha e o CARMEN não tem. Nenhuma delas mexeu em
+extensões de API que o fork tinha e o CARMEN não tinha. Nenhuma delas mexeu em
 código do CARMEN — tudo ficou dentro deste módulo, atrás de uma chave, para
-poder ser religado se a API aparecer.
+poder ser religado se a API aparecesse. **O ponto 1 já foi religado** (o CARMEN
+ganhou a API em 2026-08-31); os outros três seguem contornados.
 
-### 1. IMU embutido do LiDAR — **DESLIGADO**
+### 1. IMU embutido do LiDAR — **RELIGADO em 2026-08-31**
 
-`src/carmen_ipc_bridge/src/ipc_bridge_node.cpp`, chave `CARMEN_HAS_IMU_LIDAR` (0).
+`src/carmen_ipc_bridge/src/ipc_bridge_node.cpp`, chave `CARMEN_HAS_IMU_LIDAR` (1).
 
 A versão original usava `carmen_imu_{publish,subscribe}_imu_lidar_message(...,
 sensor_id)`, alimentada por um driver de LiDAR que republicava o IMU embutido
-nessa mensagem. Servia de **fallback** quando o XSens sumia ou publicava zerado.
-O CARMEN só tem `carmen_imu_subscribe_imu_message()` (sem `sensor_id`) e nenhum
-driver de LiDAR publicando nela — não há IMU de LiDAR para ouvir.
+nessa mensagem. Serve de **fallback** quando o XSens some ou publica zerado.
+Na migração isso ficou desligado porque o CARMEN só tinha
+`carmen_imu_subscribe_imu_message()` (sem `sensor_id`).
 
-**Consequência prática:** o `/imu_raw` passa a depender **só** do XSens. Se o
-XSens vier zerado, o nó emite um `ROS_WARN` dizendo que não há fallback, em vez
-de trocar de fonte silenciosamente. O `lidar_imu_sensor_id` do
-`carmen_ipc_bridge.launch` ficou comentado pelo mesmo motivo.
+Desde 2026-08-31 o `imu_interface` do CARMEN tem a versão por `sensor_id` — com
+o **mesmo nome IPC do fork**, `carmen_imu_message_lidar_<id>` — e os drivers
+`src/ouster_lidar` e `src/hesai_lidar` voltaram a publicar nela. A chave foi
+para 1 e o `lidar_imu_sensor_id` voltou a valer no `carmen_ipc_bridge.launch`
+(arg próprio, com default igual ao `lidar_sensor_id`: normalmente o LiDAR que dá
+a nuvem é o mesmo que tem o IMU, mas não precisa ser).
+
+**Comportamento:** o XSens tem prioridade; o IMU do LiDAR só entra quando o
+XSens some por mais de `XSENS_TIMEOUT_S` (1 s) ou vem zerado, e sai sozinho
+quando o XSens volta — sem troca manual. Validado publicando
+`carmen_imu_message_lidar_0` sem XSens no ar: o `/imu_raw` sai com os valores
+do LiDAR.
 
 ### 2. `horizontal_angles_deltas` do LiDAR — **DESLIGADO**
 

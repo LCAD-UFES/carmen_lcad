@@ -43,6 +43,64 @@ carmen_imu_publish_imu_message(carmen_imu_message* msg)  {
 }
 
 void
+carmen_imu_subscribe_imu_lidar_message(carmen_imu_message* msg,
+				 carmen_handler_t handler,
+				 carmen_subscribe_t subscribe_how,
+				 int id)
+{
+  char message_name[128];
+
+  sprintf(message_name, "%s_lidar_%d", CARMEN_IMU_MESSAGE_NAME, id);
+
+  carmen_subscribe_message(message_name,
+			   CARMEN_IMU_MESSAGE_FMT,
+			   msg, sizeof(carmen_imu_message), handler,
+			   subscribe_how);
+}
+
+
+void
+carmen_imu_unsubscribe_imu_lidar_message(carmen_handler_t handler, int id)
+{
+  char message_name[128];
+
+  sprintf(message_name, "%s_lidar_%d", CARMEN_IMU_MESSAGE_NAME, id);
+
+  carmen_unsubscribe_message(message_name, handler);
+}
+
+
+void
+carmen_imu_define_imu_lidar_message(int id)
+{
+  IPC_RETURN_TYPE err;
+  char message_name[128];
+
+  sprintf(message_name, "%s_lidar_%d", CARMEN_IMU_MESSAGE_NAME, id);
+
+  err = IPC_defineMsg(message_name, IPC_VARIABLE_LENGTH,
+		      CARMEN_IMU_MESSAGE_FMT);
+  carmen_test_ipc_exit(err, "Could not define", message_name);
+}
+
+
+void
+carmen_imu_publish_imu_lidar_message(carmen_imu_message* msg, int id)
+{
+  IPC_RETURN_TYPE err;
+  char message_name[128];
+
+  if (!msg)
+    return;
+
+  sprintf(message_name, "%s_lidar_%d", CARMEN_IMU_MESSAGE_NAME, id);
+
+  err = IPC_publishData(message_name, msg);
+  carmen_test_ipc_exit(err, "Could not publish", message_name);
+}
+
+
+void
 carmen_imu_subscribe_alive_message(carmen_imu_alive_message *alive,
 				     carmen_handler_t handler,
 				     carmen_subscribe_t subscribe_how)

@@ -31,8 +31,8 @@ int semi_trailer_being_oriented = 0;
 extern void
 mapper_handler(carmen_mapper_map_message *message);
 
-//extern void
-//carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message);
+extern void
+carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message);
 
 
 GdkColor *
@@ -751,8 +751,10 @@ namespace View
 			; // Do nothing
 		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
 		{
-			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
-//			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			// O mapa completo do mapper e' de 1050x1050 doubles (8,4 MB por mensagem, ~30 MB/s):
+			// recebe-lo trava o main loop da GUI por 130-230 ms de cada vez. O mapa compacto tem
+			// a mesma informacao util (celulas com prob >= 0.5) em ~0,4 MB.
+			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 1);
 		}
 		else if (strcmp(nav_panel_config->superimposed_map, "Map Level1") == 0)
@@ -1782,8 +1784,8 @@ namespace View
 	{
 		if (strcmp(nav_panel_config->map, "Map") == 0)
 		{
-			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) (mapper_handler), CARMEN_SUBSCRIBE_LATEST);
-			//			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			// Ver comentario em ConfigureMapViewer(): o mapa completo custa 8,4 MB por mensagem.
+			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
 		}
 		else if (strcmp(nav_panel_config->map, "Map Level1") == 0)

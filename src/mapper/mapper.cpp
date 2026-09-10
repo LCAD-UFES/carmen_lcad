@@ -243,8 +243,26 @@ double min_force_obstacle_height = 100.0;
 double max_force_obstacle_height = -100.0;
 
 
+/*
+ * Reduz o alcance maximo do sensor nos setores angulares de
+ * mapper_..._velodyne_range_max_factor_intervals (default: a metade TRASEIRA do carro).
+ *
+ * O angulo tem que estar no referencial do CARRO. O `horizontal_angle` do
+ * spherical_point_cloud e' o azimute CRU do pacote do LiDAR (velodyne_interface.cpp:
+ * `horizontal_angle = carmen_normalize_theta(-angle)`), sem nenhuma rotacao de montagem:
+ * usa-lo direto so' funciona para um LiDAR com yaw zero. Na IARA o OT-128 tem
+ * `lidar0_yaw 3.141592` -- montado 180 graus virado -- e o setor "traseiro" em
+ * referencial de sensor cai exatamente na DIANTEIRA do carro. Com
+ * mapping_mode_on_velodyne_range_max_factor 5.0 isso corta a frente e deixa a traseira
+ * com o alcance inteiro, que e' o contrario do que se quer: e' atras, com incidencia
+ * rasante no chao e a pior interpolacao de pose, que o alcance longo suja o mapa.
+ *
+ * Por isso o ponto e' levado ao referencial do carro antes do teste. A cadeia
+ * (sensor -> suporte -> carro) e' a mesma que o prob_models usa para posicionar o ponto,
+ * e nao aloca memoria.
+ */
 void
-change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
+change_sensor_rear_range_max(sensor_parameters_t *sensor_params, carmen_sphere_coord_t sphere_point)
 {
 	if (clean_map_bellow_car)
 	{
@@ -252,11 +270,12 @@ change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
 		return;
 	}
 
-	// if ((angle < M_PI / 4.0) && (angle > -M_PI / 4.0))
-	// 		sensor_params->current_range_max = sensor_params->range_max / sensor_params->range_max_factor;
-	// else
-	// 	sensor_params->current_range_max = sensor_params->range_max;
-	
+	carmen_vector_3D_t point_in_the_car = carmen_get_sensor_sphere_point_in_robot_cartesian_reference(sphere_point,
+			sensor_params->pose, sensor_params->sensor_support_pose,
+			sensor_params->sensor_to_support_matrix, sensor_params->support_to_car_matrix);
+
+	double angle = carmen_normalize_theta(atan2(point_in_the_car.y, point_in_the_car.x));
+
 	sensor_params->current_range_max = sensor_params->range_max;
 	for(int i = 0; i < mapper_range_max_factor_num_intervals; i++)
 	{
@@ -537,7 +556,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field_with_snapshot_maps(
 
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
-		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
+		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i]);
 
 		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(
 			sensor_data,
@@ -655,7 +674,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_set_t *map_
 					dt1 + dt2);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
-		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
+		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i]);
 
 		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
 				sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,

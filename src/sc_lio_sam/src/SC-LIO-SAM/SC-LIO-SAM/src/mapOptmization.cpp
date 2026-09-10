@@ -319,6 +319,7 @@ public:
 
     std::string saveSCDDirectory;
     std::string saveNodePCDDirectory;
+    std::string saveMapFilesDirectory;   // pasta extra dentro do mapa, para os arquivos de mapa gerados a partir da sessao
 
     // Fila de gravacao assincrona dos Scans/*.pcd (ver saveKeyFramesAndFactor e
     // pcdWriterThread). Mantem o I/O de ~2,5 MB por keyframe fora do callback do LiDAR.
@@ -465,6 +466,7 @@ public:
 
         saveSCDDirectory = savePCDDirectory + "SCDs/"; // SCD: scan context descriptor 
         saveNodePCDDirectory = savePCDDirectory + "Scans/";
+        saveMapFilesDirectory = savePCDDirectory + "map_files/";
 
         if (localizationMode)
         {
@@ -560,6 +562,12 @@ public:
 
             unused = system((std::string("exec rm -r ") + saveNodePCDDirectory).c_str());
             unused = system((std::string("mkdir -p ") + saveNodePCDDirectory).c_str());
+
+            // Pasta extra da sessao: fica dentro da pasta do mapa, ao lado de Scans/ e SCDs/.
+            // Precisa ser recriada aqui porque o "rm -r savePCDDirectory" acima apaga a pasta
+            // inteira -- e o mapper/map_server ja' subiram apontando para ela.
+            unused = system((std::string("exec rm -r ") + saveMapFilesDirectory).c_str());
+            unused = system((std::string("mkdir -p ") + saveMapFilesDirectory).c_str());
 
             pgSaveStream = std::fstream(savePCDDirectory + "singlesession_posegraph.g2o", std::fstream::out);
             pgTimeSaveStream = std::fstream(savePCDDirectory + "times.txt", std::fstream::out); pgTimeSaveStream.precision(dbl::max_digits10);

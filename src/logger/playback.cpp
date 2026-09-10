@@ -33,6 +33,7 @@
 #include <carmen/Gdc_To_Utm_Converter.h>
 #include <carmen/readlog.h>
 #include <carmen/logger.h>
+#include <carmen/imu_interface.h>
 #include <carmen/writelog.h>
 #include <carmen/proccontrol_interface.h>
 #include <carmen/proccontrol_messages.h>
@@ -108,6 +109,7 @@ carmen_laser_ldmrs_objects_message laser_ldmrs_objects;
 carmen_laser_ldmrs_objects_data_message laser_ldmrs_objects_data;
 
 carmen_imu_message imu;
+carmen_imu_message lidar_imu[16];
 carmen_gps_gpgga_message gpsgga;
 carmen_gps_gphdt_message gpshdt;
 carmen_gps_gprmc_message gpsrmc;
@@ -1113,6 +1115,41 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "VISUAL_ODOMETRY", (char *) CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME, (converter_func) carmen_string_to_visual_odometry_message, &visual_odometry, 0},
 	{(char *) "TRUEPOS_ACK", (char *) CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, (converter_func) carmen_string_to_simulator_ackerman_truepos_message, &truepos_ackerman, 0},
 	{(char *) "IMU", (char *) CARMEN_IMU_MESSAGE_NAME, (converter_func) carmen_string_to_imu_message, &imu, 0},
+	// IMU embarcada nos lidares. LIDAR_<id>_IMU e' o formato que o astro grava hoje;
+	// IMU_LIDAR<id> aparece em logs mais antigos do fork (ex.: /dados/teste-imu-lidar.txt).
+	// Os dois tem os mesmos 13 campos da IMU e caem na mesma mensagem IPC.
+	{(char *) "LIDAR_0_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_0", (converter_func) carmen_string_to_imu_message, &lidar_imu[0], 0},
+	{(char *) "LIDAR_1_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_1", (converter_func) carmen_string_to_imu_message, &lidar_imu[1], 0},
+	{(char *) "LIDAR_2_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_2", (converter_func) carmen_string_to_imu_message, &lidar_imu[2], 0},
+	{(char *) "LIDAR_3_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_3", (converter_func) carmen_string_to_imu_message, &lidar_imu[3], 0},
+	{(char *) "LIDAR_4_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_4", (converter_func) carmen_string_to_imu_message, &lidar_imu[4], 0},
+	{(char *) "LIDAR_5_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_5", (converter_func) carmen_string_to_imu_message, &lidar_imu[5], 0},
+	{(char *) "LIDAR_6_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_6", (converter_func) carmen_string_to_imu_message, &lidar_imu[6], 0},
+	{(char *) "LIDAR_7_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_7", (converter_func) carmen_string_to_imu_message, &lidar_imu[7], 0},
+	{(char *) "LIDAR_8_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_8", (converter_func) carmen_string_to_imu_message, &lidar_imu[8], 0},
+	{(char *) "LIDAR_9_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_9", (converter_func) carmen_string_to_imu_message, &lidar_imu[9], 0},
+	{(char *) "LIDAR_10_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_10", (converter_func) carmen_string_to_imu_message, &lidar_imu[10], 0},
+	{(char *) "LIDAR_11_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_11", (converter_func) carmen_string_to_imu_message, &lidar_imu[11], 0},
+	{(char *) "LIDAR_12_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_12", (converter_func) carmen_string_to_imu_message, &lidar_imu[12], 0},
+	{(char *) "LIDAR_13_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_13", (converter_func) carmen_string_to_imu_message, &lidar_imu[13], 0},
+	{(char *) "LIDAR_14_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_14", (converter_func) carmen_string_to_imu_message, &lidar_imu[14], 0},
+	{(char *) "LIDAR_15_IMU", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_15", (converter_func) carmen_string_to_imu_message, &lidar_imu[15], 0},
+	{(char *) "IMU_LIDAR0", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_0", (converter_func) carmen_string_to_imu_message, &lidar_imu[0], 0},
+	{(char *) "IMU_LIDAR1", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_1", (converter_func) carmen_string_to_imu_message, &lidar_imu[1], 0},
+	{(char *) "IMU_LIDAR2", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_2", (converter_func) carmen_string_to_imu_message, &lidar_imu[2], 0},
+	{(char *) "IMU_LIDAR3", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_3", (converter_func) carmen_string_to_imu_message, &lidar_imu[3], 0},
+	{(char *) "IMU_LIDAR4", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_4", (converter_func) carmen_string_to_imu_message, &lidar_imu[4], 0},
+	{(char *) "IMU_LIDAR5", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_5", (converter_func) carmen_string_to_imu_message, &lidar_imu[5], 0},
+	{(char *) "IMU_LIDAR6", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_6", (converter_func) carmen_string_to_imu_message, &lidar_imu[6], 0},
+	{(char *) "IMU_LIDAR7", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_7", (converter_func) carmen_string_to_imu_message, &lidar_imu[7], 0},
+	{(char *) "IMU_LIDAR8", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_8", (converter_func) carmen_string_to_imu_message, &lidar_imu[8], 0},
+	{(char *) "IMU_LIDAR9", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_9", (converter_func) carmen_string_to_imu_message, &lidar_imu[9], 0},
+	{(char *) "IMU_LIDAR10", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_10", (converter_func) carmen_string_to_imu_message, &lidar_imu[10], 0},
+	{(char *) "IMU_LIDAR11", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_11", (converter_func) carmen_string_to_imu_message, &lidar_imu[11], 0},
+	{(char *) "IMU_LIDAR12", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_12", (converter_func) carmen_string_to_imu_message, &lidar_imu[12], 0},
+	{(char *) "IMU_LIDAR13", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_13", (converter_func) carmen_string_to_imu_message, &lidar_imu[13], 0},
+	{(char *) "IMU_LIDAR14", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_14", (converter_func) carmen_string_to_imu_message, &lidar_imu[14], 0},
+	{(char *) "IMU_LIDAR15", (char *) CARMEN_IMU_MESSAGE_NAME "_lidar_15", (converter_func) carmen_string_to_imu_message, &lidar_imu[15], 0},
 	{(char *) "NMEAGGA", (char *) CARMEN_GPS_GPGGA_MESSAGE_NAME, (converter_func) carmen_string_to_gps_gpgga_message, &gpsgga, 0},
 	{(char *) "NMEAHDT", (char *) CARMEN_GPS_GPHDT_MESSAGE_NAME, (converter_func) carmen_string_to_gps_gphdt_message, &gpshdt, 0},
 	{(char *) "NMEARMC", (char *) CARMEN_GPS_GPRMC_MESSAGE_NAME, (converter_func) carmen_string_to_gps_gprmc_message, &gpsrmc, 0},
@@ -1230,6 +1267,161 @@ static logger_callback_t logger_callbacks[] =
 
 };
 
+#define NUM_LOGGER_CALLBACKS ((int) (sizeof(logger_callbacks) / sizeof(logger_callback_t)))
+#define MAX_USED_MESSAGES 300
+
+// Filtro de mensagens do playback_control (equivalente ao do astro). A tabela acima nao e'
+// mexida: so' marcamos aqui quem nao deve ser publicado. A linha continua sendo interpretada
+// para que o relogio do playback (playback_timestamp) siga andando -- se a linha fosse
+// simplesmente pulada, um log formado so' por mensagens filtradas travaria o laco principal.
+static char logger_callback_is_filtered_out[NUM_LOGGER_CALLBACKS];
+
+// Tags de mensagem que realmente aparecem no log, em ordem alfabetica e sem repetir.
+// E' o que o playback_control usa para montar as caixas de selecao.
+static char all_used_messages[16384] = "";
+
+
+// Ha' logs em que o GPS vem numerado no PROPRIO nome da mensagem ("NMEAGGA1"), e nao so' no
+// campo nr que vem logo depois na linha. O numero e' redundante, entao e' aparado aqui.
+// So' o NMEAGGA precisa disso: as mensagens que ja' nascem numeradas
+// (VELODYNE_VARIABLE_SCAN_IN_FILE0, LIDAR_0_IMU e afins) tem entrada propria na tabela.
+static int
+trim_nmeagga_suffix(char *command, int length)
+{
+	if (strncmp(command, "NMEAGGA", 7) != 0 || command[7] == '\0')
+		return (length);
+
+	int k = 7;
+	while (command[k] >= '0' && command[k] <= '9')
+		k++;
+
+	if (command[k] != '\0')	// nao eram so' digitos ate' o fim: nao e' o sufixo
+		return (length);
+
+	command[7] = '\0';
+
+	return (7);
+}
+
+
+static int
+is_word_in_list(const char *list, const char *word)
+{
+	const char *p = list;
+	size_t len = strlen(word);
+
+	while ((p = strstr(p, word)) != NULL)
+	{
+		int starts_word = (p == list) || (p[-1] == ' ');
+		int ends_word = (p[len] == '\0') || (p[len] == ' ');
+
+		if (starts_word && ends_word)
+			return (1);
+
+		p += len;
+	}
+
+	return (0);
+}
+
+
+static int
+compare_message_tag(const void *a, const void *b)
+{
+	return (strcmp(*(const char **) a, *(const char **) b));
+}
+
+
+// Uma passada sequencial pelo log, lendo so' o primeiro token de cada linha, para descobrir
+// quais tipos de mensagem ele contem. Usa um FILE * proprio: o logfile do playback nao pode
+// ser consumido aqui, sob pena de o laco principal passar a ler no fim do arquivo.
+static void
+scan_log_for_used_messages(char *filename)
+{
+	FILE *fp = fopen(filename, "r");
+	if (fp == NULL)
+		return;
+
+	char *tags[MAX_USED_MESSAGES];
+	int num_tags = 0;
+	char *line = NULL;
+	size_t line_size = 0;
+	ssize_t line_length;
+	double start_time = carmen_get_time();
+
+	while ((line_length = getline(&line, &line_size, fp)) != -1)
+	{
+		if (line[0] == '#' || line[0] == '\n')
+			continue;
+
+		int i;
+		for (i = 0; i < line_length && line[i] != ' ' && line[i] != '\t' && line[i] != '\n'; i++)
+			;
+		line[i] = '\0';
+		i = trim_nmeagga_suffix(line, i);
+
+		if (i == 0 || is_word_in_list(all_used_messages, line))
+			continue;
+
+		for (int j = 0; j < NUM_LOGGER_CALLBACKS; j++)
+		{
+			if (strcmp(line, logger_callbacks[j].logger_message_name) != 0)
+				continue;
+
+			if (num_tags >= MAX_USED_MESSAGES ||
+				strlen(all_used_messages) + i + 2 >= sizeof(all_used_messages))
+			{
+				fprintf(stderr, "\nplayback: mais de %d tipos de mensagem no log; o filtro lista so' os primeiros.\n",
+						num_tags);
+				num_tags = -num_tags;	// marca para sair dos dois lacos
+				break;
+			}
+
+			if (all_used_messages[0] != '\0')
+				strcat(all_used_messages, " ");
+			strcat(all_used_messages, line);
+			tags[num_tags++] = strdup(line);
+			break;
+		}
+
+		if (num_tags < 0)
+		{
+			num_tags = -num_tags;
+			break;
+		}
+	}
+
+	free(line);
+	fclose(fp);
+
+	qsort(tags, num_tags, sizeof(char *), compare_message_tag);
+
+	all_used_messages[0] = '\0';
+	for (int i = 0; i < num_tags; i++)
+	{
+		if (i > 0)
+			strcat(all_used_messages, " ");
+		strcat(all_used_messages, tags[i]);
+		free(tags[i]);
+	}
+
+	fprintf(stderr, "playback: %d tipos de mensagem no log (%.1lf s de varredura).\n",
+			num_tags, carmen_get_time() - start_time);
+}
+
+
+// Recebe do playback_control a lista das mensagens que devem continuar sendo publicadas.
+static void
+set_active_messages(char *active_messages)
+{
+	if (active_messages == NULL)
+		return;
+
+	for (int i = 0; i < NUM_LOGGER_CALLBACKS; i++)
+		logger_callback_is_filtered_out[i] = !is_word_in_list(active_messages, logger_callbacks[i].logger_message_name);
+}
+
+
 
 void
 publish_info_message()
@@ -1241,6 +1433,7 @@ publish_info_message()
 	playback_info_message.message_timestamp = playback_timestamp;
 	playback_info_message.message_timestamp_difference = playback_starttime + playback_timestamp;
 	playback_info_message.playback_speed = playback_speed;
+	playback_info_message.all_messages_tag = all_used_messages;
 
 	err = IPC_publishData (CARMEN_PLAYBACK_INFO_MESSAGE_NAME, &playback_info_message);
 	carmen_test_ipc (err, "Could not publish", CARMEN_PLAYBACK_INFO_MESSAGE_NAME);
@@ -1470,25 +1663,10 @@ read_message(int message_num, int publish, int no_wait)
 			command[j] = line[j];
 		command[j] = 0;
 
-		// Ha' logs em que o GPS vem numerado no PROPRIO nome da mensagem
-		// ("NMEAGGA1"), e nao so' no campo nr que vem logo depois na linha. Como
-		// o casamento abaixo e' por strncmp com o tamanho do token lido, o sufixo
-		// faz "NMEAGGA1" nao bater com "NMEAGGA" da tabela -- e a linha era
-		// descartada em silencio: nenhum GPGGA publicado, nenhum aviso.
-		// O numero e' redundante (o nr e' o primeiro campo), entao basta apara-lo.
-		// So' o NMEAGGA precisa disso: as mensagens que ja' nascem numeradas
-		// (VELODYNE_VARIABLE_SCAN_IN_FILE0 e afins) tem entrada propria na tabela.
-		if (strncmp(command, "NMEAGGA", 7) == 0 && command[7] != '\0')
-		{
-			int k = 7;
-			while (command[k] >= '0' && command[k] <= '9')
-				k++;
-			if (command[k] == '\0')	// so' digitos ate' o fim: e' mesmo o sufixo
-			{
-				command[7] = '\0';
-				j = 7;
-			}
-		}
+		// Sem aparar o sufixo, "NMEAGGA1" nao bate com "NMEAGGA" da tabela (o casamento
+		// abaixo e' por strncmp com o tamanho do token lido) e a linha era descartada em
+		// silencio: nenhum GPGGA publicado, nenhum aviso.
+		j = trim_nmeagga_suffix(command, j);
 
 		if (strncmp(command, logger_callbacks[i].logger_message_name, j) == 0)
 		{
@@ -1514,6 +1692,7 @@ read_message(int message_num, int publish, int no_wait)
 
 						int do_not_publish = !g_publish_odometry && (strcmp(logger_callbacks[i].ipc_message_name, CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME) == 0);
 						do_not_publish |= check_ignore_list(command) || check_in_file_message(command, line);
+						do_not_publish |= logger_callback_is_filtered_out[i];
 						if (!do_not_publish)
 							IPC_publishData(logger_callbacks[i].ipc_message_name, logger_callbacks[i].message_data);
 					}
@@ -1797,6 +1976,10 @@ playback_command_handler(carmen_playback_command_message *command)
 			print_playback_status();
 			publish_info_message();
 			break;
+
+		case CARMEN_PLAYBACK_COMMAND_SET_ACTIVATE_MESSAGE:
+			set_active_messages(command->message);
+			break;
 	}
 	if (fabs(command->speed - playback_speed) > 0.001)
 	{
@@ -1885,6 +2068,11 @@ define_ipc_messages(void)
 
 	err = IPC_defineMsg(CARMEN_PI_IMU_NAME, IPC_VARIABLE_LENGTH, CARMEN_PI_IMU_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_PI_IMU_NAME);
+
+	// A IMU nao estava sendo definida aqui: o IPC_publishData() da linha IMU falhava calado.
+	carmen_imu_define_imu_message();
+	for (int lidar_id = 0; lidar_id < 16; lidar_id++)
+		carmen_imu_define_imu_lidar_message(lidar_id);
 
 	for (int camera = 1; camera <= 13; camera++)
 		carmen_bumblebee_basic_define_messages(camera);
@@ -2028,6 +2216,17 @@ main_playback_loop(void)
 		}
 		if (paused)
 		{
+			// Parado, o playback nao publicava nada -- e um playback_control aberto depois
+			// dele ficava sem a lista de mensagens do log (a janela de filtro abria vazia).
+			// Uma info message por segundo resolve e nao custa nada.
+			static double last_idle_info = 0.0;
+			double now = carmen_get_time();
+			if (now - last_idle_info > 1.0)
+			{
+				publish_info_message();
+				last_idle_info = now;
+			}
+
 			if (killall_after_finish)
 			{
 				char buf[512];
@@ -2217,6 +2416,7 @@ set_messages()
 	memset(&can_dump, 0, sizeof(can_dump));
 	memset(&visual_odometry, 0, sizeof(visual_odometry));
 	memset(&imu, 0, sizeof(imu));
+	memset(lidar_imu, 0, sizeof(lidar_imu));
 	memset(&truepos_ackerman, 0, sizeof(truepos_ackerman));
 	memset(&laser_ackerman1, 0, sizeof(laser_ackerman1));
 	memset(&laser_ackerman2, 0, sizeof(laser_ackerman2));
@@ -2358,6 +2558,8 @@ main(int argc, char **argv)
 	{
 		logfile_index = load_logindex_file(index_file_name);
 	}
+
+	scan_log_for_used_messages(log_filename);
 
 	read_parameters (argc, argv);
 	define_ipc_messages();

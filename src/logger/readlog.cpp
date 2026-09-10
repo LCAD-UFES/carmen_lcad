@@ -1671,9 +1671,37 @@ char* carmen_string_to_ford_escape_estatus_message(char* string, carmen_ford_esc
 }
 
 
+// Numero de campos separados por espaco na linha. E' o que distingue as duas versoes da
+// GLOBALPOS_ACK que circulam por aqui (ver carmen_string_to_globalpos_message).
+static int
+count_message_arguments(char *string)
+{
+	int count = 1;
+
+	for (size_t i = 0; string[i]; i++)
+		if (string[i] == ' ')
+			count++;
+
+	return (count);
+}
+
+
+// Existem DUAS versoes da linha GLOBALPOS_ACK:
+//
+//  - a que o carmen_logger_write_globalpos() desta arvore escreve: 24 campos + host, sem nada
+//    de semi-reboque;
+//  - a dos logs gravados com semi-reboque (os do tramontina, por exemplo): 32 campos + host,
+//    com um bloco de 6 (num_trailers + trailer_theta[0..4]) logo depois de globalpos.theta e
+//    outro de 2 (semi_trailer_type, semi_trailer_engaged) depois de converged.
+//
+// Ler a segunda com o layout da primeira desloca TUDO em 6 campos: msg->v acaba recebendo o
+// pose.position.x, que e' a coordenada UTM. Foi assim que o painel do viewer_3D_dash mostrou
+// 27.928.443,6 km/h no playback do tramontina -- 7757901 m/s, que e' a northing da pose.
+// Nao da' para decidir pelo cabecalho do log, so' pela contagem de campos.
 char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_globalpos_message* msg)
 {
 	char *current_pos = string;
+	int n_args = count_message_arguments(string);
 
 	if (strncmp(current_pos, "GLOBALPOS_ACK", 13) == 0)
 		current_pos += 13;
@@ -1681,6 +1709,12 @@ char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_
 	msg->globalpos.x = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos.y = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos.theta = CLF_READ_DOUBLE(&current_pos);
+	if (n_args > 26)
+	{
+		msg->num_trailers = CLF_READ_INT(&current_pos);
+		for (int i = 0; i < 5 && i < MAX_NUM_TRAILERS; i++)
+			msg->trailer_theta[i] = CLF_READ_DOUBLE(&current_pos);
+	}
 	msg->globalpos_std.x = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos_std.y = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos_std.theta = CLF_READ_DOUBLE(&current_pos);
@@ -1700,6 +1734,11 @@ char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_
 	msg->phi = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos_xy_cov = CLF_READ_DOUBLE(&current_pos);
 	msg->converged = CLF_READ_INT(&current_pos);
+	if (n_args > 26)
+	{
+		msg->semi_trailer_type = CLF_READ_INT(&current_pos);
+		msg->semi_trailer_engaged = CLF_READ_INT(&current_pos);
+	}
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);
 

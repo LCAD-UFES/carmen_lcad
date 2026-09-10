@@ -40,6 +40,12 @@ LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -l
 		  -lboost_thread -lrt -lcollision_detection
 LFLAGS += -luser_preferences
 
+# --- viewer_3D_dash (painel do carro) ---------------------------------------------------------
+IFLAGS += `pkg-config --cflags cairo`
+LFLAGS += `pkg-config --libs cairo`
+LFLAGS += -luser_app_server_interface -lcamera_drivers -lford_escape_hybrid_interface \
+		-lroute_planner_interface
+
 SUBDIRS += glm
 
 MODULE_NAME = viewer_3D
@@ -47,14 +53,15 @@ MODULE_COMMENT = This module implements a viewer_3D filter for fusing IMU and GP
 
 SOURCES = viewer_3D.cpp Window.cpp GLDraw.cpp xsens_viewer.cpp draw_car.cpp point_cloud_drawer.cpp variable_velodyne_drawer.cpp \
 	velodyne_360_drawer.cpp interface_drawer.cpp map_drawer.cpp download_map.cpp texture_loader.cpp trajectory_drawer.cpp \
-	velodyne_intensity_drawer.cpp annotation_drawer.cpp symotha_drawer.cpp cargo_drawer.cpp viewer_3D_interface.c 3D_map_view.cpp xyz_pointcloud_lidar_interface.cpp#lane_analysis_drawer.cpp
+	velodyne_intensity_drawer.cpp annotation_drawer.cpp symotha_drawer.cpp cargo_drawer.cpp viewer_3D_interface.c 3D_map_view.cpp xyz_pointcloud_lidar_interface.cpp \
+	dashboard.cpp viewer_3D_dash.cpp#lane_analysis_drawer.cpp
 	
 PUBLIC_INCLUDES = velodyne_360_drawer.h viewer_3D_messages.h viewer_3D_interface.h xyz_pointcloud_lidar_interface.h xyz_pointcloud_lidar_messages.h
 PUBLIC_LIBRARIES = libvelodyne_360_drawer.a libviewer_3D_interface.a libxyz_pointcloud_lidar_interface.a
-PUBLIC_BINARIES = viewer_3D xsens_viewer
+PUBLIC_BINARIES = viewer_3D xsens_viewer viewer_3D_dash
 PUBLIC_OTHERS = Touareg2.mtl Touareg2.obj
 
-TARGETS = viewer_3D xsens_viewer libvelodyne_360_drawer.a libviewer_3D_interface.a 3D_map_view libxyz_pointcloud_lidar_interface.a
+TARGETS = viewer_3D xsens_viewer viewer_3D_dash libvelodyne_360_drawer.a libviewer_3D_interface.a 3D_map_view libxyz_pointcloud_lidar_interface.a
 
 libxyz_pointcloud_lidar_interface.a: xyz_pointcloud_lidar_interface.o
 
@@ -65,6 +72,17 @@ libvelodyne_360_drawer.a: velodyne_360_drawer.o
 viewer_3D:	viewer_3D.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o variable_velodyne_drawer.o velodyne_360_drawer.o \
 	interface_drawer.o map_drawer.o texture_loader.o download_map.o trajectory_drawer.o velodyne_intensity_drawer.o \
 	annotation_drawer.o symotha_drawer.o cargo_drawer.o libviewer_3D_interface.a libxyz_pointcloud_lidar_interface.a#lane_analysis_drawer.o
+
+# viewer_3D_dash reaproveita exatamente os mesmos objetos do viewer_3D: o viewer_3D_dash.cpp
+# inclui o viewer_3D.cpp, entao aqui nao entra o viewer_3D.o (teria main duplicado).
+# O Makefile.depend nao enxerga esse include, dai a dependencia explicita abaixo.
+viewer_3D_dash.o: viewer_3D.cpp
+
+viewer_3D_dash: viewer_3D_dash.o dashboard.o Window.o GLDraw.o draw_car.o point_cloud_drawer.o \
+	variable_velodyne_drawer.o velodyne_360_drawer.o interface_drawer.o map_drawer.o \
+	texture_loader.o download_map.o trajectory_drawer.o velodyne_intensity_drawer.o \
+	annotation_drawer.o symotha_drawer.o cargo_drawer.o libviewer_3D_interface.a \
+	libxyz_pointcloud_lidar_interface.a
 
 xsens_viewer: xsens_viewer.o Window.o draw_car.o texture_loader.o download_map.o
 

@@ -97,6 +97,8 @@ void carmen_logwrite_write_header(carmen_FILE *outfile)
 	carmen_fprintf(outfile,
 			"# IMU accelerationX accelerationY accelerationZ quaternion_q0 quaternion_q1 quaternion_q2 quaternion_q3 magneticfieldX magneticfieldY magneticfieldZ gyroX gyroY gyroZ\n");
 	carmen_fprintf(outfile,
+			"# LIDAR_<id>_IMU accelerationX accelerationY accelerationZ quaternion_q0 quaternion_q1 quaternion_q2 quaternion_q3 magneticfieldX magneticfieldY magneticfieldZ gyroX gyroY gyroZ\n");
+	carmen_fprintf(outfile,
 			"# XSENS_EULER accelerationX accelerationY accelerationZ pitch roll yaw magneticfieldX magneticfieldY magneticfieldZ gyroX gyroY gyroZ\n");
 	carmen_fprintf(outfile,
 			"# XSENS_QUAT accelerationX accelerationY accelerationZ quaternion_q0 quaternion_q1 quaternion_q2 quaternion_q3 magneticfieldX magneticfieldY magneticfieldZ gyroX gyroY gyroZ\n");
@@ -452,10 +454,9 @@ void carmen_logwrite_write_pantilt_laserpos(
 			timestamp);
 }
 
-void carmen_logwrite_write_imu(carmen_imu_message *msg, carmen_FILE *outfile,
+static void carmen_logwrite_write_imu_body(carmen_imu_message *msg, carmen_FILE *outfile,
 		double timestamp)
 {
-	carmen_fprintf(outfile, "IMU ");
 	carmen_fprintf(outfile, "%lf ", msg->accX);
 	carmen_fprintf(outfile, "%lf ", msg->accY);
 	carmen_fprintf(outfile, "%lf ", msg->accZ);
@@ -475,6 +476,22 @@ void carmen_logwrite_write_imu(carmen_imu_message *msg, carmen_FILE *outfile,
 
 	carmen_fprintf(outfile, "%lf %s %lf\n", msg->timestamp, msg->host,
 			timestamp);
+}
+
+void carmen_logwrite_write_imu(carmen_imu_message *msg, carmen_FILE *outfile,
+		double timestamp)
+{
+	carmen_fprintf(outfile, "IMU ");
+	carmen_logwrite_write_imu_body(msg, outfile, timestamp);
+}
+
+// IMU embarcada em um lidar: mesmos campos da IMU, com o id do sensor no proprio
+// nome da mensagem (LIDAR_<id>_IMU), como no astro.
+void carmen_logwrite_write_lidar_imu(carmen_imu_message *msg, int id, carmen_FILE *outfile,
+		double timestamp)
+{
+	carmen_fprintf(outfile, "LIDAR_%d_IMU ", id);
+	carmen_logwrite_write_imu_body(msg, outfile, timestamp);
 }
 
 void carmen_logwrite_write_xsens_euler(carmen_xsens_global_euler_message* msg,

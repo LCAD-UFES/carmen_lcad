@@ -54,6 +54,7 @@ static int log_kinect = 1;
 static int log_xsens = 1;
 static int log_xsens_mtig = 1;
 static int log_imu_pi = 1;
+static int log_imu_lidar = 0;
 static int log_bumblebee = 1;
 static int log_camera = 1;
 static int log_web_cam = 1;
@@ -64,6 +65,7 @@ static int log_ford_escape_status = 0;
 static int log_can_dump = 0;
 static int log_compact_map = 0;
 char* log_path = 0;
+char* log_filename_from_commandline = NULL;
 char* suffix = NULL;
 char* prefix = NULL;
 int compress_image = 0;
@@ -111,6 +113,7 @@ get_logger_params(int argc, char** argv)
 
   carmen_param_t optional_param_list[] = {
 		{(char *) "logger",      (char *) "compact_map", 	    CARMEN_PARAM_ONOFF, &log_compact_map, 0, NULL},
+		{(char *) "logger",      (char *) "imu_lidar", 	        CARMEN_PARAM_ONOFF, &log_imu_lidar, 0, NULL},
   };
   carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list)/sizeof(optional_param_list[0])); 
  
@@ -308,6 +311,88 @@ void imu_handler(carmen_imu_message *msg)
 {
   //fprintf(stderr, "i");
   carmen_logwrite_write_imu(msg, outfile, carmen_get_time() - logger_starttime);
+}
+
+// IMU embarcada nos lidares (Ouster, Hesai): uma mensagem por sensor, como no astro.
+// Um handler por id porque o IPC nao entrega ao callback o nome da mensagem que o disparou.
+void lidar_imu_handler0(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 0, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler1(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 1, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler2(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 2, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler3(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 3, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler4(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 4, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler5(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 5, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler6(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 6, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler7(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 7, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler8(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 8, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler9(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 9, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler10(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 10, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler11(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 11, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler12(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 12, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler13(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 13, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler14(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 14, outfile, carmen_get_time() - logger_starttime);
+}
+
+void lidar_imu_handler15(carmen_imu_message *msg)
+{
+  carmen_logwrite_write_lidar_imu(msg, 15, outfile, carmen_get_time() - logger_starttime);
 }
 
 void xsens_quat_handler(carmen_xsens_global_quat_message *msg)
@@ -872,6 +957,12 @@ _increase_file(char *filename, char *outfile)
     char token[1024], _token[1024], ext[8], _inc[4], __inc[4];
     // file extension
     char *_ext = strrchr(filename, '.');
+    if (_ext == NULL || strlen(_ext) >= sizeof(ext))
+    {
+        strcpy(outfile, filename);
+        strcat(outfile, "-1");
+        return;
+    }
     strcpy(ext, _ext);
     int i = 0;
     for (; i < (int) (strlen(filename) - strlen(ext)); i++)
@@ -949,10 +1040,15 @@ get_log_file_name(int argc, char **argv)
   }
   else
   {
-  	if (argc < 2)
+	// carmen_read_commandline_parameters() (global.c) rotaciona para o fim de argv todo
+	// argumento que nao comeca com '-'. Depois de get_logger_params() o argv[1] ja nao e'
+	// mais o nome do log, e sim a primeira opcao -- entao qualquer "logger <log> -opcao"
+	// caia em _increase_file() com um nome sem ponto, strrchr() devolvia NULL e o modulo
+	// morria de SIGSEGV antes de criar o arquivo. Por isso o nome e' guardado no main().
+	if (log_filename_from_commandline == NULL)
 	  carmen_die("Usage: %s <logfile>\n", argv[0]);
 
-    log_filename = argv[1];
+    log_filename = log_filename_from_commandline;
   }
 
   increase_file(log_filename);
@@ -962,6 +1058,9 @@ get_log_file_name(int argc, char **argv)
 int 
 main(int argc, char **argv)
 {
+	if (argc > 1 && argv[1][0] != '-')
+		log_filename_from_commandline = argv[1];
+
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
@@ -1044,6 +1143,26 @@ main(int argc, char **argv)
 
 	if (log_imu)
 		carmen_imu_subscribe_imu_message(NULL, (carmen_handler_t) imu_handler, CARMEN_SUBSCRIBE_ALL);
+
+	if (log_imu_lidar)
+	{
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler0, CARMEN_SUBSCRIBE_ALL, 0);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler1, CARMEN_SUBSCRIBE_ALL, 1);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler2, CARMEN_SUBSCRIBE_ALL, 2);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler3, CARMEN_SUBSCRIBE_ALL, 3);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler4, CARMEN_SUBSCRIBE_ALL, 4);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler5, CARMEN_SUBSCRIBE_ALL, 5);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler6, CARMEN_SUBSCRIBE_ALL, 6);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler7, CARMEN_SUBSCRIBE_ALL, 7);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler8, CARMEN_SUBSCRIBE_ALL, 8);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler9, CARMEN_SUBSCRIBE_ALL, 9);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler10, CARMEN_SUBSCRIBE_ALL, 10);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler11, CARMEN_SUBSCRIBE_ALL, 11);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler12, CARMEN_SUBSCRIBE_ALL, 12);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler13, CARMEN_SUBSCRIBE_ALL, 13);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler14, CARMEN_SUBSCRIBE_ALL, 14);
+		carmen_imu_subscribe_imu_lidar_message(NULL, (carmen_handler_t) lidar_imu_handler15, CARMEN_SUBSCRIBE_ALL, 15);
+	}
 
 	if (log_gps)
 	{

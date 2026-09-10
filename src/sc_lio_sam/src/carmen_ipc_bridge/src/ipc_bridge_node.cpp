@@ -38,18 +38,14 @@ carmen_bridge::IpcBridgeNode *carmen_bridge::g_bridge_node = nullptr;
 // embutido do LiDAR assume como referencia. Volta pro XSens sozinho assim que
 // ele publicar dado valido de novo -- nao precisa reiniciar nada.
 //
-// DESLIGADO NO CARMEN. Este caminho depende de
-// carmen_imu_{publish,subscribe}_imu_lidar_message(), que e' uma extensao do
-// imu_interface do fork de onde este modulo veio (la' o driver do ouster
-// republica o IMU embutido do lidar como carmen_imu_message por sensor_id).
-// O CARMEN so' tem
-// carmen_imu_subscribe_imu_message(), sem sensor_id, e nenhum driver de lidar
-// publicando nele -- entao nao ha' IMU de lidar pra ouvir aqui.
-//
-// O codigo fica compilado-fora em vez de apagado: se um dia o imu_interface do
-// CARMEN ganhar a versao por sensor_id, basta trocar o 0 por 1 abaixo (e o
-// lidar_imu_sensor_id volta a valer no launch/params).
-#define CARMEN_HAS_IMU_LIDAR 0
+// RELIGADO. Este caminho depende de
+// carmen_imu_{publish,subscribe}_imu_lidar_message(), que na migracao ainda nao
+// existia no CARMEN -- por isso ficou compilado-fora. Em 2026-08-31 o
+// imu_interface do CARMEN ganhou a versao por sensor_id (mesmo nome IPC do
+// fork, carmen_imu_message_lidar_<id>) e os drivers do ouster e do hesai
+// voltaram a publicar nela, entao o fallback vale de novo -- e o
+// lidar_imu_sensor_id voltou a valer no launch/params.
+#define CARMEN_HAS_IMU_LIDAR 1
 
 #if CARMEN_HAS_IMU_LIDAR
 static int    g_lidar_imu_sensor_id = 0;

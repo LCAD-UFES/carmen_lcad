@@ -820,6 +820,14 @@ carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *mes
 {
 	static carmen_compact_map_t *compact_occupancy_map = NULL;
 	static carmen_map_t occupancy_map;
+	static double last_redraw = 0.0;
+
+	// Redesenhar o mapa custa ~35 ms (converte 1050x1050 celulas para imagem, rotaciona e
+	// escala). O mapper publica a ~8 Hz; sem este limite varias mensagens sao despachadas
+	// dentro do mesmo IPC_listenWait e o main loop do GTK fica 150 ms sem rodar.
+	if ((carmen_get_time() - last_redraw) < 0.3)
+		return;
+	last_redraw = carmen_get_time();
 
 	if (compact_occupancy_map == NULL)
 	{
@@ -837,6 +845,11 @@ carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *mes
 		carmen_cpy_compact_map_message_to_compact_map(compact_occupancy_map, message);
 		carmen_prob_models_uncompress_compact_map(&occupancy_map, compact_occupancy_map);
 	}
+
+	// O bloco de mapa se desloca com o carro; sem isto o mapa seria desenhado na origem antiga
+	occupancy_map.config.x_origin = message->config.x_origin;
+	occupancy_map.config.y_origin = message->config.y_origin;
+	strcpy(occupancy_map.config.origin, message->config.origin);
 
 	online_map = &occupancy_map;
 

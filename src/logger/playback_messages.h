@@ -52,6 +52,7 @@ extern "C" {
 #define    CARMEN_PLAYBACK_COMMAND_RWD_SINGLE   	6
 #define    CARMEN_PLAYBACK_COMMAND_SET_SPEED    	7
 #define    CARMEN_PLAYBACK_COMMAND_SET_MESSAGE    	8
+#define    CARMEN_PLAYBACK_COMMAND_SET_ACTIVATE_MESSAGE	9
 
 typedef struct {
   int cmd;
@@ -69,10 +70,11 @@ typedef struct
 	double message_timestamp;
 	double message_timestamp_difference;
 	double playback_speed;
+	char *all_messages_tag;		/* tags de mensagem presentes no log, separadas por espaco */
 } carmen_playback_info_message;
 
 #define CARMEN_PLAYBACK_INFO_MESSAGE_NAME	"carmen_playback_info_message"
-#define CARMEN_PLAYBACK_INFO_MESSAGE_FMT	"{int,double,double,double}"
+#define CARMEN_PLAYBACK_INFO_MESSAGE_FMT	"{int,double,double,double,string}"
 
 #ifdef __cplusplus
 }

@@ -220,8 +220,11 @@ regenerate_map_pixmap(GtkMapViewer *map_view)
 	x_render_size = map_view->rescale_size*config.x_size;
 	y_render_size = map_view->rescale_size*config.y_size;
 
+	/* GDK_INTERP_TILES custava 32 ms para ampliar 1050x1050 -> 2100x2100 a cada mensagem de
+	   mapa; NEAREST custa 6 ms e, num grid de ocupacao ampliado, e' o resultado desejado
+	   (celula quadrada, sem borrar). */
 	final_image = gdk_pixbuf_scale_simple(rotated_image, x_render_size,
-			y_render_size, GDK_INTERP_TILES);
+			y_render_size, GDK_INTERP_NEAREST);
 	map_view->current_pixbuf = final_image;
 
 	g_object_unref(rotated_image);
