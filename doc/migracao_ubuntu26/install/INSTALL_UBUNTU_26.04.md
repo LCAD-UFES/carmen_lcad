@@ -287,7 +287,14 @@ make -C $CARMEN_HOME/src CC=gcc-15 CXX=g++-15 -j$(nproc)
 `PACKAGES` podem ter código desatualizado, os headers deles
 podem ser incompatíveis.
 
-## 9. Opcional: hardware, CUDA e ROS
+## 9. Criar pasta de dados
+
+
+### Create data folder with permission:
+  sudo mkdir /dados
+  sudo chmod -R 777 /dados
+
+## 10. Opcional: hardware, CUDA e ROS
 
 Só instale o que a máquina for realmente usar.
 
@@ -325,7 +332,7 @@ Só instale o que a máquina for realmente usar.
 
   > Instale o ROS **por último**.
 
-## 10. Python
+## 11. Python
 
 O Python do 26.04 é o 3.14 e bloqueia `pip install` fora de venv (PEP 668,
 `error: externally-managed-environment`). Prefira pacotes `python3-*` do apt;
