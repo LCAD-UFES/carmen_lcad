@@ -1,5 +1,7 @@
 #pragma once
 
+#include "carmen_ipc_bridge/platform.hpp"
+
 /*
  * ipc_bridge_node.hpp  (ROS1 / Noetic)
  *
@@ -28,7 +30,6 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 
-#include <carmen/carmen.h>
 
 // ─── Data frames ─────────────────────────────────────────────────────────────
 namespace carmen_bridge {

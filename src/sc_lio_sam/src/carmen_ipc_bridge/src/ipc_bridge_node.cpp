@@ -1,3 +1,4 @@
+#include "carmen_ipc_bridge/platform.hpp"
 /*
  * ipc_bridge_node.cpp  (ROS1 / Noetic)
  *
@@ -13,12 +14,6 @@
 
 #include "carmen_ipc_bridge/ipc_bridge_node.hpp"
 #include "carmen_ipc_bridge/carmen_time.hpp"
-#include <carmen/xsens_interface.h>
-#include <carmen/base_ackerman_interface.h>
-#include <carmen/gps_xyz_interface.h>
-#include <carmen/gps_nmea_interface.h>
-#include <carmen/imu_interface.h>
-#include <carmen/global.h>
 #include <cmath>
 #include <chrono>
 #include <map>
@@ -156,10 +151,16 @@ static void gps_xyz_handler(carmen_gps_xyz_message *msg)
 
     static std::atomic<uint64_t> gps_xyz_count{0};
     ++gps_xyz_count;
+#ifdef MAKE_IN_CARMEn
+    // Carmen's XYZ message contains position only; heading comes from HDT.
+    const double theta = 0.0;
+#else
+    const double theta = msg->theta;
+#endif
     ROS_INFO_THROTTLE(1.0,
         "[DBG-GPS-XYZ] msgs/s=%lu  nr=%d  quality=%d  x=%.3f y=%.3f theta=%.4f  ts_carmen=%.3f",
         static_cast<unsigned long>(gps_xyz_count.exchange(0)),
-        msg->nr, msg->gps_quality, msg->x, msg->y, msg->theta, msg->timestamp);
+        msg->nr, msg->gps_quality, msg->x, msg->y, theta, msg->timestamp);
 
     carmen_bridge::GpsXyzFrame frame;
     frame.timestamp   = msg->timestamp;
@@ -167,7 +168,7 @@ static void gps_xyz_handler(carmen_gps_xyz_message *msg)
     frame.x           = msg->x;
     frame.y           = msg->y;
     frame.z           = msg->z;
-    frame.theta       = msg->theta;
+    frame.theta       = theta;
     frame.gps_quality = msg->gps_quality;
     frame.valid       = (msg->gps_quality >= 1);
 
@@ -470,7 +471,14 @@ IpcBridgeNode::gps_xyz_to_msg(const GpsXyzFrame &f)
     msg.pose.covariance[0]  = sigma_xy * sigma_xy;               // xx
     msg.pose.covariance[7]  = sigma_xy * sigma_xy;               // yy
     msg.pose.covariance[14] = (sigma_xy * 3.0) * (sigma_xy * 3.0); // zz (Z do GPS é sempre pior)
+#ifdef MAKE_IN_CARMEn
+    // Identity orientation is a placeholder, not a measured heading.
+    msg.pose.covariance[21] = 1e6;
+    msg.pose.covariance[28] = 1e6;
+    msg.pose.covariance[35] = 1e6;
+#else
     msg.pose.covariance[35] = 0.05;                              // yaw, fixo por enquanto
+#endif
 
     return msg;
 }

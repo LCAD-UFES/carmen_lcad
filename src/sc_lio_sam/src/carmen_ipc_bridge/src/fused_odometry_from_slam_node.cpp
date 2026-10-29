@@ -1,3 +1,4 @@
+#include "carmen_ipc_bridge/platform.hpp"
 /*
  * fused_odometry_from_slam_node.cpp  (ROS1 / Noetic)
  *
@@ -64,11 +65,6 @@
 #include <vector>
 #include <memory>
 
-#include <carmen/carmen.h>
-#include <carmen/fused_odometry_interface.h>
-#include <carmen/fused_odometry_messages.h>
-#include <carmen/localize_ackerman_interface.h>
-#include <carmen/localize_ackerman_messages.h>
 
 #include "carmen_ipc_bridge/carmen_time.hpp"
 
@@ -282,8 +278,30 @@ private:
         for (int i = 0; i < num_trailers_; ++i)
             trailer_theta[i] = yaw;
 
+#ifdef MAKE_IN_CARMEn
+        // Carmen has no _host helper. Publish its native message while keeping
+        // the origin tag used by onCarmenInitializeMessage to avoid feedback.
+        carmen_localize_ackerman_initialize_message init{};
+        IPC_RETURN_TYPE err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME,
+            IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT);
+        carmen_test_ipc_exit(err, "Could not define message",
+            CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
+        init.timestamp = carmen_get_time();
+        init.host = const_cast<char *>(host);
+        init.distribution = CARMEN_INITIALIZE_GAUSSIAN;
+        init.num_modes = 1;
+        init.mean = &mean;
+        init.std = &std;
+        init.num_trailers = num_trailers_;
+        for (int i = 0; i < num_trailers_; ++i)
+            init.trailer_theta[i] = trailer_theta[i];
+        err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, &init);
+        carmen_test_ipc(err, "Could not publish",
+            CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
+#else
         carmen_localize_ackerman_initialize_gaussian_command_host(
             mean, std, trailer_theta, num_trailers_, (char *) host);
+#endif
     }
 
 public:

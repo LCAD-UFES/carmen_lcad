@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(carmen_ipc_bridge)
 
+option(MAKE_IN_CARMEn "Build against the Carmen APIs instead of Astro" OFF)
+if(MAKE_IN_CARMEn)
+  add_compile_definitions(MAKE_IN_CARMEn)
+endif()
+
 # ─── C++ Standard ────────────────────────────────────────────────────────────
 add_compile_options(-std=c++17)
 
@@ -23,11 +28,16 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 # ─── CARMEN / IPC ────────────────────────────────────────────────────────────
-if(NOT DEFINED ENV{CARMEN_HOME})
-  message(FATAL_ERROR "CARMEN_HOME não está definida.")
+if(MAKE_IN_CARMEn)
+  set(IPC_HOME_ENV CARMEN_HOME)
+else()
+  set(IPC_HOME_ENV ASTRO_HOME)
+endif()
+if(NOT DEFINED ENV{${IPC_HOME_ENV}})
+  message(FATAL_ERROR "${IPC_HOME_ENV} não está definida.")
 endif()
 
-set(CARMEN_HOME $ENV{CARMEN_HOME})
+set(CARMEN_HOME $ENV{${IPC_HOME_ENV}})
 
 set(CARMEN_INCLUDE_DIRS
   ${CARMEN_HOME}/include
@@ -46,15 +56,20 @@ set(CARMEN_LIBRARY_DIRS
 # ─── CARMEN_LIBRARIES ────────────────────────────────────────────────────────
 # Adicionamos velodyne_interface e xsens_interface de volta para o bridge funcionar!
 # imu_interface adicionado pro fallback xsens -> IMU do lidar (carmen_imu_message)
+set(IPC_SHARED_MEMORY_LIBRARIES)
+if(NOT MAKE_IN_CARMEn)
+  set(IPC_SHARED_MEMORY_LIBRARIES shm_map shm_manager)
+endif()
+
 set(CARMEN_LIBRARIES
   -Wl,--start-group
   ipc global param_interface
   velodyne_interface xsens_interface imu_interface base_ackerman_interface
   gps_xyz_interface gps_nmea_interface fused_odometry_interface
-  collision_detection shm_map shm_manager localize_ackerman_interface
+  collision_detection ${IPC_SHARED_MEMORY_LIBRARIES} localize_ackerman_interface
   map_interface map_util map_io
   prob_models grid_mapping
-  tf BulletCollision BulletDynamics BulletSoftBody LinearMath rt
+  tf BulletCollision BulletDynamics BulletSoftBody LinearMath rt z
   -Wl,--end-group
 )
 

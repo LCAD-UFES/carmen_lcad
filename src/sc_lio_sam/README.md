@@ -96,17 +96,35 @@ Para compilar o workspace:
 
 ```bash
 source /opt/ros/noetic/setup.bash
-export CARMEN_HOME="$HOME/carmen"
-cd "$CARMEN_HOME/src/sc_lio_sam"
-catkin_make -j$(nproc) -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+catkin_make -j2 -DMAKE_IN_CARMEn=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 ```
+
+`MAKE_IN_CARMEn` termina com **n minúsculo**. Com `ON`, a ponte usa os headers
+e bibliotecas de `CARMEN_HOME`; com `OFF` (padrão), usa os de `ASTRO_HOME`:
+
+```bash
+catkin_make -j2 -DMAKE_IN_CARMEn=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+```
+
+Os mesmos fontes e nomes de pacote/tópicos ROS são usados nas duas opções;
+`platform.hpp` adapta os nomes das APIs IPC, sem substituição textual dos fontes.
+O valor da opção fica no cache do CMake: ao trocar de plataforma, passe `ON` ou
+`OFF` explicitamente e prefira diretórios de build/devel separados.
+
+No Carmen, a mensagem GPS XYZ não contém orientação. A ponte publica a posição
+com alta incerteza de orientação, e o nó de GPS só produz a pose corrigida quando
+há heading HDT válido e recente. No Astro, permanece a alternativa de usar o
+`theta` da mensagem XYZ. A inicialização no Carmen preserva o `host` de origem
+publicando diretamente a mensagem IPC; no Astro, usa a função `_command_host`.
+As bibliotecas `shm_map` e `shm_manager` são vinculadas somente no modo Astro;
+`zlib` é vinculada nos dois modos.
 
 Se houver falta de memória, reduza o paralelismo para `-j2`.
 Após trocar uma instalação manual pela versão APT, selecione explicitamente
 sua configuração para evitar um `GTSAM_DIR` antigo no cache. No Ubuntu 26.04:
 
 ```bash
-catkin_make --force-cmake -j2 -DCMAKE_BUILD_TYPE=Release \
+catkin_make --force-cmake -j2 -DMAKE_IN_CARMEn=ON -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DGTSAM_DIR=/usr/lib/cmake/GTSAM
 ```
 

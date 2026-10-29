@@ -1,3 +1,4 @@
+#include "carmen_ipc_bridge/platform.hpp"
 /*
  * pointcloud_node.cpp  (ROS1 / Noetic)
  *
@@ -40,12 +41,6 @@
 #include <memory>
 #include <algorithm>
 
-#include <carmen/carmen.h>
-#include <carmen/velodyne_interface.h>
-#include <carmen/collision_detection.h>
-#include <carmen/localize_ackerman_interface.h>
-#include <carmen/localize_ackerman_messages.h>
-#include <carmen/global.h>
 
 #include "carmen_ipc_bridge/carmen_time.hpp"
 
@@ -771,7 +766,11 @@ static bool prepare_obj_model(const std::string &raw_file,
     // uma URI absoluta, e quem abre o arquivo e' o processo do RViz.
     std::string file = raw_file;
     if (!file.empty() && file[0] != '/') {
+#ifdef MAKE_IN_CARMEn
         const char *carmen_home = getenv("CARMEN_HOME");
+#else
+        const char *carmen_home = getenv("ASTRO_HOME");
+#endif
         std::string bin_dir = carmen_home ? (std::string(carmen_home) + "/bin") : std::string(".");
         file = bin_dir + "/" + file;
     }

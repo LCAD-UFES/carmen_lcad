@@ -1,3 +1,4 @@
+#include "carmen_ipc_bridge/platform.hpp"
 /*
  * gps_localization_node.cpp  (ROS1 / Noetic)
  *
@@ -6,8 +7,6 @@
 
 #include "carmen_ipc_bridge/gps_localization_node.hpp"
 #include "carmen_ipc_bridge/carmen_time.hpp"
-#include <carmen/carmen.h>
-#include <carmen/global.h>
 #include <tf2/utils.h>
 #include <cmath>
 #include <algorithm>
@@ -294,7 +293,9 @@ void GpsLocalizationNode::on_gps_xyz(int nr, const nav_msgs::Odometry::ConstPtr 
     it->x = msg->pose.pose.position.x;
     it->y = msg->pose.pose.position.y;
     it->z = msg->pose.pose.position.z;
+#ifndef MAKE_IN_CARMEn
     it->theta = tf2::getYaw(msg->pose.pose.orientation);
+#endif
     it->cov_xx = std::max(msg->pose.covariance[0],  1e-6);
     it->cov_yy = std::max(msg->pose.covariance[7],  1e-6);
     it->cov_zz = std::max(msg->pose.covariance[14], 1e-6);
@@ -302,8 +303,15 @@ void GpsLocalizationNode::on_gps_xyz(int nr, const nav_msgs::Odometry::ConstPtr 
     // Calibracao do rumo: SEMPRE na mesma antena (a primeira de ~gps_nrs). Se
     // misturasse as duas, o passo lateral entre elas (1.44 m no Ype) entraria
     // como zigue-zague na direcao de percurso e sujaria a medida.
+#ifdef MAKE_IN_CARMEn
+    // XYZ has no heading in Carmen. Calibrate only with a fresh HDT sample.
+    if (!gps_nrs_.empty() && nr == gps_nrs_.front() && heading_from_hdt_ &&
+        std::fabs((msg->header.stamp - last_heading_stamp_).toSec()) < heading_max_age_)
+        update_heading_offset_estimate(msg->header.stamp, last_heading_, it->x, it->y);
+#else
     if (!gps_nrs_.empty() && nr == gps_nrs_.front())
         update_heading_offset_estimate(msg->header.stamp, it->theta, it->x, it->y);
+#endif
 
     try_publish_fused(msg->header.stamp);
 }
@@ -335,6 +343,7 @@ bool GpsLocalizationNode::current_heading(const ros::Time &now, double &theta_ou
         theta_out = last_heading_;
         found = true;
     }
+#ifndef MAKE_IN_CARMEn
     else
     {
         ros::Time newest(0);
@@ -350,6 +359,7 @@ bool GpsLocalizationNode::current_heading(const ros::Time &now, double &theta_ou
             }
         }
     }
+#endif
 
     if (!found)
         return false;
