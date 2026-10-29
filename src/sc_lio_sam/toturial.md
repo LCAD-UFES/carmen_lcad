@@ -17,14 +17,9 @@ sudo apt-get install  \
     ros-noetic-robot-state-publisher
 ```
 
-Instalar a Biblioteca GTSAM (>= 4.1 — nesta máquina, **4.2a9** em `/usr/local`)
+Instalar a Biblioteca GTSAM (Versão 4.0.3)
 
-> O PPA `gtsam-release-4.0` **não serve mais**: o código usa
-> `gtsam::Pose3::Identity()` (maiúscula), que só existe a partir do 4.1. Confira
-> o que está instalado com
-> `grep GTSAM_VERSION_STRING /usr/local/include/gtsam/config.h`.
-
-Execute os comandos abaixo para remover uma instalação anterior:
+Execute os comandos abaixo para remover:
 
 ```
 sudo apt-get purge libgtsam-dev ros-noetic-gtsam
@@ -42,15 +37,11 @@ sudo rm -f /usr/lib/libgtsam*
 sudo rm -rf /usr/local/lib/cmake/GTSAM*
 sudo rm -rf /usr/lib/cmake/GTSAM*
 ```
-Depois compile e instale o GTSAM >= 4.1 a partir da fonte (não há pacote do
-4.2 para o Ubuntu 26.04):
-
+Execute os comandos abaixo para baixar, compilar e instalar:
 ```
-git clone --branch 4.2a9 https://github.com/borglab/gtsam.git
-cd gtsam && mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF \
-         -DGTSAM_USE_SYSTEM_EIGEN=ON
-make -j$(nproc) && sudo make install && sudo ldconfig
+sudo add-apt-repository ppa:borglab/gtsam-release-4.0
+sudo apt-get update
+sudo apt-get install libgtsam-dev libgtsam-unstable-dev
 ```
 
 Criar a pasta para salvar a saída:
@@ -64,16 +55,9 @@ Para compilar corretamente use o comando abaixo (pode substituir por -j2 ou -j4 
 
 ```
 source /opt/ros/noetic/setup.bash
-cd $CARMEN_HOME/src/sc_lio_sam/
-catkin_make -j$(nproc) -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cd ~/carmen/src/slam_3d/
+catkin_make -j1 -DCMAKE_BUILD_TYPE=Release
 ```
-
-> `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` é obrigatório no Ubuntu 26.04: o CMake 4.x
-> removeu a compatibilidade com `cmake_minimum_required(VERSION < 3.5)`, que é o
-> que o `toplevel.cmake` do catkin e quase todo pacote Noetic ainda declaram.
->
-> O `$CARMEN_HOME` precisa estar definido e o `make` do `$CARMEN_HOME/src` já
-> ter rodado: a bridge linka contra as libs do CARMEN em `$CARMEN_HOME/lib`.
 
 
 ---

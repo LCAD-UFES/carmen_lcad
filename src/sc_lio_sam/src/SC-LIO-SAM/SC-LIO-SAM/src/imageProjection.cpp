@@ -70,6 +70,11 @@ private:
     // atitude são derivados da odometria Ackermann (odometrySource == "ackermann").
     bool useAckermannOdom;
 
+    // Print de 1 Hz com a taxa de scans (ver printRates()).
+    ros::WallTimer rateTimer;
+    RateCounter scansInRate;
+    RateCounter scansOutRate;
+
 
 public:
     ImageProjection():
@@ -89,7 +94,20 @@ public:
         allocateMemory();
         resetParameters();
 
+        rateTimer = nh.createWallTimer(ros::WallDuration(1.0), &ImageProjection::printRates, this);
+
         pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
+    }
+
+    // "recebidos" = nuvens que chegaram do LiDAR; "entregues" = cloud_info publicados
+    // pro resto da cadeia (menor quando falta odometria/IMU pro deskew).
+    void printRates(const ros::WallTimerEvent&)
+    {
+        const int raysTotal = (N_SCAN + downsampleRate - 1) / downsampleRate;
+        const int raysUsed = (raysTotal + lidarJumpSize - 1) / lidarJumpSize;
+        printf("[FREQ] scans do lidar: %.1f Hz recebidos, %.1f Hz entregues | jump_size=%d (%d de %d raios)\n",
+               scansInRate.rate(), scansOutRate.rate(), lidarJumpSize, raysUsed, N_SCAN);
+        fflush(stdout);
     }
 
     void allocateMemory()
@@ -164,6 +182,8 @@ public:
 
     void cloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg)
     {
+        scansInRate.tick();
+
         if (!cachePointCloud(laserCloudMsg))
             return;
 
@@ -175,6 +195,7 @@ public:
         cloudExtraction();
 
         publishClouds();
+        scansOutRate.tick();
 
         resetParameters();
     }
@@ -600,6 +621,9 @@ public:
                 continue;
 
             if (rowIdn % downsampleRate != 0)
+                continue;
+
+            if ((rowIdn / downsampleRate) % lidarJumpSize != 0)
                 continue;
 
             float horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;

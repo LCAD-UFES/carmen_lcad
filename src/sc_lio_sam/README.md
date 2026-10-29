@@ -24,78 +24,97 @@ O SC-LIO-SAM é um algoritmo de SLAM. Ele utiliza de vários dados sensor, como 
 
 ## Additional Installation
 
-Módulo portado de um fork do CARMEN (ver *Notas de portabilidade*, no fim deste
-arquivo). Roda sobre **ROS 1 Noetic**; nesta máquina o Noetic foi compilado
-da fonte para o Ubuntu 26.04 (não há pacote `apt` do Noetic para o 26.04) — a
-receita está em `~/ros_src/NOTAS.md`.
+O projeto usa ROS 1 Noetic e GTSAM **4.2.0**, instalada como pacote binário
+via APT. No Ubuntu 20.04, use o PPA do BorgLab; no Ubuntu 26.04, use o
+repositório oficial `universe`. Cada sistema usa os seus próprios binários.
+Não instale pacotes de uma distribuição na outra.
 
-Pacotes ROS adicionais:
+O ROS Noetic e as bibliotecas do Carmen precisam estar previamente instalados.
+No Ubuntu 26.04, este procedimento pressupõe que o ambiente Noetic já esteja
+preparado; os comandos abaixo não instalam o ROS nessa distribuição.
+
+### Ubuntu 20.04 (Focal)
 
 ```bash
+sudo apt-get install software-properties-common
+sudo add-apt-repository ppa:borglab/gtsam-release-4.2
 sudo apt-get update
-sudo apt-get install  \
-    ros-noetic-navigation \
-    ros-noetic-robot-localization \
-    ros-noetic-robot-state-publisher
+sudo apt-get install libgtsam-dev
+sudo apt-get install ros-noetic-navigation ros-noetic-robot-localization ros-noetic-robot-state-publisher
 ```
 
-**GTSAM.** O código usa a API `gtsam::Pose3::Identity()` (maiúscula), que é do
-GTSAM ≥ 4.1 — o `identity()` minúsculo do 4.0.3 do PPA antigo **não** compila
-mais. Nesta máquina está o **4.2a9** instalado em `/usr/local`:
+### Ubuntu 26.04 (Resolute)
 
 ```bash
-ls /usr/local/lib/cmake/GTSAM     # deve existir
-grep GTSAM_VERSION_STRING /usr/local/include/gtsam/config.h
+sudo add-apt-repository universe
+sudo apt-get update
+sudo apt-get install libgtsam-dev
 ```
 
-Se precisar reinstalar, remova a instalação anterior antes:
+Se você adicionou anteriormente o PPA antigo do README, remova essa entrada
+antes do `apt-get update`:
 
 ```bash
-sudo apt-get purge libgtsam-dev libgtsam-unstable-dev ros-noetic-gtsam
-sudo rm -rf /usr/local/include/gtsam /usr/local/include/gtsam_unstable /usr/include/gtsam
-sudo rm -f  /usr/local/lib/libgtsam* /usr/lib/libgtsam*
-sudo rm -rf /usr/local/lib/cmake/GTSAM* /usr/lib/cmake/GTSAM*
+sudo add-apt-repository --remove ppa:borglab/gtsam-release-4.0
 ```
 
-Crie a pasta de saída:
+O PPA 4.0 não publica pacotes para Resolute. O pacote oficial usado no Ubuntu
+26.04 é `4.2.0+dfsg-6`. Não é necessário instalar `libgtsam-unstable-dev` nem
+compilar a GTSAM a partir do código-fonte para este workspace.
+
+O pacote `4.2.0+dfsg-6` exporta no CMake uma biblioteca de testes
+`libCppUnitLite.a` que não fornece. O arquivo
+`src/SC-LIO-SAM/SC-LIO-SAM/cmake/GtsamCompatibility.cmake` detecta esse caso e
+importa a biblioteca compartilhada do sistema com suas dependências, sem
+carregar a exportação de testes. Nenhum arquivo de `/usr` é alterado.
+Instalações sem esse defeito usam a configuração CMake fornecida pela GTSAM.
+Esse ajuste e a remoção de um include não utilizado de `gtsam_unstable` não
+alteram o algoritmo de SLAM.
+
+Validação desta adaptação: compilação completa no Ubuntu 26.04 com
+`libgtsam-dev 4.2.0+dfsg-6`. A compilação no Ubuntu 20.04 e a comparação de
+trajetória/mapa em execução ainda precisam ser verificadas.
+
+Para conferir a origem e a versão instalada:
+
+```bash
+apt-cache policy libgtsam-dev
+```
+
+Referências: [instalação oficial da GTSAM](https://borglab.github.io/gtsam/install/),
+[PPA 4.2 para Focal](https://launchpad.net/~borglab/+archive/ubuntu/gtsam-release-4.2),
+[pacote de Resolute](https://packages.ubuntu.com/resolute/libgtsam-dev).
+
+Crie a pasta para salvar a saída:
 
 ```bash
 mkdir -p /dados/sc_lio_sam_output/
 sudo chmod 777 /dados/sc_lio_sam_output/
 ```
 
-### Compilando
-
-O build é próprio (`catkin_make`), **fora** do `make` do `$CARMEN_HOME/src`. Ele
-linka contra as libs do CARMEN já compiladas, então rode o `make` do `src/`
-antes — o `CMakeLists.txt` da bridge lê `$CARMEN_HOME` e aborta se não estiver
-definida.
+Para compilar o workspace:
 
 ```bash
 source /opt/ros/noetic/setup.bash
-cd $CARMEN_HOME/src/sc_lio_sam/
+export CARMEN_HOME="$HOME/carmen"
+cd "$CARMEN_HOME/src/sc_lio_sam"
 catkin_make -j$(nproc) -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 ```
 
-> `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` é obrigatório: o CMake 4.x do Ubuntu 26.04
-> removeu a compatibilidade com `cmake_minimum_required(VERSION < 3.5)`, que é o
-> que quase todo pacote do Noetic (inclusive o `toplevel.cmake` do catkin) ainda
-> declara. Sem a flag o `cmake` nem configura. Mesma flag usada no build do
-> Noetic em `~/ros_src/NOTAS.md`.
+Se houver falta de memória, reduza o paralelismo para `-j2`.
+Após trocar uma instalação manual pela versão APT, selecione explicitamente
+sua configuração para evitar um `GTSAM_DIR` antigo no cache. No Ubuntu 26.04:
 
-Se a máquina for fraca, troque por `-j2`/`-j4`: o `mapOptmization.cpp` sozinho
-come vários GB de RAM ao compilar.
+```bash
+catkin_make --force-cmake -j2 -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DGTSAM_DIR=/usr/lib/cmake/GTSAM
+```
 
-Saem 12 executáveis em `devel/lib/`:
-
-| Pacote | Binários |
-|---|---|
-| `lio_sam` | `imageProjection`, `featureExtraction`, `imuPreintegration`, `mapOptmization` |
-| `carmen_ipc_bridge` | `ipc_bridge_node`, `pointcloud_node`, `gps_localization_node`, `fused_odometry_from_slam_node` |
-| `ltslam` / `removert` | `ltslam_ltslam`, `removert_removert`, `removert_reconstruct_feature_map` |
-
-`build/`, `devel/` e o symlink `src/CMakeLists.txt` são gerados pelo `catkin_make`
-e estão no `.gitignore` do módulo.
+No Ubuntu 20.04, consulte `dpkg -L libgtsam-dev` para localizar
+`GTSAMConfig.cmake` e use o diretório correspondente, se necessário.
+Instalações manuais antigas em `/usr/local` também podem sobrepor cabeçalhos
+ou bibliotecas do APT; remova-as pelo procedimento da instalação original
+antes de misturar as duas origens.
 
 
 ## How to Use
@@ -120,36 +139,11 @@ Parâmetros principais do arquivo `params.yaml` (SC-LIO-SAM):
 Dependências de outros módulos:
 - Executar o `central`, o `param_daemon` e os módulos que publicam os sensores.
 
-Executar o programa. O `run.launch` tem dois `arg` **obrigatórios** (`params_file`
-e `savePCDDirectory`) — sem eles o `roslaunch` aborta. É preciso dar `source` no
-`devel/setup.bash` deste workspace antes:
+Executar o programa:
 
 ```bash
-source $CARMEN_HOME/src/sc_lio_sam/devel/setup.bash
-roslaunch lio_sam run.launch \
-    params_file:=$CARMEN_HOME/bin/argos/params_argos.yaml \
-    savePCDDirectory:=/dados/sc_lio_sam_output/minha_sessao/
+roslaunch lio_sam run.launch
 ```
-
-Modo de localização (reusa um mapa existente sem sobrescrever), com a pose
-inicial dentro do mapa:
-
-```bash
-roslaunch lio_sam run.launch localizationMode:=true \
-    params_file:=$CARMEN_HOME/bin/argos/params_argos.yaml \
-    savePCDDirectory:=/dados/sc_lio_sam_output/meu_mapa/ \
-    initialPoseX:=... initialPoseY:=... initialPoseYaw:=...
-```
-
-E a bridge com o IPC do CARMEN, em outro terminal:
-
-```bash
-source $CARMEN_HOME/src/sc_lio_sam/devel/setup.bash
-roslaunch carmen_ipc_bridge carmen_ipc_bridge.launch
-```
-
-Na prática nada disso é digitado à mão: o `proccontrol` (abaixo) sobe os dois com
-os argumentos certos.
 
 ### Outputs
 
@@ -173,85 +167,3 @@ Pontos em aberto (WIP) a serem endereçados:
 - Detalhar os parâmetros do `params.yaml`.
 - Avaliar a migração dos parâmetros do `.yaml` para o `.ini`.
 - Atualizar o README com instalação e execução.
-
-
-## Notas de portabilidade
-
-Este módulo foi trazido de um fork do CARMEN, onde o pacote da bridge se chamava
-de outro jeito. Além do rename para **`carmen_ipc_bridge`** (e do header
-`carmen_time.hpp`), quatro pontos precisaram de adaptação, porque dependiam de
-extensões de API que o fork tinha e o CARMEN não tinha. Nenhuma delas mexeu em
-código do CARMEN — tudo ficou dentro deste módulo, atrás de uma chave, para
-poder ser religado se a API aparecesse. **O ponto 1 já foi religado** (o CARMEN
-ganhou a API em 2026-08-31); os outros três seguem contornados.
-
-### 1. IMU embutido do LiDAR — **RELIGADO em 2026-08-31**
-
-`src/carmen_ipc_bridge/src/ipc_bridge_node.cpp`, chave `CARMEN_HAS_IMU_LIDAR` (1).
-
-A versão original usava `carmen_imu_{publish,subscribe}_imu_lidar_message(...,
-sensor_id)`, alimentada por um driver de LiDAR que republicava o IMU embutido
-nessa mensagem. Serve de **fallback** quando o XSens some ou publica zerado.
-Na migração isso ficou desligado porque o CARMEN só tinha
-`carmen_imu_subscribe_imu_message()` (sem `sensor_id`).
-
-Desde 2026-08-31 o `imu_interface` do CARMEN tem a versão por `sensor_id` — com
-o **mesmo nome IPC do fork**, `carmen_imu_message_lidar_<id>` — e os drivers
-`src/ouster_lidar` e `src/hesai_lidar` voltaram a publicar nela. A chave foi
-para 1 e o `lidar_imu_sensor_id` voltou a valer no `carmen_ipc_bridge.launch`
-(arg próprio, com default igual ao `lidar_sensor_id`: normalmente o LiDAR que dá
-a nuvem é o mesmo que tem o IMU, mas não precisa ser).
-
-**Comportamento:** o XSens tem prioridade; o IMU do LiDAR só entra quando o
-XSens some por mais de `XSENS_TIMEOUT_S` (1 s) ou vem zerado, e sai sozinho
-quando o XSens volta — sem troca manual. Validado publicando
-`carmen_imu_message_lidar_0` sem XSens no ar: o `/imu_raw` sai com os valores
-do LiDAR.
-
-### 2. `horizontal_angles_deltas` do LiDAR — **DESLIGADO**
-
-`src/carmen_ipc_bridge/src/pointcloud_node.cpp`, chave
-`CARMEN_LIDAR_CONFIG_HAS_HORIZONTAL_DELTAS` (0).
-
-A versão original lia `double *horizontal_angles_deltas` do `carmen_lidar_config`
-(offset de azimute por canal, vindo da chave `lidar<N>_horizontal_angles` do
-`param_daemon`). O struct do CARMEN (`velodyne_messages.h`) não tem esse campo.
-
-**Consequência prática:** nenhuma regressão — o caminho já era opcional.
-`ring_cos_az_off_`/`ring_sin_az_off_` ficam na identidade e o azimute sai do
-índice do shot, como em qualquer LiDAR sem correção horizontal.
-
-### 3. `theta`/`valid` do `carmen_gps_xyz_message` — **contornado**
-
-`src/carmen_ipc_bridge/src/ipc_bridge_node.cpp`, `gps_xyz_handler()`.
-
-A versão original tinha `theta` e `valid` no struct do GPS (rumo de duas
-antenas). O CARMEN não tem. A posição (`x`, `y`, `z`, `nr`, `gps_quality`) é
-idêntica e continua sendo lida normalmente; o **rumo** já chegava por um caminho
-separado (`carmen_gps_gphdt_message` → `gps_hdt_handler` → `/gps/heading_raw`),
-então `frame.theta` sai 0 e quem precisa de rumo usa o tópico do GPHDT.
-
-**Consequência prática:** nenhuma — o `gps_localization_node` já combinava as
-duas fontes.
-
-### 4. `..._initialize_gaussian_command_host()` — implementado localmente
-
-`src/carmen_ipc_bridge/src/fused_odometry_from_slam_node.cpp`.
-
-O nó assina o `carmen_localize_ackerman_initialize_message` (clique de
-"posicionar robô" do `navigator_gui`/`viewer_3D`) e precisa distinguir o clique
-de verdade do **eco do seu próprio snap** — o filtro é pelo campo `host`. A
-versão original tinha uma variante `_host` do `initialize_gaussian_command` que
-deixava o chamador escolher esse campo; o CARMEN só tem a versão que carimba
-`carmen_get_host()`.
-
-Em vez de mexer no `libcarmen` (a interface é compartilhada com o resto do
-sistema), a variante foi reimplementada como função `static` dentro do próprio
-nó: mesma mensagem IPC, mesmos `NAME`/`FMT`, só com o `host` vindo por parâmetro.
-
-### 5. `zlib` no link
-
-`src/carmen_ipc_bridge/CMakeLists.txt`.
-
-O `libmap_io` do CARMEN lê/grava mapa comprimido e não arrasta a `zlib` sozinho:
-sem `-lz` os quatro nós quebram o link em `undefined reference to 'gzopen'`.

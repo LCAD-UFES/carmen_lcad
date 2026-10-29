@@ -3165,6 +3165,7 @@ get_alive_LIDARs_and_their_parameters(int argc, char **argv, int correction_type
 			{(char *) "localize_ackerman", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].unsafe_height_above_ground, 0, NULL},
 			{(char *) "localize_ackerman", (char *) "safe_height_from_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].safe_height_from_ground, 0, NULL},
 		};
+		carmen_param_allow_unfound_variables(1);
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 		if (spherical_sensor_params[i].alive)

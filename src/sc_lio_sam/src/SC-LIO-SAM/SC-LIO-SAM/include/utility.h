@@ -50,6 +50,7 @@
 #include <iomanip>
 #include <array>
 #include <thread>
+#include <atomic>
 #include <mutex>
 #include <sstream>
 
@@ -207,6 +208,39 @@ public:
     float ackermannRejectYawDeg;
     float ackermannRejectPosM;
 
+    // Folga da rejeição por METRO andado desde o último scan aceito. O erro do dead
+    // reckoning cresce com a distância, então um limite fixo vira armadilha: depois
+    // de alguns scans rejeitados a odometria já derivou mais que o limite, o
+    // scan-to-map (certo) passa a ser rejeitado sempre e a pose nunca mais volta.
+    // Com a folga o limite abre conforme o veículo anda às cegas e fecha de novo no
+    // primeiro scan aceito. 0 = limite fixo (comportamento antigo).
+    float ackermannRejectPosGrowth;      // m de folga por m andado
+    float ackermannRejectYawGrowthDeg;   // graus de folga por m andado
+
+    // Taxa de referência dos pesos ackermannYawWeight/ackermannPosWeight [Hz].
+    // Os pesos são "fração aceita por scan", mas o mapOptimization nem sempre
+    // processa todos os scans: com nuvem densa ele cai pra 2-3 Hz e descarta o
+    // resto. Aí um peso 0.10 pensado pra 20 Hz deixa o LiDAR corrigir ~10x menos
+    // por segundo, e o erro da odometria (que cresce por segundo/metro) ganha.
+    // Com a taxa de referência o peso efetivo de cada scan processado vira
+    //     w_ef = 1 - (1 - w)^(dt * refHz)
+    // (dt = tempo desde o scan processado anterior), ou seja, a mesma constante de
+    // tempo independente de quantos scans foram descartados.
+    // 0 = peso por scan processado (comportamento antigo).
+    float ackermannWeightRefHz;
+
+    // Estimador do viés de CURVATURA da odometria Ackermann [distância de
+    // convergência, em m]. Esterço com zero deslocado (alinhamento, abaulamento da
+    // pista, folga) faz omega = v*tan(phi)/L ter um erro proporcional à velocidade:
+    // 0.3 graus de viés com L=3.75 m dão ~0.8 grau/s a 10 m/s. Em reta rápida isso
+    // é maior do que o gate deixa o LiDAR corrigir.
+    // O estimador integra a inovação de yaw do scan-to-map (aceito, em trecho quase
+    // reto) num viés kappa [rad/m] e o desconta do incremento de yaw do chute:
+    //     dyaw_corrigido = dyaw_odometria - kappa * ds
+    // É o termo integral que faltava ao gate (que sozinho é só proporcional).
+    // Menor = converge mais rápido e oscila mais. 0 desliga.
+    float ackermannCurvBiasDist;
+
     // Tamanho das filas dos subscribers da cadeia SLAM.
     // 1 (padrao) = sempre processa o scan MAIS NOVO e descarta o resto -- correto
     // no carro, onde pose atrasada e' pior que pose faltando.
@@ -255,13 +289,6 @@ public:
     double posesOriginMaxDt;       // casamento GPS <-> pose SLAM (s)
     double posesOriginMinBaseline; // deslocamento minimo (m) pra tirar rumo do movimento
     double posesOriginRelPosNoise; // variancia do erro RELATIVO do GPS (m^2)
-    // Exigir que o robo ENCAIXE no mapa antes de comecar a gravar poses.
-    // O encaixe (locEverAnchored) so' e' marcado por um snap: clique no RViz,
-    // auto-relocalize por GPS, ou Scan Context. Num veiculo SEM GPS, em
-    // posesOriginMode "manual", nenhum dos tres acontece sozinho -- e o arquivo
-    // ficava vazio esperando um encaixe que nunca vinha.
-    // Default: exige em modo "gps", nao exige em modo "manual".
-    bool   posesRequireAnchor;
     int    posesSettleScans;
     double posesInterpolateMaxGap;
     double posesInterpolateMaxError;
@@ -272,6 +299,12 @@ public:
     int N_SCAN;
     int Horizon_SCAN;
     int downsampleRate;
+    // Usa 1 a cada lidarJumpSize RAIOS do LiDAR (raio = linha/ring, na ordem do
+    // shot do CARMEN): 1 = todos, 2 = olha um e pula o proximo, 4 = olha um e pula
+    // tres. Os raios pulados sao descartados no imageProjection, antes da extracao
+    // de features, entao tudo o que vem depois (features, voxel, scan-to-map)
+    // fica proporcionalmente mais leve. N_SCAN continua sendo o total do sensor.
+    int lidarJumpSize;
     float lidarMaxRange;
 
     // IMU
@@ -364,6 +397,10 @@ public:
         nh.param<float>("lio_sam/ackermannPosMaxCorr", ackermannPosMaxCorr, 0.0);
         nh.param<float>("lio_sam/ackermannRejectYawDeg", ackermannRejectYawDeg, 0.0);
         nh.param<float>("lio_sam/ackermannRejectPosM", ackermannRejectPosM, 0.0);
+        nh.param<float>("lio_sam/ackermannRejectPosGrowth", ackermannRejectPosGrowth, 0.0);
+        nh.param<float>("lio_sam/ackermannRejectYawGrowthDeg", ackermannRejectYawGrowthDeg, 0.0);
+        nh.param<float>("lio_sam/ackermannWeightRefHz", ackermannWeightRefHz, 0.0);
+        nh.param<float>("lio_sam/ackermannCurvBiasDist", ackermannCurvBiasDist, 0.0);
         nh.param<float>("lio_sam/poseCovThreshold", poseCovThreshold, 25.0);
 
         nh.param<int>("lio_sam/slamQueueSize", slamQueueSize, 1);
@@ -393,12 +430,6 @@ public:
         nh.param<double>("lio_sam/posesOriginMaxDt", posesOriginMaxDt, 0.50);
         nh.param<double>("lio_sam/posesOriginMinBaseline", posesOriginMinBaseline, 1.0);
         nh.param<double>("lio_sam/posesOriginRelPosNoise", posesOriginRelPosNoise, 0.25);
-        // Default derivado do modo da origem: em "gps" a pose inicial vem de um fix
-        // que ainda nao foi validado contra o mapa, entao esperar o encaixe evita
-        // gravar o salto da correcao. Em "manual" a pose inicial e' a que o operador
-        // deu (initialPose*), nao ha' salto nenhum para esperar.
-        // Pode ser forcado nos dois sentidos pelo .yaml.
-        nh.param<bool>("lio_sam/posesRequireAnchor", posesRequireAnchor, (posesOriginMode == "gps"));
         nh.param<int>("lio_sam/posesSettleScans",  posesSettleScans, 20);
         nh.param<double>("lio_sam/posesInterpolateMaxGap", posesInterpolateMaxGap, 5.0);
         nh.param<double>("lio_sam/posesInterpolateMaxError", posesInterpolateMaxError, 0.10);
@@ -408,6 +439,12 @@ public:
         nh.param<int>("lio_sam/N_SCAN", N_SCAN, 16);
         nh.param<int>("lio_sam/Horizon_SCAN", Horizon_SCAN, 1800);
         nh.param<int>("lio_sam/downsampleRate", downsampleRate, 1);
+        nh.param<int>("lio_sam/lidarJumpSize", lidarJumpSize, 1);
+        if (lidarJumpSize < 1)
+        {
+            ROS_WARN("lidarJumpSize=%d invalido, usando 1 (todos os raios).", lidarJumpSize);
+            lidarJumpSize = 1;
+        }
         nh.param<float>("lio_sam/lidarMaxRange", lidarMaxRange, 1000.0);
 
         nh.param<float>("lio_sam/imuAccNoise", imuAccNoise, 0.01);
@@ -509,6 +546,28 @@ public:
     }
 };
 
+
+// Conta eventos e devolve a taxa media [Hz] desde a ultima leitura, em relogio de
+// parede (em playback o que interessa e' o que a maquina da' conta, nao o /clock).
+// tick() e rate() podem ser chamados de threads diferentes.
+class RateCounter
+{
+public:
+    void tick() { ++count; }
+
+    double rate()
+    {
+        const ros::WallTime now = ros::WallTime::now();
+        const int n = count.exchange(0);
+        const double dt = (now - last).toSec();
+        last = now;
+        return dt > 1e-3 ? n / dt : 0.0;
+    }
+
+private:
+    std::atomic<int> count{0};
+    ros::WallTime last = ros::WallTime::now();
+};
 
 sensor_msgs::PointCloud2 publishCloud(ros::Publisher *thisPub, pcl::PointCloud<PointType>::Ptr thisCloud, ros::Time thisStamp, std::string thisFrame)
 {

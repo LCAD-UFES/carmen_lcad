@@ -51,15 +51,11 @@ set(CARMEN_LIBRARIES
   ipc global param_interface
   velodyne_interface xsens_interface imu_interface base_ackerman_interface
   gps_xyz_interface gps_nmea_interface fused_odometry_interface
-  collision_detection localize_ackerman_interface
+  collision_detection shm_map shm_manager localize_ackerman_interface
   map_interface map_util map_io
   prob_models grid_mapping
-  tf BulletCollision BulletDynamics BulletSoftBody LinearMath
+  tf BulletCollision BulletDynamics BulletSoftBody LinearMath rt
   -Wl,--end-group
-  # libmap_io do CARMEN grava/le mapa comprimido (gz*/inflate/deflate) e nao
-  # arrasta a zlib sozinha -- sem isto o link dos 4 nos quebra em
-  # "undefined reference to `gzopen'".
-  z
 )
 
 find_package(Boost REQUIRED COMPONENTS thread filesystem)

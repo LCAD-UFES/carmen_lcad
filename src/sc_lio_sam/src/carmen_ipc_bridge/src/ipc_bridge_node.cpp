@@ -35,34 +35,21 @@ carmen_bridge::IpcBridgeNode *carmen_bridge::g_bridge_node = nullptr;
 // ─── Fallback XSens -> IMU do LiDAR ──────────────────────────────────────────
 // Prioridade normal: XSens. Se o XSens nunca publicar (nao existir/nao
 // conectado) ou publicar zerado (sensor travado mas IPC ainda de pe), o IMU
-// embutido do LiDAR assume como referencia. Volta pro XSens sozinho assim que
-// ele publicar dado valido de novo -- nao precisa reiniciar nada.
-//
-// RELIGADO. Este caminho depende de
-// carmen_imu_{publish,subscribe}_imu_lidar_message(), que na migracao ainda nao
-// existia no CARMEN -- por isso ficou compilado-fora. Em 2026-08-31 o
-// imu_interface do CARMEN ganhou a versao por sensor_id (mesmo nome IPC do
-// fork, carmen_imu_message_lidar_<id>) e os drivers do ouster e do hesai
-// voltaram a publicar nela, entao o fallback vale de novo -- e o
-// lidar_imu_sensor_id voltou a valer no launch/params.
-#define CARMEN_HAS_IMU_LIDAR 1
-
-#if CARMEN_HAS_IMU_LIDAR
+// embutido do LiDAR (carmen_imu_message, ver ouster_main.cpp) assume como
+// referencia. Volta pro XSens sozinho assim que ele publicar dado valido de
+// novo -- nao precisa reiniciar nada.
 static int    g_lidar_imu_sensor_id = 0;
-#endif
 static double g_last_xsens_carmen_time = -1.0;  // timestamp CARMEN da ultima msg xsens valida
 static bool   g_last_xsens_valid = false;
 static const double XSENS_TIMEOUT_S = 1.0;   // sem msg ha mais que isso -> fallback
 static const double XSENS_ZERO_EPS  = 1e-6;
 
-#if CARMEN_HAS_IMU_LIDAR
 static bool xsens_is_active(double ref_carmen_time)
 {
     if (g_last_xsens_carmen_time < 0.0) return false;
     if (!g_last_xsens_valid)          return false;
     return (ref_carmen_time - g_last_xsens_carmen_time) < XSENS_TIMEOUT_S;
 }
-#endif
 
 // ─── Handlers IPC ─────────────────────────────────────────────────────────────
 
@@ -101,19 +88,8 @@ static void xsens_handler(carmen_xsens_global_quat_message *msg)
 
     if (is_zeroed)
     {
-#if CARMEN_HAS_IMU_LIDAR
         //ROS_WARN_THROTTLE(2.0, "[DBG-XSENS] mensagem zerada recebida -- cedendo pro fallback do IMU do lidar");
         return; // nao publica lixo; lidar_imu_handler assume a partir daqui
-#else
-        // Sem o fallback do IMU do lidar nao ha' pra quem ceder: descartar a
-        // mensagem zerada deixa o /imu_raw MUDO. Avisa alto, porque daqui a
-        // frente o SC-LIO-SAM fica sem IMU e a deskew/preintegracao param.
-        ROS_WARN_THROTTLE(2.0,
-            "[XSENS] mensagem zerada (sensor travado?) -- descartada. "
-            "O fallback do IMU do lidar esta' desligado no CARMEN, entao "
-            "/imu_raw fica sem dado enquanto isso durar.");
-        return; // nao publica lixo
-#endif
     }
 
     frame.ros_stamp_ns = carmen_bridge::carmen_to_ros_ns(msg->timestamp);
@@ -122,7 +98,6 @@ static void xsens_handler(carmen_xsens_global_quat_message *msg)
     carmen_bridge::g_bridge_node->on_imu(frame);
 }
 
-#if CARMEN_HAS_IMU_LIDAR
 // Fallback: IMU embutido do LiDAR (carmen_imu_message, publicado pelo
 // ouster_main.cpp via carmen_imu_publish_imu_lidar_message). So publica
 // quando o xsens nao existe ou esta zerado -- ver xsens_is_active().
@@ -158,7 +133,6 @@ static void lidar_imu_handler(carmen_imu_message *msg)
 
     carmen_bridge::g_bridge_node->on_imu(frame);
 }
-#endif // CARMEN_HAS_IMU_LIDAR
 
 static void base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 {
@@ -183,9 +157,9 @@ static void gps_xyz_handler(carmen_gps_xyz_message *msg)
     static std::atomic<uint64_t> gps_xyz_count{0};
     ++gps_xyz_count;
     ROS_INFO_THROTTLE(1.0,
-        "[DBG-GPS-XYZ] msgs/s=%lu  nr=%d  quality=%d  x=%.3f y=%.3f  ts_carmen=%.3f",
+        "[DBG-GPS-XYZ] msgs/s=%lu  nr=%d  quality=%d  x=%.3f y=%.3f theta=%.4f  ts_carmen=%.3f",
         static_cast<unsigned long>(gps_xyz_count.exchange(0)),
-        msg->nr, msg->gps_quality, msg->x, msg->y, msg->timestamp);
+        msg->nr, msg->gps_quality, msg->x, msg->y, msg->theta, msg->timestamp);
 
     carmen_bridge::GpsXyzFrame frame;
     frame.timestamp   = msg->timestamp;
@@ -193,11 +167,7 @@ static void gps_xyz_handler(carmen_gps_xyz_message *msg)
     frame.x           = msg->x;
     frame.y           = msg->y;
     frame.z           = msg->z;
-    // O carmen_gps_xyz_message do CARMEN nao tem theta nem valid -- sao campos
-    // que o fork de origem acrescentou ao struct para GPS de duas antenas. Aqui o rumo
-    // chega SEMPRE pelo caminho separado do GPHDT (gps_hdt_handler ->
-    // on_gps_hdt), entao theta fica zerado e o consumidor usa o /gps/heading_raw.
-    frame.theta       = 0.0;
+    frame.theta       = msg->theta;
     frame.gps_quality = msg->gps_quality;
     frame.valid       = (msg->gps_quality >= 1);
 
@@ -237,13 +207,8 @@ IpcBridgeNode::IpcBridgeNode(ros::NodeHandle &nh, ros::NodeHandle &pnh)
         publish_imu_        ? "SIM" : "NAO",
         publish_ackermann_  ? "SIM" : "NAO",
         publish_gps_        ? "SIM" : "NAO");
-#if CARMEN_HAS_IMU_LIDAR
     ROS_INFO("  IMU fallback: lidar_imu_sensor_id=%d (assume se xsens sumir/zerar por %.1fs)",
         g_lidar_imu_sensor_id, XSENS_TIMEOUT_S);
-#else
-    ROS_INFO("  IMU fallback do lidar: DESLIGADO (o CARMEN nao tem "
-             "carmen_imu_subscribe_imu_lidar_message; so' o XSens alimenta /imu_raw)");
-#endif
 }
 
 IpcBridgeNode::~IpcBridgeNode()
@@ -264,11 +229,9 @@ void IpcBridgeNode::declare_parameters()
     pnh_.param<std::string>("gps_frame_id", gps_frame_id_,   "utm");
     pnh_.param<std::string>("ipc_host",    ipc_host_,       "localhost");
 
-#if CARMEN_HAS_IMU_LIDAR
     // id do lidar (ouster_sensor_id no carmen.ini dele) cujo IMU embutido
     // serve de fallback quando o xsens some ou vem zerado
     pnh_.param<int>("lidar_imu_sensor_id", g_lidar_imu_sensor_id, 0);
-#endif
 
     std::vector<double> rot;
     pnh_.param("imu_rotation", rot, std::vector<double>{1,0,0, 0,1,0, 0,0,1});
@@ -329,7 +292,6 @@ void IpcBridgeNode::start_ipc_thread()
             reinterpret_cast<carmen_handler_t>(xsens_handler),
             CARMEN_SUBSCRIBE_LATEST);
 
-#if CARMEN_HAS_IMU_LIDAR
         // Fallback: IMU do lidar. Fica inscrito o tempo todo mas so publica
         // quando xsens_is_active() diz que o xsens sumiu/zerou (ver handler).
         carmen_imu_subscribe_imu_lidar_message(
@@ -337,7 +299,6 @@ void IpcBridgeNode::start_ipc_thread()
             reinterpret_cast<carmen_handler_t>(lidar_imu_handler),
             CARMEN_SUBSCRIBE_LATEST,
             g_lidar_imu_sensor_id);
-#endif
 
         if (publish_ackermann_)
             carmen_base_ackerman_subscribe_odometry_message(

@@ -112,6 +112,7 @@ public:
     ros::Publisher pubLocReset;
     ros::Publisher pubKeyPoses;
     ros::Publisher pubPath;
+    ros::Publisher pubGpsInMap;
 
     ros::Publisher pubHistoryKeyFrames;
     ros::Publisher pubIcpKeyFrames;
@@ -301,6 +302,19 @@ public:
     Eigen::Affine3f incrementalOdometryAffineGuess; // chute puro (ackermann/imu), antes do ICP
     bool incrementalOdometryGuessFromOdom = false;  // true só se o Guess veio de odom real (ackermann), não do fallback de IMU
 
+    // Estado do gate do Ackermann (ver applyAckermannYawWeight / correctAckermannIncrement).
+    float  ackCurvBias = 0.0f;          // viés de curvatura estimado [rad/m]
+    float  ackPredDs = 0.0f;            // avanço (eixo x do base_link) do incremento deste scan [m]
+    float  ackPredDyaw = 0.0f;          // yaw do incremento deste scan, já sem o viés [rad]
+    float  ackDistSinceAccept = 0.0f;   // distância andada desde o último scan aceito [m]
+    double ackLastGateTime = -1.0;      // stamp do último scan aceito pelo gate
+
+    // Print de 1 Hz com a taxa da localização e do pose graph (ver printRates()).
+    ros::WallTimer rateTimer;
+    RateCounter scanRate;       // scans que chegaram do featureExtraction
+    RateCounter poseRate;       // poses publicadas (scan-to-map concluído)
+    RateCounter keyframeRate;   // nós acrescentados ao pose graph
+
     // Histórico do gate anti-salto (ver transformUpdate()): últimas N correções
     // scan-match vs. odometria, usadas pra estimar um limiar robusto (mediana +
     // k*MAD) em vez de uma constante chutada.
@@ -435,6 +449,7 @@ public:
         pubLaserOdometryIncremental = nh.advertise<nav_msgs::Odometry> ("lio_sam/mapping/odometry_incremental", 1);
         pubLocReset                 = nh.advertise<std_msgs::Header>("lio_sam/mapping/loc_reset", 1);
         pubPath                     = nh.advertise<nav_msgs::Path>("lio_sam/mapping/path", 1);
+        pubGpsInMap                 = nh.advertise<nav_msgs::Odometry>("lio_sam/mapping/gps_in_map", 10);
 
         subCloud        = nh.subscribe<lio_sam::cloud_info>("lio_sam/feature/cloud_info", slamQueueSize, &mapOptimization::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
         subGPS          = nh.subscribe<nav_msgs::Odometry> (gpsTopic, 200, &mapOptimization::gpsHandler, this, ros::TransportHints().tcpNoDelay());
@@ -461,6 +476,8 @@ public:
         downSizeFilterSurroundingKeyPoses.setLeafSize(surroundingKeyframeDensity, surroundingKeyframeDensity, surroundingKeyframeDensity); // for surrounding key poses of scan-to-map optimization
 
         allocateMemory();
+
+        rateTimer = nh.createWallTimer(ros::WallDuration(1.0), &mapOptimization::printRates, this);
 
         pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
 
@@ -1392,8 +1409,25 @@ public:
     //     edges_str.emplace_back(curEdgeSaveStream);
     // }
 
+    // "scans" aqui é o que sobrou depois das filas de tamanho slamQueueSize: com a
+    // fila em 1, scan que chega enquanto o anterior ainda está sendo casado é
+    // descartado antes de entrar. A taxa crua do LiDAR sai no print do imageProjection.
+    void printRates(const ros::WallTimerEvent&)
+    {
+        const double scans = scanRate.rate();
+        const double poses = poseRate.rate();
+        if (localizationMode)
+            printf("[FREQ] localizacao: %.1f Hz | scans recebidos: %.1f Hz\n", poses, scans);
+        else
+            printf("[FREQ] localizacao: %.1f Hz | pose graph: %.1f keyframes/s (%zu no total) | scans recebidos: %.1f Hz\n",
+                   poses, keyframeRate.rate(), cloudKeyPoses3D->size(), scans);
+        fflush(stdout);
+    }
+
     void laserCloudInfoHandler(const lio_sam::cloud_infoConstPtr& msgIn)
     {
+        scanRate.tick();
+
         // extract time stamp
         timeLaserInfoStamp = msgIn->header.stamp;
         timeLaserInfoCur = msgIn->header.stamp.toSec();
@@ -1476,6 +1510,33 @@ public:
     //   - LOCALIZAÇÃO: lê a âncora do arquivo salvo (ver loadMap()) e usa
     //     pra converter cada fix RAW pro frame do mapa antes de disparar o
     //     auto-relocalize.
+    // Publica o GPS ja' convertido pro frame do mapa pela mesma ancora que o
+    // SC-LIO-SAM usa pra se corrigir. Serve so' pra visualizar no RViz.
+    void publishGpsInMap(const nav_msgs::Odometry::ConstPtr& gpsMsg)
+    {
+        if (!gpsAnchorValid || pubGpsInMap.getNumSubscribers() == 0)
+            return;
+
+        const double rawX = gpsMsg->pose.pose.position.x;
+        const double rawY = gpsMsg->pose.pose.position.y;
+        const double c = cos(gpsAnchorYaw), s = sin(gpsAnchorYaw);
+
+        tf::Quaternion qRaw;
+        tf::quaternionMsgToTF(gpsMsg->pose.pose.orientation, qRaw);
+        double rawRoll, rawPitch, rawYaw;
+        tf::Matrix3x3(qRaw).getRPY(rawRoll, rawPitch, rawYaw);
+
+        nav_msgs::Odometry out = *gpsMsg;
+        out.header.frame_id = mapFrame;
+        out.pose.pose.position.x = gpsAnchorX + c * rawX - s * rawY;
+        out.pose.pose.position.y = gpsAnchorY + s * rawX + c * rawY;
+        out.pose.pose.position.z = transformTobeMapped[5]; // altitude do GPS nao serve pra exibir
+        tf::Quaternion qOut;
+        qOut.setRPY(0.0, 0.0, gpsAnchorYaw + rawYaw);
+        tf::quaternionTFToMsg(qOut, out.pose.pose.orientation);
+        pubGpsInMap.publish(out);
+    }
+
     void gpsHandler(const nav_msgs::Odometry::ConstPtr& gpsMsg)
     {
         // RELIGADO: o auto-relocalize por GPS em localizationMode tinha sido
@@ -1509,6 +1570,8 @@ public:
         // modos (em mapeamento este handler nao tem o early-return, mas manter
         // aqui em cima deixa a ordem obvia).
         updateWorldOriginFromGps(gpsMsg);
+
+        publishGpsInMap(gpsMsg);
 
         if (localizationMode && locEverAnchored.load())
             return;
@@ -2166,6 +2229,11 @@ public:
                         {
                             std::lock_guard<std::mutex> lockMain(mtx);
                             *locSnapScan += *laserCloudRawDS;
+                            // Sem isto o locSnapWorker desconta o "quanto o robo andou
+                            // durante o ICP" a partir da identidade (ou do pedido
+                            // anterior), ou seja, compoe a pose atual INTEIRA em cima do
+                            // resultado do ICP e joga o encaixe fora.
+                            locSnapPoseAtRequest = trans2Affine3f(transformTobeMapped);
                         }
                         locSnapPending = true; // Dispara a thread de alinhamento ICP do LIO-SAM
                         locAutoRelocArmed = false; // achou candidato; so tenta de novo apos um reset (locResetRequested)
@@ -2603,6 +2671,41 @@ public:
 
 
 
+    // Desconta o viés de curvatura estimado (ackCurvBias) do incremento de odometria
+    // e guarda o avanço/yaw do incremento pro gate. O incremento chega no frame do
+    // LiDAR; o modelo de bicicleta vive no base_link, então a conta é feita lá.
+    void correctAckermannIncrement(Eigen::Affine3f& transIncre)
+    {
+        ackPredDs = 0.0f;
+        ackPredDyaw = 0.0f;
+
+        if (odometrySource != "ackermann" && odometrySource != "fusion")
+            return;
+        if (!ensureBaselink2Lidar())
+            return;
+
+        const tf::Quaternion q = baselink2Lidar.getRotation();
+        const tf::Vector3 o = baselink2Lidar.getOrigin();
+        Eigen::Affine3f E = Eigen::Affine3f::Identity();
+        E.linear() = Eigen::Quaternionf(q.w(), q.x(), q.y(), q.z()).toRotationMatrix();
+        E.translation() = Eigen::Vector3f(o.x(), o.y(), o.z());
+
+        Eigen::Affine3f increBase = E * transIncre * E.inverse();
+        float bx, by, bz, broll, bpitch, byaw;
+        pcl::getTranslationAndEulerAngles(increBase, bx, by, bz, broll, bpitch, byaw);
+
+        const float dyawBias = -ackCurvBias * bx;
+        if (dyawBias != 0.0f)
+        {
+            increBase = increBase * Eigen::AngleAxisf(dyawBias, Eigen::Vector3f::UnitZ());
+            transIncre = E.inverse() * increBase * E;
+        }
+
+        ackPredDs = bx;
+        ackPredDyaw = byaw + dyawBias;
+        ackDistSinceAccept += std::fabs(bx);
+    }
+
     void updateInitialGuess()
     {
         // save current transformation before any processing
@@ -2628,6 +2731,14 @@ public:
             if (!useImuHeadingInitialization)
                 transformTobeMapped[2] = 0;
 
+            // Em modo ackermann a "atitude" do cloud_info nao vem de IMU: e' a da
+            // odometria de dead reckoning, que no frame do LiDAR e' so' a rotacao da
+            // extrinseca (constante). Usa-la aqui inclinaria o mapa de um jeito que
+            // depende de a odometria ter chegado antes ou depois do primeiro scan.
+            // O frame do mapa e' o do primeiro scan, como sempre foi.
+            if (odometrySource == "ackermann")
+                transformTobeMapped[0] = transformTobeMapped[1] = transformTobeMapped[2] = 0;
+
             lastImuTransformation = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit); // save imu before return;
             lastImuTransValid = (cloudInfo.imuAvailable == true);
             return;
@@ -2646,6 +2757,7 @@ public:
                 lastImuPreTransAvailable = true;
             } else {
                 Eigen::Affine3f transIncre = lastImuPreTransformation.inverse() * transBack;
+                correctAckermannIncrement(transIncre);
                 Eigen::Affine3f transTobe = trans2Affine3f(transformTobeMapped);
                 Eigen::Affine3f transFinal = transTobe * transIncre;
 
@@ -2698,7 +2810,15 @@ public:
         }
 
         // use imu incremental estimation for pose guess (only rotation)
-        if (cloudInfo.imuAvailable == true)
+        //
+        // Fora do modo ackermann, pelo mesmo motivo do bloco equivalente em
+        // updateInitialGuessLocalization(): ali imuAvailable so' quer dizer "tem deskew"
+        // e imu*Init e' a atitude da odometria no frame do LiDAR. No boot ela passa de
+        // zero (odometria ainda sem amostra antes do scan) pra rotacao da extrinseca, e
+        // este bloco aplicava a diferenca como se o veiculo tivesse girado: com o LiDAR
+        // montado a 180 graus, o keyframe 0 ficava em yaw 0 e todos os outros em yaw
+        // -3.13, deixando no mapa uma copia da cena inicial virada ao contrario.
+        if (cloudInfo.imuAvailable == true && odometrySource != "ackermann")
         {
             Eigen::Affine3f transBack = pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
 
@@ -2783,6 +2903,7 @@ public:
                 locLastImuPreTransAvailable = true;
             } else {
                 Eigen::Affine3f transIncre = locLastImuPreTransformation.inverse() * transBack;
+                correctAckermannIncrement(transIncre);
                 Eigen::Affine3f transTobe = trans2Affine3f(transformTobeMapped);
                 Eigen::Affine3f transFinal = transTobe * transIncre;
                 pcl::getTranslationAndEulerAngles(transFinal, transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5], 
@@ -3644,13 +3765,23 @@ public:
         const float dyRaw  = transformTobeMapped[4] - gy;
         const float posRaw = std::sqrt(dxRaw * dxRaw + dyRaw * dyRaw);
 
+        // Tempo desde o ultimo scan ACEITO: e' o que converte os pesos
+        // "por scan" em pesos por tempo (ver ackermannWeightRefHz em utility.h).
+        const double gateDt = (ackLastGateTime > 0.0) ? (timeLaserInfoCur - ackLastGateTime) : 0.0;
+        const float weightExp = (ackermannWeightRefHz > 0.0f && gateDt > 0.0)
+                              ? std::max(1.0f, (float)gateDt * ackermannWeightRefHz) : 1.0f;
+
+        // Limites de rejeicao com a folga do trecho andado sem scan aceito.
+        const float rejectYaw = (ackermannRejectYawDeg + ackermannRejectYawGrowthDeg * ackDistSinceAccept) * M_PI / 180.0f;
+        const float rejectPos = ackermannRejectPosM + ackermannRejectPosGrowth * ackDistSinceAccept;
+
         // ── Rejeicao: o scan-to-map produziu um teleporte. Descarta a saida INTEIRA e
         // fica so' com a predicao. Nao adianta podar um pouco uma pose que ja' e' lixo:
         // se o casamento errou tanto no plano, roll/pitch/z dele tambem nao valem nada.
         // A predicao carrega a atitude e a altura do scan anterior, entao o resultado e'
         // "segura tudo e anda pela odometria" -- exatamente o que se quer num scan ruim.
-        if ((ackermannRejectYawDeg > 0.0f && std::fabs(yawRaw) > ackermannRejectYawDeg * M_PI / 180.0f) ||
-            (ackermannRejectPosM   > 0.0f && posRaw > ackermannRejectPosM))
+        if ((ackermannRejectYawDeg > 0.0f && std::fabs(yawRaw) > rejectYaw) ||
+            (ackermannRejectPosM   > 0.0f && posRaw > rejectPos))
         {
             pcl::getTranslationAndEulerAngles(incrementalOdometryAffineGuess,
                                               transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5],
@@ -3659,9 +3790,33 @@ public:
                 "Ackermann: scan-to-map REJEITADO -- queria mover %.2f m / %.1f graus de uma vez "
                 "(limites %.2f m / %.1f deg). Scan descartado, pose segue pela odometria. "
                 "isDegenerate=%d, %d edge / %d surf no scan.",
-                posRaw, yawRaw * 180.0 / M_PI, ackermannRejectPosM, ackermannRejectYawDeg,
+                posRaw, yawRaw * 180.0 / M_PI, rejectPos, rejectYaw * 180.0 / M_PI,
                 (int)isDegenerate, laserCloudCornerLastDSNum, laserCloudSurfLastDSNum);
             return;
+        }
+        const float distSinceAccept = ackDistSinceAccept;
+        ackDistSinceAccept = 0.0f;
+        ackLastGateTime = timeLaserInfoCur;
+
+        // ── Vies de curvatura: integra a inovacao de yaw (predicao - LiDAR) pesada
+        // pelo avanco. So' em trecho quase reto (raio > 50 m): em curva o erro de
+        // yaw da odometria e' dominado por escala do esterco/subesterco, que nao e'
+        // vies e contaminaria a estimativa. Tambem fica de fora o scan degenerado, o
+        // que chega depois de um trecho rejeitado (a inovacao dele e' o erro
+        // acumulado, nao o do passo) e a fase de rotacao travada.
+        if (ackermannCurvBiasDist > 0.0f && !isDegenerate && !rotationLockActive() &&
+            std::fabs(ackPredDs) > 0.05f && distSinceAccept < 2.0f * std::fabs(ackPredDs) + 0.5f &&
+            std::fabs(ackPredDyaw) < 0.02f * std::fabs(ackPredDs))
+        {
+            const float kMaxCurvBias = 0.01f;   // rad/m (~2 graus de esterco com L=3.75 m)
+            // Ganho (ds/D)^2 sobre o vies medido neste passo (-yawRaw/ds), com teto: a
+            // 1-2 Hz e 10 m/s o passo chega a 10-20 m, o ganho sem teto passa de 1 e
+            // o integrador, em vez de convergir, passa do ponto e oscila.
+            const float biasGain = std::min(0.5f, (ackPredDs * ackPredDs) / (ackermannCurvBiasDist * ackermannCurvBiasDist));
+            ackCurvBias += biasGain * (-yawRaw / ackPredDs);
+            ackCurvBias = std::max(-kMaxCurvBias, std::min(kMaxCurvBias, ackCurvBias));
+            ROS_INFO_THROTTLE(10.0, "Ackermann: vies de curvatura estimado = %.5f rad/m (equivale a %.2f graus de esterco).",
+                              ackCurvBias, std::atan(ackCurvBias * wheelbase) * 180.0 / M_PI);
         }
 
         // ── Yaw: PESO primeiro, TETO depois. Nessa ordem os dois knobs sao
@@ -3669,9 +3824,12 @@ public:
         // em regime normal, o teto e' o limite duro do que sai aplicado neste scan.
         // (Na ordem inversa eles se multiplicariam e o teto viraria peso*teto, que nao
         // e' o numero que se le' no params.yaml.)
+        const float yawWeightEf = 1.0f - std::pow(1.0f - std::min(1.0f, std::max(0.0f, ackermannYawWeight)), weightExp);
+        const float posWeightEf = 1.0f - std::pow(1.0f - std::min(1.0f, std::max(0.0f, ackermannPosWeight)), weightExp);
+
         float yawCorr = yawRaw;
         if (yawWeightOn)
-            yawCorr *= std::max(0.0f, ackermannYawWeight);
+            yawCorr *= yawWeightEf;
         if (yawCapOn)
         {
             const float cap = ackermannYawMaxCorrDeg * M_PI / 180.0f;
@@ -3684,7 +3842,7 @@ public:
         // ── Translacao horizontal: peso e teto agem sobre o VETOR (dx,dy), pra nao
         // torcer a direcao da correcao -- limitar x e y separados enviesaria o
         // deslocamento pro eixo de maior componente.
-        float scale = posWeightOn ? std::max(0.0f, ackermannPosWeight) : 1.0f;
+        float scale = posWeightOn ? posWeightEf : 1.0f;
         if (posCapOn && posRaw * scale > ackermannPosMaxCorr)
             scale = ackermannPosMaxCorr / posRaw;
 
@@ -3703,7 +3861,7 @@ public:
                 "isDegenerate=%d, %d edge / %d surf.",
                 yawRaw * 180.0 / M_PI, yawCorr * 180.0 / M_PI,
                 posRaw, posRaw * scale,
-                ackermannYawWeight, ackermannPosWeight,
+                yawWeightEf, posWeightEf,
                 ackermannYawMaxCorrDeg, ackermannPosMaxCorr,
                 (int)isDegenerate, laserCloudCornerLastDSNum, laserCloudSurfLastDSNum);
         }
@@ -3952,6 +4110,8 @@ public:
     {
         if (saveFrame() == false)
             return;
+
+        keyframeRate.tick();
 
         // odom factor
         addOdomFactor();
@@ -4680,23 +4840,10 @@ public:
 
         // Só depois que o robô encaixou no mapa. Antes disso a pose vem do chute
         // inicial / GPS / snap, e cada correção entra no arquivo como um salto.
-        //
-        // Com posesRequireAnchor false (default do modo "manual") este portao sai do
-        // caminho: a pose inicial e' a que o operador deu em initialPose*, nao vem de
-        // fix nenhum, e nao ha' correcao pendente para esperar. Sem isso, veiculo sem
-        // GPS so' comecava a gravar depois de um clique de "2D Pose Estimate" no RViz --
-        // e, se ninguem clicasse, o arquivo ficava vazio sem nunca dizer o porque alem
-        // desta linha de log.
-        //
-        // O tratamento de descontinuidade adiante NAO depende deste portao: se um snap
-        // acontecer no meio da gravacao, o locAnchorCount muda, o aviso sai e os
-        // posesSettleScans seguintes sao descartados do mesmo jeito.
-        if (posesRequireAnchor && !locEverAnchored.load())
+        if (!locEverAnchored.load())
         {
             ROS_INFO_THROTTLE(10.0,
-                "poses_opt: aguardando o robo encaixar no mapa para comecar a gravar. "
-                "(posesRequireAnchor=true; em veiculo sem GPS use posesOriginMode 'manual' "
-                "ou ponha posesRequireAnchor: false)");
+                "poses_opt: aguardando o robo encaixar no mapa para comecar a gravar.");
             return;
         }
 
@@ -4834,6 +4981,7 @@ public:
         fflush(stdout);
 
         pubLaserOdometryGlobal.publish(laserOdometryROS);
+        poseRate.tick();
         
         // TF odom->lidarFrame removido: esse broadcast competia com a cadeia
         // já correta e de alta frequência odom->base_link (TransformFusion,

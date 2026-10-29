@@ -21,7 +21,6 @@
 
 #include <gtsam/nonlinear/ISAM2.h>
 #include <gtsam/linear/linearExceptions.h>
-#include <gtsam_unstable/nonlinear/IncrementalFixedLagSmoother.h>
 
 using gtsam::symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 using gtsam::symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
@@ -782,72 +781,51 @@ public:
 };
 
 
-// ─── Predição por odometria Ackermann (acoplamento firme GTSAM) ──────────────
+// ─── Predição por odometria Ackermann (dead reckoning puro) ──────────────────
 //
 // Alternativa ao IMUPreintegration para robôs de cinemática Ackermann que usam
 // velocidade (v) e ângulo de esterçamento (phi) para a predição do movimento.
-// Em vez de um dead reckoning determinístico, monta um grafo GTSAM pose-only
-// (ISAM2) que funde probabilisticamente:
-//   - BetweenFactor: movimento predito pelo modelo de bicicleta, com covariância
-//     derivada de ackermannVelNoise/ackermannSteerNoise + escorregamento
-//     (slip lateral/diagonal) modelado como random walk no tempo.
-//   - PriorFactor: correção de pose do scan-to-map (LiDAR).
 // Publica o MESMO tópico/contrato do IMUPreintegration
 // (odomTopic+"_incremental", child_frame_id="odom_imu"), de modo que
 // TransformFusion, imageProjection e mapOptimization funcionem sem alteração.
+//
+// A pose publicada é dead reckoning PURO do modelo de bicicleta: nunca é
+// re-ancorada na correção do LiDAR. Todos os consumidores (updateInitialGuess*,
+// TransformFusion) usam só o INCREMENTO entre duas mensagens, então o drift
+// absoluto desta pose não chega a ninguém.
+//
+// Antes havia aqui um grafo ISAM2 pose-only que fundia o modelo de bicicleta com
+// a pose do scan-to-map e re-semeava a odometria publicada a cada correção. Cada
+// re-semeada é um degrau na pose publicada, e o degrau entrava no incremento do
+// chute inicial do scan seguinte -- ou seja, a correção do LiDAR (que o
+// mapOptimization já tinha aplicado em transformTobeMapped) era somada de novo.
+// Com o gate do Ackermann aceitando só uma fração do scan-to-map, a pose final é
+// praticamente o chute, e essa realimentação fechava uma malha: em reta rápida
+// (onde o viés de esterço mais pesa) ela entrava em oscilação de período 2 --
+// um scan rejeitado, um aceito, amplitude crescendo até o yaw se perder.
 class AckermannPreintegration : public ParamServer
 {
 public:
     std::mutex mtx;
 
     ros::Subscriber subAckermann;
-    ros::Subscriber subOdometry;
-    ros::Subscriber subLocReset;
     ros::Publisher  pubImuOdometry;
 
-    bool systemInitialized = false;
-    bool doneFirstOpt = false;
-    double lastAckT_opt  = -1;
-    double lastAckT_odom = -1;
-    double lastLocResetTime = -1.0;
+    double lastAckT = -1;
 
-    // Grafo pose-only
-    gtsam::ISAM2 optimizer;
-    gtsam::NonlinearFactorGraph graphFactors;
-    gtsam::Values graphValues;
-    const double delta_t = 0;
-    int key = 1;
-
-    gtsam::noiseModel::Diagonal::shared_ptr priorPoseNoise;
-    gtsam::noiseModel::Diagonal::shared_ptr correctionNoise;
-    gtsam::noiseModel::Diagonal::shared_ptr correctionNoise2;
-
-    gtsam::Pose3 prevPose_;   // âncora corrigida (resultado da última otimização)
-
-    // Filas de mensagens Ackermann (v, phi) para integração
-    std::deque<geometry_msgs::TwistStamped> ackQueOpt;   // consumida na correção
-    std::deque<geometry_msgs::TwistStamped> ackQueOdom;  // re-propagação de alta taxa
-
-    // Pose propagada de alta taxa (publicada). x, y, yaw evoluem pelo modelo
-    // Ackermann; z, roll, pitch acompanham a última correção do LiDAR.
-    double odomX = 0, odomY = 0, odomZ = 0;
-    double odomRoll = 0, odomPitch = 0, odomYaw = 0;
-
-    // Grace period pós loc_reset / failure: afrouxa o prior de pose por alguns
-    // keyframes para o scan-to-map convergir antes de "cobrar" a predição.
-    int resetGraceKeyframesLeft = 0;
-    static const int RESET_GRACE_KEYFRAMES = 5;
+    // Pose de dead reckoning em base_link (plano: z, roll e pitch ficam em zero;
+    // quem carrega a atitude e a altura é o transformTobeMapped do mapOptimization,
+    // sobre o qual o incremento é composto).
+    double odomX = 0, odomY = 0, odomYaw = 0;
 
     // Extrínseca lidar_link -> base_link. NÃO é fixa no código: é lida do TF
     // publicado em runtime pelo pointcloud_node.cpp (que por sua vez monta
     // T_robot_lidar a partir do param_daemon / sensor_board_1 via IPC). Se o
     // lidar estiver montado invertido, essa rotação carrega essa inversão.
-    // O grafo do Ackermann continua operando em convenção lidar_link (igual
-    // lio_sam/mapping/odometry), mas o modelo de bicicleta (v = velocidade no
-    // eixo x do VEÍCULO) precisa ser aplicado em base_link. Por isso: entra
-    // lidarPose -> vira baselinkPose (lidar2Baselink), e na hora de publicar
-    // volta pra lidar_link (baselink2Lidar), pro TransformFusion continuar
-    // recebendo a odometria incremental na mesma convenção de sempre.
+    // O modelo de bicicleta (v = velocidade no eixo x do VEÍCULO) é integrado em
+    // base_link, e na hora de publicar a pose vai pra lidar_link (baselink2Lidar),
+    // pro TransformFusion continuar recebendo a odometria incremental na mesma
+    // convenção de lio_sam/mapping/odometry.
     //
     // Lookup é LAZY (não-bloqueante): TransformFusion, construída logo depois
     // no main(), já bloqueia até 3s esperando esse mesmo TF. Se a gente
@@ -856,91 +834,26 @@ public:
     // de startup que gera o erro de extrapolação no RViz/TF buffer.
     tf::TransformListener tfListener;
     tf::StampedTransform lidar2BaselinkTF;
-    gtsam::Pose3 lidar2Baselink = gtsam::Pose3::Identity();
-    gtsam::Pose3 baselink2Lidar = gtsam::Pose3::Identity();
+    gtsam::Pose3 lidar2Baselink = gtsam::Pose3();
+    gtsam::Pose3 baselink2Lidar = gtsam::Pose3();
     bool haveLidar2Baselink = false;
 
     AckermannPreintegration()
     {
         subAckermann = nh.subscribe<geometry_msgs::TwistStamped>(ackermannTopic, 2000, &AckermannPreintegration::ackermannHandler, this, ros::TransportHints().tcpNoDelay());
-        subOdometry  = nh.subscribe<nav_msgs::Odometry>("lio_sam/mapping/odometry_incremental", 5, &AckermannPreintegration::odometryHandler, this, ros::TransportHints().tcpNoDelay());
-        subLocReset  = nh.subscribe<std_msgs::Header>("lio_sam/mapping/loc_reset", 1, &AckermannPreintegration::locResetHandler, this, ros::TransportHints().tcpNoDelay());
 
         pubImuOdometry = nh.advertise<nav_msgs::Odometry>(odomTopic+"_incremental", 2000);
 
         if (lidarFrame == baselinkFrame)
             haveLidar2Baselink = true; // mesmo frame, extrínseca é identidade mesmo
 
-        priorPoseNoise   = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2).finished()); // rad,rad,rad,m,m,m
-        correctionNoise  = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 0.05, 0.05, 0.05, 0.1, 0.1, 0.1).finished());     // confiança na correção LiDAR
-        correctionNoise2 = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 1, 1, 1, 1, 1, 1).finished());                     // degenerate / grace
-
-        ROS_INFO("AckermannPreintegration (GTSAM): topic=%s, L=%.3f m, velNoise=%.3f, steerNoise=%.3f, slip[x,y,th]=[%.3f,%.3f,%.3f]",
-                 ackermannTopic.c_str(), wheelbase,
-                 ackermannVelNoise, ackermannSteerNoise,
-                 ackermannSlipNoiseX, ackermannSlipNoiseY, ackermannSlipNoiseTheta);
-    }
-
-    void resetOptimization()
-    {
-        gtsam::ISAM2Params optParameters;
-        optParameters.relinearizeThreshold = 0.1;
-        optParameters.relinearizeSkip = 1;
-        optimizer = gtsam::ISAM2(optParameters);
-
-        gtsam::NonlinearFactorGraph newGraphFactors;
-        graphFactors = newGraphFactors;
-
-        gtsam::Values NewGraphValues;
-        graphValues = NewGraphValues;
-    }
-
-    void resetParams()
-    {
-        lastAckT_opt = -1;
-        doneFirstOpt = false;
-        systemInitialized = false;
-    }
-
-    void locResetHandler(const std_msgs::Header::ConstPtr& msg)
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        // Guarda o marco do reset e reinicia o grafo. Não zera a pose (evita
-        // teleporte): a próxima correção do LiDAR reancora o grafo na posição
-        // correta. Grace period afrouxa o prior por alguns keyframes.
-        lastLocResetTime = msg->stamp.toSec();
-        lastAckT_odom = -1;
-        resetParams();
-        resetGraceKeyframesLeft = RESET_GRACE_KEYFRAMES;
-    }
-
-    // Atualiza (x, y, yaw) pelo modelo de bicicleta (ponto médio no yaw).
-    void propagatePlanar(double v, double phi, double dt, double& x, double& y, double& yaw)
-    {
-        bicyclePropagateMean(v, phi, dt, wheelbase, x, y, yaw);
-    }
-
-    // Integra um passo atualizando média (x, y, yaw) e a covariância 3x3.
-    void integrateStep(double v, double phi, double dt,
-                       double& x, double& y, double& yaw, Eigen::Matrix3d& Sigma)
-    {
-        bicycleIntegrateStep(v, phi, dt, wheelbase,
-                             ackermannVelNoise, ackermannSteerNoise,
-                             ackermannSlipNoiseX, ackermannSlipNoiseY, ackermannSlipNoiseTheta,
-                             x, y, yaw, Sigma);
-    }
-
-    // Constrói o BetweenFactor 6x6 a partir da covariância 3x3 (x,y,theta).
-    gtsam::Matrix cov6FromSigma(const Eigen::Matrix3d& Sigma)
-    {
-        return bicycleCov6FromSigma(Sigma);
+        ROS_INFO("AckermannPreintegration (dead reckoning): topic=%s, L=%.3f m",
+                 ackermannTopic.c_str(), wheelbase);
     }
 
     // Tenta pegar a extrínseca lidar_link->base_link do TF SEM bloquear (só
-    // consulta o que já está no buffer agora). Chamado a cada odometryHandler
-    // até conseguir; depois disso vira no-op (haveLidar2Baselink=true). Assim
-    // não trava o startup do nó (que também tem TransformFusion esperando o
-    // mesmo TF logo em seguida no main()).
+    // consulta o que já está no buffer agora). Chamado a cada amostra até
+    // conseguir; depois disso vira no-op (haveLidar2Baselink=true).
     void ensureLidar2Baselink()
     {
         if (haveLidar2Baselink)
@@ -961,225 +874,18 @@ public:
         }
         catch (tf::TransformException &ex)
         {
-            // Ainda não publicou -- normal nos primeiros ciclos. Segue com
-            // identidade (mesmo comportamento de antes) até conseguir.
+            // Ainda não publicou -- normal nos primeiros ciclos.
         }
-    }
-
-    void odometryHandler(const nav_msgs::Odometry::ConstPtr& odomMsg)
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-
-        ensureLidar2Baselink();
-
-        // Evita ancorar o grafo (systemInitialized) com a extrínseca errada
-        // (identidade) se o TF real do lidar->base_link ainda não chegou.
-        // Só nos primeiros ciclos, geralmente resolve em 1-2 mensagens.
-        if (!haveLidar2Baselink && lidarFrame != baselinkFrame)
-            return;
-
-        if (odomMsg->header.stamp.toSec() < lastLocResetTime)
-            return;
-
-        double currentCorrectionTime = ROS_TIME(odomMsg);
-
-        // FIX: esse early-return era silencioso -- se a correcao do lidar chega
-        // e ainda nao tem NENHUMA amostra Ackermann nova na fila, o ciclo
-        // inteiro e' descartado (grafo fica um ciclo atrasado) sem deixar
-        // rastro nenhum no log. Com odometria a ~80Hz e lidar a ~20Hz isso
-        // deveria ser raro (~4 amostras por correcao), entao se esse WARN
-        // aparecer com frequencia e' sinal de fila/lock/backlog entre os dois
-        // callbacks -- e um candidato direto pro "mapa puxando" que nao vinha
-        // do glitch de phi (esse ja tem log e guarda proprios, ver acima).
-        if (ackQueOpt.empty())
-        {
-            ROS_WARN_THROTTLE(1.0,
-                "AckermannPreintegration: correcao do lidar chegou (t=%.3f) sem NENHUMA amostra "
-                "Ackermann nova na fila -- ciclo de correcao pulado inteiro (nao so degradado)",
-                currentCorrectionTime);
-            return;
-        }
-
-        float p_x = odomMsg->pose.pose.position.x;
-        float p_y = odomMsg->pose.pose.position.y;
-        float p_z = odomMsg->pose.pose.position.z;
-        float r_x = odomMsg->pose.pose.orientation.x;
-        float r_y = odomMsg->pose.pose.orientation.y;
-        float r_z = odomMsg->pose.pose.orientation.z;
-        float r_w = odomMsg->pose.pose.orientation.w;
-        bool degenerate = (int)odomMsg->pose.covariance[0] == 1 ? true : false;
-        gtsam::Pose3 lidarPose = gtsam::Pose3(gtsam::Rot3::Quaternion(r_w, r_x, r_y, r_z), gtsam::Point3(p_x, p_y, p_z));
-
-        // Lidar (mapOptmization) -> base_link (frame que o modelo Ackermann
-        // assume como "x = frente do veículo"). Usa a extrínseca dinâmica
-        // lida do TF no construtor. Se o lidar estiver invertido, é essa
-        // conversão que corrige a direção "frente/trás" do modelo Ackermann.
-        gtsam::Pose3 baselinkPose = lidarPose.compose(lidar2Baselink);
-
-        // 0. inicialização do sistema
-        if (systemInitialized == false)
-        {
-            resetOptimization();
-
-            // descarta mensagens Ackermann antigas
-            while (!ackQueOpt.empty())
-            {
-                if (ROS_TIME(&ackQueOpt.front()) < currentCorrectionTime - delta_t)
-                {
-                    lastAckT_opt = ROS_TIME(&ackQueOpt.front());
-                    ackQueOpt.pop_front();
-                }
-                else
-                    break;
-            }
-
-            prevPose_ = baselinkPose;
-            gtsam::PriorFactor<gtsam::Pose3> priorPose(X(0), prevPose_, priorPoseNoise);
-            graphFactors.add(priorPose);
-            graphValues.insert(X(0), prevPose_);
-            optimizer.update(graphFactors, graphValues);
-            graphFactors.resize(0);
-            graphValues.clear();
-
-            seedOdomFromPose(prevPose_);
-            key = 1;
-            systemInitialized = true;
-            doneFirstOpt = true;
-            if (lastLocResetTime > 0)
-                ROS_INFO("\033[1;32m----> CONECTADO: Localizacao estabelecida, retomando odometria Ackermann!\033[0m");
-            return;
-        }
-
-        // reset periódico do grafo para manter o ISAM2 enxuto
-        if (key == 100)
-        {
-            gtsam::noiseModel::Gaussian::shared_ptr updatedPoseNoise = gtsam::noiseModel::Gaussian::Covariance(optimizer.marginalCovariance(X(key-1)));
-            resetOptimization();
-            gtsam::PriorFactor<gtsam::Pose3> priorPose(X(0), prevPose_, updatedPoseNoise);
-            graphFactors.add(priorPose);
-            graphValues.insert(X(0), prevPose_);
-            optimizer.update(graphFactors, graphValues);
-            graphFactors.resize(0);
-            graphValues.clear();
-            key = 1;
-        }
-
-        // 1. integra o movimento Ackermann entre duas correções -> relPose + cov
-        double rx = 0, ry = 0, ryaw = 0;
-        Eigen::Matrix3d Sigma = Eigen::Matrix3d::Zero();
-        while (!ackQueOpt.empty())
-        {
-            geometry_msgs::TwistStamped *thisAck = &ackQueOpt.front();
-            double ackTime = ROS_TIME(thisAck);
-            if (ackTime < currentCorrectionTime - delta_t)
-            {
-                double dt = (lastAckT_opt < 0) ? (1.0 / 50.0) : (ackTime - lastAckT_opt);
-                if (!integrationDtOk(dt))
-                {
-                    lastAckT_opt = ackTime;
-                    ackQueOpt.pop_front();
-                    continue;
-                }
-                integrateStep(thisAck->twist.linear.x, thisAck->twist.angular.z, dt, rx, ry, ryaw, Sigma);
-                lastAckT_opt = ackTime;
-                ackQueOpt.pop_front();
-            }
-            else
-                break;
-        }
-
-        // DIAGNOSTICO: se nenhuma amostra Ackermann foi integrada nesta janela
-        // (Sigma ficou exatamente zero), o BetweenFactor sai com confianca
-        // quase absoluta (piso MIN_VAR) enquanto o mapOptmization pode estar
-        // varias correcoes atrasado (ver timestamps de /ackermann/odom_raw vs
-        // /lio_sam/mapping/odometry_incremental) -- essa e a assinatura do
-        // backlog que estamos investigando, nao um bug isolado do modelo.
-        if (Sigma.isZero(0))
-            ROS_WARN_THROTTLE(1.0,
-                "AckermannPreintegration: key=%d sem amostra Ackermann integrada nesta janela "
-                "(currentCorrectionTime=%.3f, lastAckT_opt=%.3f) -- possivel backlog do mapOptmization",
-                key, currentCorrectionTime, lastAckT_opt);
-
-        gtsam::Pose3 relPose = gtsam::Pose3(gtsam::Rot3::Yaw(ryaw), gtsam::Point3(rx, ry, 0.0));
-        gtsam::noiseModel::Gaussian::shared_ptr motionNoise = gtsam::noiseModel::Gaussian::Covariance(cov6FromSigma(Sigma));
-        graphFactors.add(gtsam::BetweenFactor<gtsam::Pose3>(X(key - 1), X(key), relPose, motionNoise));
-
-        // fator de pose (correção LiDAR, já em base_link)
-        bool inResetGrace = (resetGraceKeyframesLeft > 0);
-        gtsam::PriorFactor<gtsam::Pose3> pose_factor(X(key), baselinkPose, (degenerate || inResetGrace) ? correctionNoise2 : correctionNoise);
-        graphFactors.add(pose_factor);
-        if (inResetGrace)
-            --resetGraceKeyframesLeft;
-
-        // valor inicial predito
-        gtsam::Pose3 propPose = prevPose_.compose(relPose);
-        graphValues.insert(X(key), propPose);
-
-        // otimiza
-        if (!runOptimizerUpdate(optimizer, graphFactors, graphValues, "AckermannPreintegration"))
-        {
-            graphFactors.resize(0);
-            graphValues.clear();
-            resetParams();
-            resetOptimization();
-            resetGraceKeyframesLeft = RESET_GRACE_KEYFRAMES;
-            return;
-        }
-        graphFactors.resize(0);
-        graphValues.clear();
-
-        gtsam::Values result = optimizer.calculateEstimate();
-        prevPose_ = result.at<gtsam::Pose3>(X(key));
-
-        // 2. re-propaga a odometria de alta taxa a partir da pose corrigida
-        seedOdomFromPose(prevPose_);
-        double lastAckQT = -1;
-        while (!ackQueOdom.empty() && ROS_TIME(&ackQueOdom.front()) < currentCorrectionTime - delta_t)
-        {
-            lastAckQT = ROS_TIME(&ackQueOdom.front());
-            ackQueOdom.pop_front();
-        }
-        if (!ackQueOdom.empty())
-        {
-            for (int i = 0; i < (int)ackQueOdom.size(); ++i)
-            {
-                geometry_msgs::TwistStamped *thisAck = &ackQueOdom[i];
-                double ackTime = ROS_TIME(thisAck);
-                double dt = (lastAckQT < 0) ? (1.0 / 50.0) : (ackTime - lastAckQT);
-                if (!integrationDtOk(dt))
-                {
-                    lastAckQT = ackTime;
-                    continue;
-                }
-                propagatePlanar(thisAck->twist.linear.x, thisAck->twist.angular.z, dt, odomX, odomY, odomYaw);
-                lastAckQT = ackTime;
-            }
-        }
-        lastAckT_odom = lastAckQT;
-
-        ++key;
-        doneFirstOpt = true;
-    }
-
-    void seedOdomFromPose(const gtsam::Pose3& pose)
-    {
-        odomX = pose.x();
-        odomY = pose.y();
-        odomZ = pose.z();
-        gtsam::Vector3 rpy = pose.rotation().rpy();
-        odomRoll  = rpy(0);
-        odomPitch = rpy(1);
-        odomYaw   = rpy(2);
     }
 
     void ackermannHandler(const geometry_msgs::TwistStamped::ConstPtr& ackMsg)
     {
         std::lock_guard<std::mutex> lock(mtx);
 
-        ackQueOpt.push_back(*ackMsg);
-        ackQueOdom.push_back(*ackMsg);
-
-        if (doneFirstOpt == false)
+        // Sem a extrínseca real a conversão base_link -> lidar_link sairia com
+        // identidade, e a troca no meio do caminho viraria um degrau no incremento.
+        ensureLidar2Baselink();
+        if (!haveLidar2Baselink)
             return;
 
         const double v   = ackMsg->twist.linear.x;   // m/s
@@ -1187,37 +893,25 @@ public:
         const double t   = ROS_TIME(ackMsg);
         const double omega = (wheelbase > 1e-6) ? (v * std::tan(phi) / wheelbase) : 0.0;
 
-        double dt = (lastAckT_odom < 0) ? (1.0 / 50.0) : (t - lastAckT_odom);
-        if (!integrationDtOk(dt))
-        {
-            lastAckT_odom = t;
-            return;
-        }
-        lastAckT_odom = t;
+        // Buraco na odometria (ou relógio voltando, ex. playback reiniciado): não
+        // integra esse passo. Quem consome só usa incrementos, então o efeito é um
+        // incremento menor naquele intervalo, não um salto.
+        if (lastAckT >= 0 && integrationDtOk(t - lastAckT))
+            bicyclePropagateMean(v, phi, t - lastAckT, wheelbase, odomX, odomY, odomYaw);
+        lastAckT = t;
 
-        propagatePlanar(v, phi, dt, odomX, odomY, odomYaw);
-
-        // odomX/Y/Z/RPY estão em base_link (é o frame que o modelo Ackermann
-        // assume). Antes de publicar, converte de volta pra lidar_link, pra
-        // manter o mesmo contrato que o TransformFusion espera (mesma
-        // convenção de lio_sam/mapping/odometry).
-        gtsam::Pose3 baselinkPoseOut(gtsam::Rot3::RzRyRx(odomRoll, odomPitch, odomYaw),
-                                      gtsam::Point3(odomX, odomY, odomZ));
+        // odomX/Y/Yaw estão em base_link (é o frame que o modelo Ackermann
+        // assume). Antes de publicar, converte pra lidar_link, pra manter o
+        // mesmo contrato que o TransformFusion espera (mesma convenção de
+        // lio_sam/mapping/odometry).
+        gtsam::Pose3 baselinkPoseOut(gtsam::Rot3::Yaw(odomYaw), gtsam::Point3(odomX, odomY, 0.0));
         gtsam::Pose3 lidarPoseOut = baselinkPoseOut.compose(baselink2Lidar);
 
-        // =================================================================
-        // CORREÇÃO: CONVERSÃO DO TWIST (VELOCIDADE) PARA O FRAME DO LIDAR
-        // =================================================================
-        // Cria vetores de velocidade linear e angular puros no base_link
-        gtsam::Vector3 linVelBase(v, 0.0, 0.0);
-        gtsam::Vector3 angVelBase(0.0, 0.0, omega);
+        // Twist no frame do LiDAR (a rotação da extrínseca lida com o sensor
+        // montado invertido); o imageProjection integra angular.* no deskew.
+        gtsam::Vector3 linVelLidar = lidar2Baselink.rotation() * gtsam::Vector3(v, 0.0, 0.0);
+        gtsam::Vector3 angVelLidar = lidar2Baselink.rotation() * gtsam::Vector3(0.0, 0.0, omega);
 
-        // Rotaciona esses vetores fisicamente para o eixo de coordenadas do LiDAR
-        // (A matriz lidar2Baselink.rotation() contém a conversão exata, lidando com os 180°)
-        gtsam::Vector3 linVelLidar = lidar2Baselink.rotation() * linVelBase;
-        gtsam::Vector3 angVelLidar = lidar2Baselink.rotation() * angVelBase;
-
-        // Publica a odometria incremental
         nav_msgs::Odometry odometry;
         odometry.header.stamp    = ackMsg->header.stamp;
         odometry.header.frame_id = odometryFrame;
@@ -1229,7 +923,6 @@ public:
         odometry.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(
             lidarPoseOut.rotation().roll(), lidarPoseOut.rotation().pitch(), lidarPoseOut.rotation().yaw());
 
-        // Preenche as velocidades agora ALINHADAS com o LiDAR
         odometry.twist.twist.linear.x  = linVelLidar.x();
         odometry.twist.twist.linear.y  = linVelLidar.y();
         odometry.twist.twist.linear.z  = linVelLidar.z();
@@ -1323,8 +1016,8 @@ public:
     // sozinho (que já usa lidar2Baselink corretamente) funcionando bem.
     tf::TransformListener tfListener;
     tf::StampedTransform lidar2BaselinkTF;
-    gtsam::Pose3 lidar2Baselink = gtsam::Pose3::Identity();
-    gtsam::Pose3 baselink2Lidar = gtsam::Pose3::Identity();
+    gtsam::Pose3 lidar2Baselink = gtsam::Pose3();
+    gtsam::Pose3 baselink2Lidar = gtsam::Pose3();
     bool haveLidar2Baselink = false;
 
     void ensureLidar2Baselink()

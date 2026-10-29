@@ -29,7 +29,7 @@ set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl" CACHE PATH "PCL cmake dir" FOR
 find_package(jsoncpp QUIET)
 find_package(PCL REQUIRED QUIET)
 find_package(OpenCV REQUIRED QUIET)
-find_package(GTSAM REQUIRED QUIET)
+include(cmake/GtsamCompatibility.cmake)
 
 add_message_files(
   DIRECTORY msg
@@ -104,8 +104,8 @@ if(CUDA_FOUND)
   # Padrao C++ do lado do nvcc. A partir do CUDA 12 o Thrust/CUB/libcu++ que vem
   # no toolkit EXIGEM C++17 -- com --std=c++14 o build morre em:
   #   error #error Thrust requires at least C++17
-  # O host (CMAKE_CXX_STANDARD 14, linha 6) fica como esta': o .cu e' compilado
-  # separado e so' expoe uma interface C simples, entao os dois padroes convivem.
+  # O host continua no seu padrao: o .cu e' compilado separado e so' expoe uma
+  # interface C simples, entao os dois padroes convivem.
   if(CUDA_VERSION VERSION_GREATER_EQUAL "12.0")
     set(_CMS_GENCODE_FLAGS -O3 --std=c++17)
   else()
@@ -117,13 +117,8 @@ if(CUDA_FOUND)
   # Maxwell (sm_52), Pascal (sm_61) e Volta (sm_70). Pedi-las a um nvcc 13 nao
   # e' aviso, e' erro fatal na hora do build:
   #   nvcc fatal: Unsupported gpu architecture 'compute_52'
-  # Sem esta guarda, instalar um toolkit novo QUEBRA a compilacao -- e o repo do
-  # Ubuntu 26.04 so' publica CUDA 13.
-  #
-  # Consequencia a saber: um build feito com CUDA 13 NAO roda em placa Maxwell ou
-  # Pascal. PTX so' tem compatibilidade pra frente (GPU mais nova que o virtual
-  # arch), nunca pra tras. Se a frota ainda tiver GTX 900/10, aquela maquina
-  # precisa compilar com um toolkit 12.x.
+  # Consequencia: um build feito com CUDA 13 NAO roda em placa Maxwell ou Pascal
+  # (PTX so' tem compatibilidade pra frente). Essas maquinas precisam de CUDA 12.x.
   if(CUDA_VERSION VERSION_GREATER_EQUAL "6.5" AND CUDA_VERSION VERSION_LESS "13.0")
     list(APPEND _CMS_GENCODE_FLAGS -gencode arch=compute_52,code=sm_52)
     set(_CMS_HIGHEST_ARCH "52")
@@ -144,11 +139,9 @@ if(CUDA_FOUND)
     list(APPEND _CMS_GENCODE_FLAGS -gencode arch=compute_89,code=sm_89)
     set(_CMS_HIGHEST_ARCH "89")
   endif()
-  # Blackwell (RTX 50). O compute_120 so' existe a partir do CUDA 12.8 -- pedir
-  # antes disso da' "nvcc fatal: Unsupported gpu architecture 'compute_120'".
-  # Sem este bloco, numa RTX 50 o build passa mas o SASS mais alto e' sm_89: o
-  # driver cai no PTX de compute_89 e compila em JIT (funciona, mas com pausa no
-  # primeiro kernel). Com o bloco, sai SASS nativo.
+  # Blackwell (RTX 50). Sem este bloco, numa RTX 50 o build passa mas o SASS mais
+  # alto e' sm_89: o driver cai no PTX de compute_89 e compila em JIT (funciona,
+  # mas com pausa no primeiro kernel). Com o bloco, sai SASS nativo.
   if(CUDA_VERSION VERSION_GREATER_EQUAL "12.8")
     list(APPEND _CMS_GENCODE_FLAGS -gencode arch=compute_120,code=sm_120)
     set(_CMS_HIGHEST_ARCH "120")

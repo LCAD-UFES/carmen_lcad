@@ -72,52 +72,6 @@
 
 #include "carmen_ipc_bridge/carmen_time.hpp"
 
-// ─── carmen_localize_ackerman_initialize_gaussian_command_host() ─────────────
-//
-// O localize_ackerman_interface do fork de origem tem uma variante "_host" do
-// initialize_gaussian_command que deixa o CHAMADOR escolher o campo `host` da
-// mensagem. E' disso que este no' depende: ele mesmo assina
-// carmen_localize_ackerman_initialize_message (o clique de "posicionar robo" do
-// navigator_gui/viewer_3D) e precisa distinguir o clique de verdade do ECO do
-// seu proprio snap -- o filtro e' justamente pelo host (ver
-// onCarmenInitializeMessage()).
-//
-// O CARMEN so' tem carmen_localize_ackerman_initialize_gaussian_command(), que
-// carimba carmen_get_host() e portanto nao da' como filtrar o eco. Em vez de
-// mexer no libcarmen (a interface e' compartilhada com todo o resto), a
-// variante fica local aqui: e' a MESMA mensagem IPC, mesmos NAME/FMT, so' com o
-// host vindo por parametro.
-static void
-carmen_localize_ackerman_initialize_gaussian_command_host(carmen_point_t mean, carmen_point_t std,
-                                                          double *trailer_theta, int num_trailers,
-                                                          char *host)
-{
-    static carmen_localize_ackerman_initialize_message init;
-    static int first = 1;
-    IPC_RETURN_TYPE err;
-
-    if (first)
-    {
-        err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, IPC_VARIABLE_LENGTH,
-                            CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT);
-        carmen_test_ipc_exit(err, "Could not define message", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
-        first = 0;
-    }
-
-    init.timestamp = carmen_get_time();
-    init.host = host;
-    init.distribution = CARMEN_INITIALIZE_GAUSSIAN;
-    init.num_modes = 1;
-    init.mean = &mean;
-    init.std = &std;
-    init.num_trailers = num_trailers;
-    for (int i = 0; i < init.num_trailers; i++)
-        init.trailer_theta[i] = trailer_theta[i];
-
-    err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME, &init);
-    carmen_test_ipc(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME);
-}
-
 // Forward decl: o handler IPC do clique "posicionar robo" (navigator_gui/
 // viewer_3D) e' um free function (CARMEN_EXTERN_FUNCTION/carmen_handler_t nao
 // aceita ponteiro-a-membro), mas precisa ser referenciavel de dentro do

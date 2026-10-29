@@ -5,10 +5,6 @@
 
   <arg name="ipc_host"          default="localhost" />
   <arg name="lidar_sensor_id"   default="5" />
-  <!-- Lidar cujo IMU embutido serve de fallback do XSens. Normalmente e' o mesmo
-       que fornece a nuvem, mas nao precisa ser: pode haver um lidar com IMU e outro
-       sem. No tramontina os dois sao 0 (LIDAR_0_IMU / VELODYNE_VARIABLE_SCAN_IN_FILE0). -->
-  <arg name="lidar_imu_sensor_id" default="$(arg lidar_sensor_id)" />
   <arg name="publish_imu"       default="true" />
   <arg name="publish_ackermann" default="true" />
   <arg name="publish_gps"       default="true" />
@@ -22,9 +18,7 @@
     <param name="base_frame_id"  value="base_link" />
     <param name="imu_frame_id"   value="imu_link" />
     <param name="gps_frame_id"   value="utm" />
-    <!-- IMU embutido do LiDAR: fallback quando o XSens some ou vem zerado.
-         Ver CARMEN_HAS_IMU_LIDAR em src/ipc_bridge_node.cpp. -->
-    <param name="lidar_imu_sensor_id" value="$(arg lidar_imu_sensor_id)" />
+    <param name="lidar_imu_sensor_id" value="$(arg lidar_sensor_id)" />
 
     <param name="publish_imu"       value="$(arg publish_imu)" />
     <param name="publish_ackermann" value="$(arg publish_ackermann)" />
@@ -39,6 +33,7 @@
     <param name="laser_frame_id" value="velodyne" />
     <param name="lidar_sensor_id" value="$(arg lidar_sensor_id)" />
     <param name="ipc_host" value="$(arg ipc_host)" />
+    <param name="use_exact_lidar_timestamp" value="false" />
   </node>
 
   <!-- Fusão/correção de GPS (lê /gps/xyz_raw/gps_<nr> + /gps/heading_raw +
