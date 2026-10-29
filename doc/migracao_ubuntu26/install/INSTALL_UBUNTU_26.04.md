@@ -50,6 +50,11 @@ echo $CARMEN_HOME              # /home/<usuário>/carmen_lcad
 ls $CARMEN_HOME/src/Makefile.conf
 ```
 
+Execute:
+```
+xhost +local:
+```
+
 <!-- > ⚠️ Se esta máquina tiver **outro repositório do LCAD** (um fork do CARMEN), os
 > dois geram bibliotecas com os mesmos nomes (`libglobal.so`, `libipc.a`, ...).
 > Quem aparecer primeiro no `LD_LIBRARY_PATH` ganha em tempo de execução. O bloco

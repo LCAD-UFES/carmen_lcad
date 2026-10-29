@@ -4,7 +4,8 @@
   <param name="/use_sim_time" value="$(arg use_sim_time)"/>
 
   <arg name="ipc_host"          default="localhost" />
-  <arg name="lidar_sensor_id"   default="5" />
+  <arg name="lidar_sensor_id"   default="0" />
+  <arg name="use_exact_lidar_timestamp" default="false" />
   <arg name="warn_on_xsens" default="true" />
   <arg name="publish_imu"       default="true" />
   <arg name="publish_ackermann" default="true" />
@@ -48,12 +49,16 @@
     <param name="ipc_host" value="$(arg ipc_host)" />
   </node>
 
-  <node pkg="carmen_ipc_bridge" type="pointcloud_node" name="pointcloud_node" output="screen">
-    <param name="base_frame_id"  value="base_link" />
+  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_lidar_raw" name="carmen_to_ros_lidar_raw" output="screen">
     <param name="laser_frame_id" value="velodyne" />
     <param name="lidar_sensor_id" value="$(arg lidar_sensor_id)" />
-    <param name="ipc_host" value="$(arg ipc_host)" />
-    <param name="use_exact_lidar_timestamp" value="false" />
+    <param name="use_exact_lidar_timestamp" value="$(arg use_exact_lidar_timestamp)" />
+  </node>
+
+  <node pkg="carmen_ipc_bridge" type="ros_to_ros_lidar_collision_model" name="ros_to_ros_lidar_collision_model" output="screen">
+    <param name="base_frame_id" value="base_link" />
+    <param name="laser_frame_id" value="velodyne" />
+    <param name="lidar_sensor_id" value="$(arg lidar_sensor_id)" />
   </node>
 
   <!-- Fusão/correção de GPS (lê /gps/xyz_raw/gps_<nr> + /gps/heading_raw +

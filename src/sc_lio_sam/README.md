@@ -222,6 +222,46 @@ and runs one IPC loop without ROS spin. The obsolete `ipc_bridge_node`
 target and sources have been removed; custom launch files should use the
 new node name.
 
+### LiDAR nodes
+
+`carmen_to_ros_lidar_raw.cpp` receives partial and variable CARMEN scans and
+publishes `sensor_msgs/PointCloud2` on `/points_raw`. It retains channel
+calibration, elevation-ranked rings, per-point timing, `/clock` and
+`/carmen/scan_time_reference`. It runs only the IPC loop, without ROS spin.
+
+`ros_to_ros_lidar_collision_model.cpp` subscribes to `/points_raw`, removes
+points inside the vehicle collision cylinders and publishes
+`/points_raw_no_vehicle`. It also owns the static transforms, collision markers
+and truck/trailer OBJ visualization. OBJ meshes are not used for filtering.
+The cloud passes through unchanged until collision geometry and heights are
+available. The filter still uses CARMEN for vehicle/mounting parameters and
+trailer articulation (`localize_ackerman`); it does not subscribe to IPC scans.
+Its single loop dispatches IPC and ROS callbacks, including the model wall timer.
+
+Each node centralizes ROS and CARMEN parameter reads in `read_parameters` and
+uses the default IPC connection. Keep `laser_frame_id` and `lidar_sensor_id`
+consistent between nodes. The launch supplies both and starts both executables.
+LiDAR settings have no implicit defaults. Both nodes require private ROS
+`laser_frame_id` and `lidar_sensor_id`; the raw node also requires
+`use_exact_lidar_timestamp`. The launch supplies these explicitly.
+
+The raw node requires CARMEN `lidar<N>_shot_size`, `range_division_factor`,
+`max_range`, `time_between_shots`, `vertical_angles` and `ray_order`.
+`horizontal_angles` is optional: when absent, every channel uses zero correction
+and the node logs a warning. When supplied, angle tables must contain exactly
+`shot_size` finite values; `ray_order` must be a complete permutation.
+Invalid tables or missing required parameters terminate startup. The collision node requires finite `lidar<N>_x`, `y`, `z`,
+`roll`, `pitch` and `yaw`. Defaults for unrelated visualization settings remain.
+
+Custom launch files must replace the former `pointcloud_node` with these two
+nodes; move timestamp policy to the raw node and model/frame settings to the
+collision node.
+
+Validation: both executables build; differential synthetic tests passed for
+160 scan cases, 4,800 collision checks, serialized clouds, timestamps, transforms,
+markers and OBJ normalization. Full-log playback and RViz validation remain
+pending, including transport and scheduling between the separate processes.
+
 ### Outputs
 
 O módulo gera a odometria e o mapa bruto da sessão: nuvens de pontos (`.pcd`), poses e o pose-graph com os descritores globais (Scan Context) de cada keyframe. Esses arquivos são salvos na pasta definida em `SC_LIO_SAM_MAP_PATH` (por padrão `/dados/sc_lio_sam_output/`).

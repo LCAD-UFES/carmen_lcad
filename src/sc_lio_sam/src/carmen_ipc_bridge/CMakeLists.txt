@@ -121,16 +121,18 @@ target_include_directories(carmen_to_ros_gps_nmea PRIVATE ${CARMEN_INCLUDE_DIRS}
 target_link_directories(carmen_to_ros_gps_nmea PRIVATE ${CARMEN_LIBRARY_DIRS})
 target_link_libraries(carmen_to_ros_gps_nmea ${catkin_LIBRARIES} ${CARMEN_LIBRARIES})
 
-# ─── pointcloud_node (lê range_division_factor do param_daemon do CARMEN) ────
-add_executable(pointcloud_node src/pointcloud_node.cpp)
-add_dependencies(pointcloud_node ${catkin_EXPORTED_TARGETS})
-target_include_directories(pointcloud_node PRIVATE ${CARMEN_INCLUDE_DIRS})
-target_link_directories(pointcloud_node PRIVATE ${CARMEN_LIBRARY_DIRS})
-target_link_libraries(pointcloud_node
-  ${catkin_LIBRARIES}
-  Boost::thread
-  ${CARMEN_LIBRARIES}
-)
+# Raw LiDAR conversion and ROS collision filtering.
+add_executable(carmen_to_ros_lidar_raw src/carmen_to_ros_lidar_raw.cpp)
+add_dependencies(carmen_to_ros_lidar_raw ${catkin_EXPORTED_TARGETS})
+target_include_directories(carmen_to_ros_lidar_raw PRIVATE ${CARMEN_INCLUDE_DIRS})
+target_link_directories(carmen_to_ros_lidar_raw PRIVATE ${CARMEN_LIBRARY_DIRS})
+target_link_libraries(carmen_to_ros_lidar_raw ${catkin_LIBRARIES} ${CARMEN_LIBRARIES})
+
+add_executable(ros_to_ros_lidar_collision_model src/ros_to_ros_lidar_collision_model.cpp)
+add_dependencies(ros_to_ros_lidar_collision_model ${catkin_EXPORTED_TARGETS})
+target_include_directories(ros_to_ros_lidar_collision_model PRIVATE ${CARMEN_INCLUDE_DIRS})
+target_link_directories(ros_to_ros_lidar_collision_model PRIVATE ${CARMEN_LIBRARY_DIRS})
+target_link_libraries(ros_to_ros_lidar_collision_model ${catkin_LIBRARIES} ${CARMEN_LIBRARIES})
 
 # ─── gps_localization_node (fusão/correção de GPS -> /odometry/gps p/ o SC-LIO-SAM) ──
 add_executable(gps_localization_node src/gps_localization_node.cpp)
@@ -167,7 +169,7 @@ target_link_libraries(fused_odometry_from_slam_node
 # )
 
 # ─── Install ──────────────────────────────────────────────────────────────
-install(TARGETS carmen_to_ros_gps_nmea carmen_to_ros_gps_xyz carmen_to_ros_odometry carmen_to_ros_imu_lidar carmen_to_ros_imu_xsens pointcloud_node gps_localization_node
+install(TARGETS carmen_to_ros_gps_nmea carmen_to_ros_gps_xyz carmen_to_ros_odometry carmen_to_ros_imu_lidar carmen_to_ros_imu_xsens carmen_to_ros_lidar_raw ros_to_ros_lidar_collision_model gps_localization_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

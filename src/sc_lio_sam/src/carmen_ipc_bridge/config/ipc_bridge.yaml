@@ -46,10 +46,10 @@ imu_rotation: [1.0, 0.0, 0.0,
 #                 0.0,-1.0, 0.0,
 #                 0.0, 0.0, 1.0]
 
-# ── pointcloud_node ────────────────────────────────────────────────────────
+# ── carmen_to_ros_lidar_raw ────────────────────────────────────────────────────────
 # O pointcloud_node não lê mais parâmetros de alcance daqui:
 # - range_division_factor e max_range vêm do param_daemon (carmen.ini) via load_lidar_config()
-# - min_range é constante (0.4 m) no código (pointcloud_node.cpp e ipc_bridge_node.cpp)
+# Collision filtering runs in ros_to_ros_lidar_collision_model.
 
 # carmen_to_ros_imu_lidar warning subscriber
 warn_on_xsens: true
