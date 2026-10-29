@@ -86,16 +86,40 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# ─── ipc_bridge_node ─────────────────────────────────────────────────────────
-add_executable(ipc_bridge_node src/ipc_bridge_node.cpp)
-add_dependencies(ipc_bridge_node ${catkin_EXPORTED_TARGETS})
-target_include_directories(ipc_bridge_node PRIVATE ${CARMEN_INCLUDE_DIRS})
-target_link_directories(ipc_bridge_node PRIVATE ${CARMEN_LIBRARY_DIRS})
-target_link_libraries(ipc_bridge_node
-  ${catkin_LIBRARIES}
-  Boost::thread
-  ${CARMEN_LIBRARIES}
-)
+# Carmen to ROS Xsens IMU.
+add_executable(carmen_to_ros_imu_xsens src/carmen_to_ros_imu_xsens.cpp)
+add_dependencies(carmen_to_ros_imu_xsens ${catkin_EXPORTED_TARGETS})
+target_include_directories(carmen_to_ros_imu_xsens PRIVATE ${CARMEN_INCLUDE_DIRS})
+target_link_directories(carmen_to_ros_imu_xsens PRIVATE ${CARMEN_LIBRARY_DIRS})
+target_link_libraries(carmen_to_ros_imu_xsens ${catkin_LIBRARIES} ${CARMEN_LIBRARIES})
+
+# Carmen to ROS LiDAR IMU.
+add_executable(carmen_to_ros_imu_lidar src/carmen_to_ros_imu_lidar.cpp)
+add_dependencies(carmen_to_ros_imu_lidar ${catkin_EXPORTED_TARGETS})
+target_include_directories(carmen_to_ros_imu_lidar PRIVATE ${CARMEN_INCLUDE_DIRS})
+target_link_directories(carmen_to_ros_imu_lidar PRIVATE ${CARMEN_LIBRARY_DIRS})
+target_link_libraries(carmen_to_ros_imu_lidar ${catkin_LIBRARIES} ${CARMEN_LIBRARIES})
+
+# Carmen to ROS Ackermann odometry.
+add_executable(carmen_to_ros_odometry src/carmen_to_ros_odometry.cpp)
+add_dependencies(carmen_to_ros_odometry ${catkin_EXPORTED_TARGETS})
+target_include_directories(carmen_to_ros_odometry PRIVATE ${CARMEN_INCLUDE_DIRS})
+target_link_directories(carmen_to_ros_odometry PRIVATE ${CARMEN_LIBRARY_DIRS})
+target_link_libraries(carmen_to_ros_odometry ${catkin_LIBRARIES} ${CARMEN_LIBRARIES})
+
+# Carmen to ROS GPS XYZ.
+add_executable(carmen_to_ros_gps_xyz src/carmen_to_ros_gps_xyz.cpp)
+add_dependencies(carmen_to_ros_gps_xyz ${catkin_EXPORTED_TARGETS})
+target_include_directories(carmen_to_ros_gps_xyz PRIVATE ${CARMEN_INCLUDE_DIRS})
+target_link_directories(carmen_to_ros_gps_xyz PRIVATE ${CARMEN_LIBRARY_DIRS})
+target_link_libraries(carmen_to_ros_gps_xyz ${catkin_LIBRARIES} ${CARMEN_LIBRARIES})
+
+# Carmen to ROS GPS NMEA HDT.
+add_executable(carmen_to_ros_gps_nmea src/carmen_to_ros_gps_nmea.cpp)
+add_dependencies(carmen_to_ros_gps_nmea ${catkin_EXPORTED_TARGETS})
+target_include_directories(carmen_to_ros_gps_nmea PRIVATE ${CARMEN_INCLUDE_DIRS})
+target_link_directories(carmen_to_ros_gps_nmea PRIVATE ${CARMEN_LIBRARY_DIRS})
+target_link_libraries(carmen_to_ros_gps_nmea ${catkin_LIBRARIES} ${CARMEN_LIBRARIES})
 
 # ─── pointcloud_node (lê range_division_factor do param_daemon do CARMEN) ────
 add_executable(pointcloud_node src/pointcloud_node.cpp)
@@ -143,11 +167,7 @@ target_link_libraries(fused_odometry_from_slam_node
 # )
 
 # ─── Install ──────────────────────────────────────────────────────────────
-#install(TARGETS ipc_bridge_node pointcloud_node gps_localization_node generate_poses_opt
-#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
-
-install(TARGETS ipc_bridge_node pointcloud_node gps_localization_node
+install(TARGETS carmen_to_ros_gps_nmea carmen_to_ros_gps_xyz carmen_to_ros_odometry carmen_to_ros_imu_lidar carmen_to_ros_imu_xsens pointcloud_node gps_localization_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -157,13 +177,6 @@ install(DIRECTORY launch config
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-)
-
-set_target_properties(ipc_bridge_node PROPERTIES
-  BUILD_RPATH ""
-  INSTALL_RPATH ""
-  SKIP_BUILD_RPATH FALSE
-  BUILD_WITH_INSTALL_RPATH FALSE
 )
 
 set_target_properties(gps_localization_node PROPERTIES

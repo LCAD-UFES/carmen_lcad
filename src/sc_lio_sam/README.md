@@ -163,6 +163,65 @@ Executar o programa:
 roslaunch lio_sam run.launch
 ```
 
+### IMU bridges
+
+`carmen_to_ros_imu_xsens.cpp` converts Xsens messages and
+`carmen_to_ros_imu_lidar.cpp` converts `carmen_imu_message` from the sensor
+selected by `lidar_imu_sensor_id`. Both publish `/imu_raw` independently;
+there is no priority or automatic fallback. The former `ipc_bridge_node` has been replaced by the dedicated sensor nodes.
+
+The launch starts both IMU nodes. Each supports `publish_imu`, `base_frame_id`,
+`imu_frame_id` and `imu_rotation` in its private namespace. Set the unwanted
+node's `publish_imu` to false or stop that node to select one sensor.
+
+After publishing its first IMU sample, the LiDAR node warns when its ROS
+subscriber receives Xsens data on the same topic. The warning is throttled
+to once every five seconds. Disable it with private parameter
+`warn_on_xsens:=false`, also exposed as a launch argument. If Xsens is renamed,
+set `xsens_node_name` on the LiDAR node to its ROS name (default:
+`carmen_to_ros_imu_xsens`, resolved in the current namespace).
+
+Both nodes use one application processing loop. The LiDAR loop also calls
+`ros::spinOnce()` to process its warning subscriber. IPC connects using the
+inherited `CENTRALHOST` environment variable.
+
+### Ackermann odometry bridge
+
+`carmen_to_ros_odometry.cpp` publishes `carmen_base_ackerman_odometry_message`
+as `geometry_msgs/TwistStamped` on `/ackermann/odom_raw`. It preserves the
+sensor timestamp, speed in `linear.x` (m/s), and steering angle in `angular.z`
+(rad). The latter is not yaw rate; SC-LIO-SAM still integrates the bicycle model.
+
+The launch starts this node automatically and forwards `publish_ackermann`.
+Its private parameters are `publish_ackermann` and `base_frame_id`. It uses
+`CENTRALHOST` from the environment and a single IPC loop, without ROS spin.
+
+### GPS XYZ bridge
+
+`carmen_to_ros_gps_xyz.cpp` publishes raw GPS positions as `nav_msgs/Odometry`
+on `/gps/xyz_raw/gps_<nr>`, with one publisher per receiver. Samples with
+`gps_quality < 1` are discarded. Timestamps, receiver-specific child frames
+and quality-based covariances are preserved. Carmen publishes identity
+orientation with high uncertainty; Astro retains the receiver's `theta`.
+
+The launch starts this node automatically. Private parameters are
+`gps_frame_id` (default `utm`) and `publish_gps`. IPC uses the inherited
+`CENTRALHOST`, with a single processing loop and no ROS spin. GPS heading
+is published by `carmen_to_ros_gps_nmea`; `gps_localization_node` still performs fusion.
+
+### GPS NMEA bridge
+
+`carmen_to_ros_gps_nmea.cpp` converts valid `carmen_gps_gphdt_message`
+(NMEA HDT) measurements to `geometry_msgs/QuaternionStamped` on
+`/gps/heading_raw`. Heading in radians becomes a yaw quaternion; the original
+timestamp is preserved. Messages with `valid == 0` are discarded.
+
+The launch starts this node automatically. Private parameters are
+`gps_frame_id` (default `utm`) and `publish_gps`. It inherits `CENTRALHOST`
+and runs one IPC loop without ROS spin. The obsolete `ipc_bridge_node`
+target and sources have been removed; custom launch files should use the
+new node name.
+
 ### Outputs
 
 O módulo gera a odometria e o mapa bruto da sessão: nuvens de pontos (`.pcd`), poses e o pose-graph com os descritores globais (Scan Context) de cada keyframe. Esses arquivos são salvos na pasta definida em `SC_LIO_SAM_MAP_PATH` (por padrão `/dados/sc_lio_sam_output/`).

@@ -5,6 +5,7 @@
 
   <arg name="ipc_host"          default="localhost" />
   <arg name="lidar_sensor_id"   default="5" />
+  <arg name="warn_on_xsens" default="true" />
   <arg name="publish_imu"       default="true" />
   <arg name="publish_ackermann" default="true" />
   <arg name="publish_gps"       default="true" />
@@ -14,16 +15,35 @@
        deixo os dois aqui; muda pra [1] se quiser rodar só com uma. -->
   <arg name="gps_nrs" default="[1, 2]" />
 
-  <node pkg="carmen_ipc_bridge" type="ipc_bridge_node" name="ipc_bridge_node" output="screen">
-    <param name="base_frame_id"  value="base_link" />
-    <param name="imu_frame_id"   value="imu_link" />
-    <param name="gps_frame_id"   value="utm" />
-    <param name="lidar_imu_sensor_id" value="$(arg lidar_sensor_id)" />
+  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_gps_nmea" name="carmen_to_ros_gps_nmea" output="screen">
+    <param name="gps_frame_id" value="utm" />
+    <param name="publish_gps" value="$(arg publish_gps)" />
+  </node>
 
-    <param name="publish_imu"       value="$(arg publish_imu)" />
+  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_gps_xyz" name="carmen_to_ros_gps_xyz" output="screen">
+    <param name="gps_frame_id" value="utm" />
+    <param name="publish_gps" value="$(arg publish_gps)" />
+  </node>
+
+  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_odometry" name="carmen_to_ros_odometry" output="screen">
+    <param name="base_frame_id" value="base_link" />
     <param name="publish_ackermann" value="$(arg publish_ackermann)" />
-    <param name="publish_gps"       value="$(arg publish_gps)" />
+  </node>
 
+  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_imu_xsens" name="carmen_to_ros_imu_xsens" output="screen">
+    <param name="base_frame_id" value="base_link" />
+    <param name="imu_frame_id" value="imu_link" />
+    <param name="publish_imu" value="$(arg publish_imu)" />
+    <rosparam param="imu_rotation">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
+    <param name="ipc_host" value="$(arg ipc_host)" />
+  </node>
+
+  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_imu_lidar" name="carmen_to_ros_imu_lidar" output="screen">
+    <param name="warn_on_xsens" value="$(arg warn_on_xsens)" />
+    <param name="lidar_imu_sensor_id" value="$(arg lidar_sensor_id)" />
+    <param name="base_frame_id" value="base_link" />
+    <param name="imu_frame_id" value="imu_link" />
+    <param name="publish_imu" value="$(arg publish_imu)" />
     <rosparam param="imu_rotation">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
     <param name="ipc_host" value="$(arg ipc_host)" />
   </node>

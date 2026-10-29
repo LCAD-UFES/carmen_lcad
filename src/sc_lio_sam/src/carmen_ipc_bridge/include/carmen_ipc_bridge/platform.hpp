@@ -1,0 +1,79 @@
+#pragma once
+
+// Keep platform naming differences at the IPC boundary. ROS package/topics stay
+// the same on both platforms; message-layout differences use MAKE_IN_CARMEn.
+#ifdef MAKE_IN_CARMEn
+#include <carmen/carmen.h>
+#include <carmen/base_ackerman_interface.h>
+#include <carmen/collision_detection.h>
+#include <carmen/fused_odometry_interface.h>
+#include <carmen/fused_odometry_messages.h>
+#include <carmen/global.h>
+#include <carmen/gps_nmea_interface.h>
+#include <carmen/gps_xyz_interface.h>
+#include <carmen/imu_interface.h>
+#include <carmen/localize_ackerman_interface.h>
+#include <carmen/localize_ackerman_messages.h>
+#include <carmen/velodyne_interface.h>
+#include <carmen/xsens_interface.h>
+#else
+#include <astro/astro.h>
+#include <astro/base_ackerman_interface.h>
+#include <astro/collision_detection.h>
+#include <astro/fused_odometry_interface.h>
+#include <astro/fused_odometry_messages.h>
+#include <astro/global.h>
+#include <astro/gps_nmea_interface.h>
+#include <astro/gps_xyz_interface.h>
+#include <astro/imu_interface.h>
+#include <astro/localize_ackerman_interface.h>
+#include <astro/localize_ackerman_messages.h>
+#include <astro/velodyne_interface.h>
+#include <astro/xsens_interface.h>
+
+#define CARMEN_FUSED_ODOMETRY_FMT ASTRO_FUSED_ODOMETRY_FMT
+#define CARMEN_FUSED_ODOMETRY_NAME ASTRO_FUSED_ODOMETRY_NAME
+#define CARMEN_INITIALIZE_GAUSSIAN ASTRO_INITIALIZE_GAUSSIAN
+#define CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_FMT ASTRO_LOCALIZE_ACKERMAN_INITIALIZE_FMT
+#define CARMEN_LOCALIZE_ACKERMAN_INITIALIZE_NAME ASTRO_LOCALIZE_ACKERMAN_INITIALIZE_NAME
+#define CARMEN_PARAM_DOUBLE ASTRO_PARAM_DOUBLE
+#define CARMEN_PARAM_INT ASTRO_PARAM_INT
+#define CARMEN_PARAM_STRING ASTRO_PARAM_STRING
+#define CARMEN_SUBSCRIBE_LATEST ASTRO_SUBSCRIBE_LATEST
+#define carmen_base_ackerman_odometry_message astro_base_ackerman_odometry_message
+#define carmen_base_ackerman_subscribe_odometry_message astro_base_ackerman_subscribe_odometry_message
+#define carmen_collision_config_t astro_collision_config_t
+#define carmen_collision_detection_get_global_collision_config astro_collision_detection_get_global_collision_config
+#define carmen_collision_marker_t astro_collision_marker_t
+#define carmen_fused_odometry_message astro_fused_odometry_message
+#define carmen_fused_odometry_publish_message astro_fused_odometry_publish_message
+#define carmen_get_host astro_get_host
+#define carmen_get_time astro_get_time
+#define carmen_gps_gphdt_message astro_gps_gphdt_message
+#define carmen_gps_subscribe_nmea_hdt_message astro_gps_subscribe_nmea_hdt_message
+#define carmen_gps_xyz_message astro_gps_xyz_message
+#define carmen_gps_xyz_subscribe_message astro_gps_xyz_subscribe_message
+#define carmen_handler_t astro_handler_t
+#define carmen_imu_message astro_imu_message
+#define carmen_imu_subscribe_imu_lidar_message astro_imu_subscribe_imu_lidar_message
+#define carmen_ipc_initialize astro_ipc_initialize
+#define carmen_lidar_config astro_lidar_config
+#define carmen_localize_ackerman_globalpos_message astro_localize_ackerman_globalpos_message
+#define carmen_localize_ackerman_initialize_gaussian_command_host astro_localize_ackerman_initialize_gaussian_command_host
+#define carmen_localize_ackerman_initialize_message astro_localize_ackerman_initialize_message
+#define carmen_localize_ackerman_subscribe_globalpos_message astro_localize_ackerman_subscribe_globalpos_message
+#define carmen_localize_ackerman_subscribe_initialize_message astro_localize_ackerman_subscribe_initialize_message
+#define carmen_param_allow_unfound_variables astro_param_allow_unfound_variables
+#define carmen_param_check_version astro_param_check_version
+#define carmen_param_install_params astro_param_install_params
+#define carmen_param_t astro_param_t
+#define carmen_point_t astro_point_t
+#define carmen_test_ipc astro_test_ipc
+#define carmen_test_ipc_exit astro_test_ipc_exit
+#define carmen_velodyne_partial_scan_message astro_velodyne_partial_scan_message
+#define carmen_velodyne_subscribe_partial_scan_message astro_velodyne_subscribe_partial_scan_message
+#define carmen_velodyne_subscribe_variable_scan_message astro_velodyne_subscribe_variable_scan_message
+#define carmen_velodyne_variable_scan_message astro_velodyne_variable_scan_message
+#define carmen_xsens_global_quat_message astro_xsens_global_quat_message
+#define carmen_xsens_subscribe_xsens_global_quat_message astro_xsens_subscribe_xsens_global_quat_message
+#endif

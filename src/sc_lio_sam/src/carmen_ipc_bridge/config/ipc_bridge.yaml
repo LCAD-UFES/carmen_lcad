@@ -10,8 +10,8 @@
 #   O LIO-SAM usa extrinsicRot/RPY no params.yaml para a mesma finalidade.
 #   Prefira configurar aqui e deixar identidade no params.yaml do LIO-SAM.
 #
-# NOTA: este arquivo cobre apenas os parâmetros que ipc_bridge_node e
-# pointcloud_node de fato leem nesta versão mínima (só ipc + pointcloud).
+# IMU parameters belong to carmen_to_ros_imu_xsens and carmen_to_ros_imu_lidar.
+# Load them in the private namespace of the corresponding node.
 # Parâmetros como odom_frame_id / publish_odom_tf / wheelbase eram
 # reservados para um imu_odom_node futuro e não são lidos pelo código atual.
 
@@ -50,3 +50,8 @@ imu_rotation: [1.0, 0.0, 0.0,
 # O pointcloud_node não lê mais parâmetros de alcance daqui:
 # - range_division_factor e max_range vêm do param_daemon (carmen.ini) via load_lidar_config()
 # - min_range é constante (0.4 m) no código (pointcloud_node.cpp e ipc_bridge_node.cpp)
+
+# carmen_to_ros_imu_lidar warning subscriber
+warn_on_xsens: true
+xsens_node_name: "carmen_to_ros_imu_xsens"
+lidar_imu_sensor_id: 5
