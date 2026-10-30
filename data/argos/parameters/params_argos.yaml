@@ -134,15 +134,6 @@ lio_sam:
   extrinsicTrans: [0.0, 0.0, 0.19]
   extrinsicRPY: [0.0, 0.0, 0.0]  # roll, pitch, yaw [rad]
 
-  # ── Modelo de colisao 3D do veiculo (usado pelo bridge) ────────────────
-  # E' o filtro que tira do scan os pontos que batem no proprio robo
-  # (pointcloud_node.cpp:1303 ensure_collision_heights()). ATENCAO: o bridge so'
-  # carrega o filtro se robot_collision_height E semi_trailer_collision_height
-  # forem AMBOS > 0 -- mesmo o ARGOS nao tendo reboque, deixar o segundo em 0
-  # desliga o filtro inteiro em silencio. Valores de partida, ajuste medindo.
-  robot_collision_height: 0.70         # m, do chao ao topo do robo
-  semi_trailer_collision_height: 0.70  # m, sem reboque: repete o valor acima (nao pode ser 0)
-  collision_safety_margin: 0.10        # m, somado ao raio de todos os circulos
 
   # ── LOAM feature threshold ───────────────────────────────────────────
   # ALTERADO: valores anteriores (edgeThreshold=0.05, edgeFeatureMinValidNum=1)
@@ -195,3 +186,8 @@ lio_sam:
   globalMapVisualizationPoseDensity: 10.0     # m, espacamento das poses amostradas
   globalMapVisualizationLeafSize: 0.01        # m, voxel do downsample da visualizacao
 
+ipc_bridge:
+  # Vehicle collision cylinders: heights and radius margin in meters.
+  robot_collision_height: 0.70         # m, do chao ao topo do robo
+  semi_trailer_collision_height: 0.70  # m, sem reboque: repete o valor acima (nao pode ser 0)
+  collision_safety_margin: 0.10        # m, somado ao raio de todos os circulos

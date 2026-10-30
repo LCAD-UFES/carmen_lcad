@@ -1,5 +1,8 @@
 <launch>
 
+  <arg name="params_file" />
+  <rosparam file="$(arg params_file)" command="load" />
+
   <arg name="use_sim_time" default="false"/>
   <param name="/use_sim_time" value="$(arg use_sim_time)"/>
 

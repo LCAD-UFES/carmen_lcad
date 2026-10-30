@@ -106,10 +106,6 @@ lio_sam:
   lidarExcludeBoxMinZ: -2.5
   lidarExcludeBoxMaxZ: 2.5
 
-  # ── Modelo de colisao 3D do veiculo (usado pelo bridge) ────────────────
-  robot_collision_height: 2.5          # m, do chao ao topo dos cilindros do caminhao
-  semi_trailer_collision_height: 5.0   # m, idem para o semi-reboque
-  collision_safety_margin: 0.25        # m, somado ao raio de todos os circulos
 
   # ── LOAM: extracao de features ─────────────────────────────────────────
   edgeThreshold: 1.0           # curvatura minima pra virar edge (era 0.05, permissivo demais)
@@ -145,3 +141,9 @@ lio_sam:
   globalMapVisualizationSearchRadius: 1000.0  # m, raio do mapa global publicado
   globalMapVisualizationPoseDensity: 10.0     # m, espacamento das poses amostradas
   globalMapVisualizationLeafSize: 0.01        # m, voxel do downsample da visualizacao
+
+ipc_bridge:
+  # Vehicle collision cylinders: heights and radius margin in meters.
+  robot_collision_height: 2.5          # m, do chao ao topo dos cilindros do caminhao
+  semi_trailer_collision_height: 5.0   # m, idem para o semi-reboque
+  collision_safety_margin: 0.25        # m, somado ao raio de todos os circulos

@@ -44,7 +44,7 @@ static std::vector<mesh_parameters> trailer_parameters;
 static int num_trailers = 0;
 
 // Collision parameters can arrive after startup; refresh only those on demand.
-static void read_parameters(int argc, char **argv, bool collision_only = false);
+static void read_parameters(int argc, char **argv);
 
 // Module state: all application callbacks run on the main thread.
 // LiDAR mounting pose used by the filter and static transforms.
@@ -88,7 +88,6 @@ static bool trailer_engaged{false};
 static double robot_collision_height{0.0};
 static double semi_trailer_collision_height{0.0};
 static double collision_safety_margin{0.0};
-static bool collision_heights_loaded{false};
 static bool static_tfs_sent{false};
 
 // Viewer-compatible truck and trailer mesh state.
@@ -188,16 +187,6 @@ prepare_obj_model(const std::string &raw_file, double size_x, double size_y, dou
                     (bb_max[2] - bb_min[2]) * scale.z());
     uri = "file://" + file;
     return true;
-}
-
-// Retry ROS collision-height parameters until both vehicle heights are available.
-static bool
-ensure_collision_heights()
-{
-    if (collision_heights_loaded)
-        return true;
-    read_parameters(0, nullptr, true);
-    return collision_heights_loaded;
 }
 
 // Test ground-relative cylinders for the truck and the first engaged trailer.
@@ -481,7 +470,7 @@ publish_collision_markers(const ros::Time &stamp)
 {
     if (stamp.isZero())
         return;
-    if (!collision_ready || !ensure_collision_heights())
+    if (!collision_ready)
         return;
 
     visualization_msgs::MarkerArray markers_message;
@@ -616,7 +605,7 @@ points_raw_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     const uint32_t point_step = msg->point_step;
     const uint32_t point_count = msg->width;
 
-    if (!collision_ready || !ensure_collision_heights() || point_step < 12 || point_count == 0)
+    if (!collision_ready || point_step < 12 || point_count == 0)
     {
         points_no_vehicle_pub.publish(*msg);
         return;
@@ -871,28 +860,32 @@ setup_car_model()
 
 // Read ROS settings and CARMEN sensor/vehicle parameters in one place.
 static void
-read_parameters(int argc, char **argv, bool collision_only)
+read_parameters(int argc, char **argv)
 {
-    // ROS collision heights may be published after this node starts.
-    if (!collision_heights_loaded)
+    // Collision settings must be available before startup.
+    if (!ros::param::get("/ipc_bridge/robot_collision_height", robot_collision_height) ||
+        !std::isfinite(robot_collision_height) || robot_collision_height <= 0.0)
     {
-        double rh = 0.0, th = 0.0;
-        if (ros::param::get("/lio_sam/robot_collision_height", rh) &&
-            ros::param::get("/lio_sam/semi_trailer_collision_height", th) &&
-            rh > 0.0 && th > 0.0)
-        {
-            robot_collision_height = rh;
-            semi_trailer_collision_height = th;
-            double margin = 0.0;
-            ros::param::get("/lio_sam/collision_safety_margin", margin);
-            collision_safety_margin = (margin > 0.0) ? margin : 0.0;
-            collision_heights_loaded = true;
-            ROS_INFO("Alturas de colisao: robot=%.2fm, semi_trailer=%.2fm, margem=%.2fm",
-                     rh, th, collision_safety_margin);
-        }
-    }
-    if (collision_only)
+        ROS_FATAL("Parametro /ipc_bridge/robot_collision_height ausente ou invalido: deve ser finito e positivo.");
+        ros::shutdown();
         return;
+    }
+    if (!ros::param::get("/ipc_bridge/semi_trailer_collision_height", semi_trailer_collision_height) ||
+        !std::isfinite(semi_trailer_collision_height) || semi_trailer_collision_height <= 0.0)
+    {
+        ROS_FATAL("Parametro /ipc_bridge/semi_trailer_collision_height ausente ou invalido: deve ser finito e positivo.");
+        ros::shutdown();
+        return;
+    }
+    if (!ros::param::get("/ipc_bridge/collision_safety_margin", collision_safety_margin) ||
+        !std::isfinite(collision_safety_margin) || collision_safety_margin < 0.0)
+    {
+        ROS_FATAL("Parametro /ipc_bridge/collision_safety_margin ausente ou invalido: deve ser finito e nao negativo.");
+        ros::shutdown();
+        return;
+    }
+    ROS_INFO("Alturas de colisao: robot=%.2fm, semi_trailer=%.2fm, margem=%.2fm",
+             robot_collision_height, semi_trailer_collision_height, collision_safety_margin);
 
     // ROS parameters.
     ros::NodeHandle private_node("~");
