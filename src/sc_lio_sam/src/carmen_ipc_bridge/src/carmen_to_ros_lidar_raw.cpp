@@ -14,33 +14,10 @@
 #include <csignal>
 #include <sstream>
 #include <stdexcept>
-
-struct velodyne_frame
-{
-    // CARMEN scan-end time and the selected ROS cloud timestamp.
-    double timestamp = 0.0;
-    int64_t ros_stamp_ns = 0;
-    // 0: partial scan; 1: variable scan.
-    int source = 0;
-    int num_shots = 0;
-    int shot_size = 0;
-    double range_div = 0.0;
-    double max_range = 0.0;
-    struct raw_point
-    {
-        uint32_t distance;
-        uint8_t intensity;
-        uint8_t ring;
-    };
-    std::vector<raw_point> raw_points;
-    std::vector<int>      shot_sizes;
-    std::vector<float>    shot_cos_az;
-    std::vector<float>    shot_sin_az;
-};
+#include <limits>
 
 // Module state: all application callbacks run on the main thread.
 // LiDAR calibration and scan timestamp policy.
-static constexpr int max_rays = 128;
 static int lidar_sensor_id = -1;
 static double lidar_range_division_factor{0.0};
 static double lidar_max_range{0.0};
@@ -50,14 +27,14 @@ static int lidar_shot_size = 0;
 static bool use_exact_lidar_timestamp;
 
 static int lidar_num_rays = 0;
-static float ring_cos_el[max_rays];
-static float ring_sin_el[max_rays];
+static std::vector<float> ring_cos_el;
+static std::vector<float> ring_sin_el;
 
 // Raw channel index -> elevation-ranked ring in the ROS cloud.
-static int ring_of_raw[max_rays];
+static std::vector<int> ring_of_raw;
 
-static float ring_cos_az_off[max_rays];
-static float ring_sin_az_off[max_rays];
+static std::vector<float> ring_cos_az_off;
+static std::vector<float> ring_sin_az_off;
 // Raw cloud and time publishers.
 static ros::Publisher clock_pub;
 static ros::Publisher points_raw_publisher;
@@ -127,8 +104,10 @@ parse_lidar_table(const char *text, int count, const std::string &parameter)
 static void
 configure_lidar_angles(const carmen_lidar_config *cfg)
 {
-    if (cfg->shot_size <= 0 || cfg->shot_size > max_rays)
-        throw std::runtime_error("shot_size deve estar entre 1 e " + std::to_string(max_rays));
+    if (cfg->shot_size <= 0)
+        throw std::runtime_error("shot_size deve ser positivo");
+    if (cfg->shot_size - 1 > std::numeric_limits<uint16_t>::max())
+        throw std::runtime_error("shot_size excede o campo ring UINT16 da nuvem ROS");
     if (!cfg->vertical_angles || !cfg->horizontal_angles_deltas || !cfg->ray_order)
         throw std::runtime_error("vertical_angles, horizontal_angles e ray_order sao obrigatorios");
     std::vector<int> order(cfg->shot_size);
@@ -147,6 +126,11 @@ configure_lidar_angles(const carmen_lidar_config *cfg)
     {
         return cfg->vertical_angles[a] < cfg->vertical_angles[b];
     });
+    ring_cos_el.resize(cfg->shot_size);
+    ring_sin_el.resize(cfg->shot_size);
+    ring_cos_az_off.resize(cfg->shot_size);
+    ring_sin_az_off.resize(cfg->shot_size);
+    ring_of_raw.resize(cfg->shot_size);
     for (int i = 0; i < cfg->shot_size; ++i)
     {
         float elevation = static_cast<float>(cfg->vertical_angles[i]) * static_cast<float>(M_PI) / 180.0f;
@@ -162,10 +146,8 @@ configure_lidar_angles(const carmen_lidar_config *cfg)
 
 // Preserve the 32-byte x/y/z/intensity/ring/time layout and float arithmetic.
 static sensor_msgs::PointCloud2
-velodyne_frame_to_points_raw(const velodyne_frame &frame)
+create_pointcloud(size_t point_count, const ros::Time &stamp)
 {
-    const ros::Time stamp = carmen_bridge::carmen_ns_to_ros_time(frame.ros_stamp_ns);
-
     sensor_msgs::PointCloud2 cloud;
     cloud.header.stamp = stamp;
     cloud.header.frame_id = laser_frame_id;
@@ -188,74 +170,56 @@ velodyne_frame_to_points_raw(const velodyne_frame &frame)
     cloud.fields[5].name = "time";      cloud.fields[5].offset = 20; cloud.fields[5].datatype = 7;
     cloud.fields[5].count = 1;
 
-    const uint32_t point_count = static_cast<uint32_t>(frame.raw_points.size());
-    cloud.data.resize(static_cast<size_t>(point_count) * cloud.point_step, 0);
+    if (point_count > std::numeric_limits<uint32_t>::max() / cloud.point_step)
+        throw std::runtime_error("nuvem excede o tamanho suportado por PointCloud2");
+    cloud.data.resize(point_count * cloud.point_step, 0);
+    return cloud;
+}
 
+// Convert one CARMEN return directly into the ROS data buffer.
+static void
+append_point(sensor_msgs::PointCloud2 &cloud, uint32_t distance, uint8_t raw_intensity,
+             int channel, int shot, int shot_size, float cos_az, float sin_az)
+{
+    float range = static_cast<float>(distance) / static_cast<float>(lidar_range_division_factor);
+    if (range > static_cast<float>(lidar_max_range) || channel < 0 || channel >= lidar_shot_size)
+        return;
+
+    float cos_el = ring_cos_el[channel];
+    float sin_el = ring_sin_el[channel];
+    float cos_az_off = ring_cos_az_off[channel];
+    float sin_az_off = ring_sin_az_off[channel];
+    float cos_az_pt = cos_az * cos_az_off - sin_az * sin_az_off;
+    float sin_az_pt = sin_az * cos_az_off + cos_az * sin_az_off;
+    float x = range * cos_el * cos_az_pt;
+    float y = range * cos_el * sin_az_pt;
+    float z = range * sin_el;
+    if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z))
+        return;
+
+    float intensity = static_cast<float>(raw_intensity);
+    uint16_t ring_id = static_cast<uint16_t>(ring_of_raw[channel]);
     const float shot_period = static_cast<float>(lidar_time_between_shots);
+    const float time_per_point = shot_period / static_cast<float>(shot_size);
+    float point_time = static_cast<float>(shot) * shot_period
+                     + static_cast<float>(channel) * time_per_point;
+    uint8_t *output_point = cloud.data.data() + static_cast<size_t>(cloud.width) * cloud.point_step;
+    std::memcpy(output_point + 0, &x, 4);
+    std::memcpy(output_point + 4, &y, 4);
+    std::memcpy(output_point + 8, &z, 4);
+    std::memcpy(output_point + 12, &intensity, 4);
+    std::memcpy(output_point + 16, &ring_id, 2);
+    std::memcpy(output_point + 20, &point_time, 4);
+    ++cloud.width;
+}
 
-    uint8_t *output_point = cloud.data.data();
-    uint32_t valid = 0;
-    int point_idx = 0;
-
-    for (int i = 0; i < frame.num_shots; ++i)
-    {
-        if (i >= static_cast<int>(frame.shot_cos_az.size()) ||
-            i >= static_cast<int>(frame.shot_sin_az.size()) ||
-            i >= static_cast<int>(frame.shot_sizes.size()))
-            throw std::runtime_error("scan sem azimute ou tamanho de shot");
-        const float cos_az = frame.shot_cos_az[i];
-        const float sin_az = frame.shot_sin_az[i];
-        const int shot_size = frame.shot_sizes[i];
-        const float time_per_point = shot_period / static_cast<float>(std::max(shot_size, 1));
-        for (int j = 0; j < shot_size && point_idx < (int)frame.raw_points.size(); ++j, ++point_idx)
-        {
-            const auto &raw_point = frame.raw_points[point_idx];
-
-            float range = static_cast<float>(raw_point.distance) / static_cast<float>(frame.range_div);
-            if (range > static_cast<float>(frame.max_range))
-                continue;
-
-            int raw_channel = static_cast<int>(raw_point.ring);
-            if (raw_channel < 0 || raw_channel >= lidar_shot_size || raw_channel >= max_rays)
-                continue;
-            int ring = ring_of_raw[raw_channel];
-
-            float cos_el = ring_cos_el[raw_channel];
-            float sin_el = ring_sin_el[raw_channel];
-
-            float cos_az_off = ring_cos_az_off[raw_channel];
-            float sin_az_off = ring_sin_az_off[raw_channel];
-            float cos_az_pt = cos_az * cos_az_off - sin_az * sin_az_off;
-            float sin_az_pt = sin_az * cos_az_off + cos_az * sin_az_off;
-
-            float x = range * cos_el * cos_az_pt;
-            float y = range * cos_el * sin_az_pt;
-            float z = range * sin_el;
-            if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z))
-                continue;
-
-            float intensity = static_cast<float>(raw_point.intensity);
-            uint16_t ring_id = static_cast<uint16_t>(ring);
-            float point_time = static_cast<float>(i) * shot_period
-                      + static_cast<float>(j) * time_per_point;
-
-            std::memcpy(output_point + 0, &x, 4);
-            std::memcpy(output_point + 4, &y, 4);
-            std::memcpy(output_point + 8, &z, 4);
-            std::memcpy(output_point + 12, &intensity, 4);
-            std::memcpy(output_point + 16, &ring_id, 2);
-
-            std::memcpy(output_point + 20, &point_time, 4);
-
-            output_point += cloud.point_step;
-            ++valid;
-        }
-    }
-
-    cloud.width = valid;
-    cloud.row_step = valid * cloud.point_step;
-    cloud.data.resize(static_cast<size_t>(valid) * cloud.point_step);
-
+// Trim rejected returns and report the cloud rate.
+static void
+finish_pointcloud(sensor_msgs::PointCloud2 &cloud)
+{
+    cloud.row_step = cloud.width * cloud.point_step;
+    cloud.data.resize(cloud.row_step);
+    const ros::Time &stamp = cloud.header.stamp;
     static uint64_t scan_count = 0;
     static double log_start_time = 0.0;
     ++scan_count;
@@ -266,12 +230,11 @@ velodyne_frame_to_points_raw(const velodyne_frame &frame)
     if (now_s - log_start_time >= 1.0)
     {
         ROS_INFO("[DBG-CLOUD] Hz=%.1f  pontos_validos=%u  stamp=%.3f",
-                 static_cast<double>(scan_count) / (now_s - log_start_time), valid, stamp.toSec());
+                 static_cast<double>(scan_count) / (now_s - log_start_time), cloud.width, stamp.toSec());
         scan_count = 0;
         log_start_time = now_s;
     }
 
-    return cloud;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -279,150 +242,101 @@ velodyne_frame_to_points_raw(const velodyne_frame &frame)
 
 // Publish clock and CARMEN time reference before the cloud.
 static void
-publish_velodyne_scan(velodyne_frame frame)
+publish_lidar_scan(sensor_msgs::PointCloud2 &cloud, double timestamp, const std::string &source)
 {
-    if (frame.raw_points.empty())
-        return;
-
-    const ros::Time stamp = carmen_bridge::carmen_ns_to_ros_time(frame.ros_stamp_ns);
+    finish_pointcloud(cloud);
+    const ros::Time &stamp = cloud.header.stamp;
     carmen_bridge::publish_clock(clock_pub, stamp);
 
-    {
-        sensor_msgs::TimeReference tref;
-        tref.header.stamp = stamp;
-        tref.header.frame_id = laser_frame_id;
-        tref.time_ref.fromSec(frame.timestamp);
-        tref.source = (frame.source == 1)
-                    ? ("variable_scan:" + std::to_string(lidar_sensor_id))
-                    : std::string("partial_scan");
-        scan_time_ref_pub.publish(tref);
-    }
-
-    points_raw_publisher.publish(velodyne_frame_to_points_raw(frame));
+    sensor_msgs::TimeReference tref;
+    tref.header.stamp = stamp;
+    tref.header.frame_id = laser_frame_id;
+    tref.time_ref.fromSec(timestamp);
+    tref.source = source;
+    scan_time_ref_pub.publish(tref);
+    points_raw_publisher.publish(cloud);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Handlers
 
-// Decode fixed 32-ray scans with the original constant intensity.
+// Convert fixed 32-ray scans with the original constant intensity.
 static void
 velodyne_partial_scan_handler(carmen_velodyne_partial_scan_message *msg)
 {
-    if (!msg)
+    if (!msg || !msg->partial_scan)
         return;
     const int num_shots = msg->number_of_32_laser_shots;
     if (num_shots <= 0 || num_shots > 10000)
         return;
 
-    velodyne_frame frame;
-    frame.timestamp = msg->timestamp;
-    frame.num_shots = num_shots;
-    frame.shot_size = 32;
-    frame.range_div = lidar_range_division_factor;
-    frame.max_range = lidar_max_range;
-
-    frame.raw_points.reserve(num_shots * 32);
-    frame.shot_sizes.assign(num_shots, 32);
-    frame.shot_cos_az.resize(num_shots);
-    frame.shot_sin_az.resize(num_shots);
-
-    for (int i = 0; i < num_shots; ++i)
-    {
-        float az_deg = msg->partial_scan[i].angle;
-        float az_rad = -az_deg * static_cast<float>(M_PI) / 180.0f;
-        frame.shot_cos_az[i] = std::cos(az_rad);
-        frame.shot_sin_az[i] = std::sin(az_rad);
-
-        for (int j = 0; j < 32; ++j)
-        {
-            velodyne_frame::raw_point rp;
-            rp.distance = msg->partial_scan[i].distance[j];
-            rp.intensity = 100;
-            rp.ring = static_cast<uint8_t>(j);
-            frame.raw_points.push_back(rp);
-        }
-    }
-
-    frame.source = 0;
-    frame.ros_stamp_ns = scan_start_stamp_ns(frame.timestamp, num_shots);
-    publish_velodyne_scan(std::move(frame));
-}
-
-// Decode variable scans with actual azimuths and per-shot ray counts.
-static void
-velodyne_variable_scan_handler(carmen_velodyne_variable_scan_message *msg)
-{
-    if (!msg)
-        return;
-    const int num_shots = msg->number_of_shots;
-
-    ROS_INFO_THROTTLE(1.0,
-                      "[DBG-SCAN-1] CARMEN->pointcloud: num_shots=%d  ts_carmen=%.3f",
-                      num_shots, msg->timestamp);
-
-    velodyne_frame frame;
-    frame.timestamp = msg->timestamp;
-    frame.num_shots = num_shots;
-    frame.range_div = lidar_range_division_factor;
-    frame.max_range = lidar_max_range;
-
     try
     {
-        std::vector<float> cos_az(num_shots), sin_az(num_shots);
+        const ros::Time stamp = carmen_bridge::carmen_ns_to_ros_time(
+            scan_start_stamp_ns(msg->timestamp, num_shots));
+        auto cloud = create_pointcloud(static_cast<size_t>(num_shots) * 32, stamp);
         for (int i = 0; i < num_shots; ++i)
         {
             float az_deg = msg->partial_scan[i].angle;
             float az_rad = -az_deg * static_cast<float>(M_PI) / 180.0f;
-            cos_az[i] = std::cos(az_rad);
-            sin_az[i] = std::sin(az_rad);
+            float cos_az = std::cos(az_rad);
+            float sin_az = std::sin(az_rad);
+            for (int j = 0; j < 32; ++j)
+                append_point(cloud, msg->partial_scan[i].distance[j], 100, j, i, 32, cos_az, sin_az);
         }
-
-        const int rays_hint = lidar_shot_size;
-        frame.shot_sizes.reserve(num_shots);
-        frame.raw_points.reserve(num_shots * rays_hint);
-        frame.shot_cos_az.resize(num_shots);
-        frame.shot_sin_az.resize(num_shots);
-        for (int i = 0; i < num_shots; ++i)
-        {
-            frame.shot_cos_az[i] = cos_az[i];
-            frame.shot_sin_az[i] = sin_az[i];
-        }
-
-        for (int i = 0; i < num_shots; ++i)
-        {
-            int shot_size = msg->partial_scan[i].shot_size;
-            if (shot_size <= 0 || shot_size > 128)
-            {
-                frame.shot_sizes.push_back(0);
-                continue;
-            }
-            frame.shot_sizes.push_back(shot_size);
-            if (frame.shot_size == 0)
-                frame.shot_size = shot_size;
-
-            for (int j = 0; j < shot_size; ++j)
-            {
-                velodyne_frame::raw_point rp;
-                rp.distance = msg->partial_scan[i].distance[j];
-                rp.intensity = (msg->partial_scan[i].intensity)
-                               ? static_cast<uint8_t>(msg->partial_scan[i].intensity[j])
-                               : 0;
-                rp.ring = static_cast<uint8_t>(j < 128 ? j : 127);
-                frame.raw_points.push_back(rp);
-            }
-        }
-
-        ROS_INFO_THROTTLE(1.0,
-                          "[DBG-SCAN-2] raw_pts=%zu  (shots=%d)",
-                          frame.raw_points.size(), num_shots);
-
-        frame.source = 1;
-        frame.ros_stamp_ns = scan_start_stamp_ns(msg->timestamp, num_shots);
-        publish_velodyne_scan(std::move(frame));
+        publish_lidar_scan(cloud, msg->timestamp, "partial_scan");
     }
-    catch (const std::exception &e)
+    catch (const std::exception &error)
     {
-        ROS_ERROR("EXCEÇÃO no variable_scan_handler: %s", e.what());
+        ROS_ERROR("Erro ao converter partial_scan: %s", error.what());
+    }
+}
+
+// Convert variable scans directly, preserving per-shot channel counts.
+static void
+velodyne_variable_scan_handler(carmen_velodyne_variable_scan_message *msg)
+{
+    if (!msg || !msg->partial_scan || msg->number_of_shots <= 0)
+        return;
+    const int num_shots = msg->number_of_shots;
+    ROS_INFO_THROTTLE(1.0,
+                      "[DBG-SCAN-1] CARMEN->pointcloud: num_shots=%d  ts_carmen=%.3f",
+                      num_shots, msg->timestamp);
+    try
+    {
+        size_t point_count = 0;
+        for (int i = 0; i < num_shots; ++i)
+        {
+            const auto &shot = msg->partial_scan[i];
+            if (shot.shot_size > 0 && shot.shot_size <= lidar_shot_size && shot.distance)
+                point_count += shot.shot_size;
+        }
+        ROS_INFO_THROTTLE(1.0, "[DBG-SCAN-2] raw_pts=%zu  (shots=%d)", point_count, num_shots);
+        const ros::Time stamp = carmen_bridge::carmen_ns_to_ros_time(
+            scan_start_stamp_ns(msg->timestamp, num_shots));
+        if (point_count == 0)
+            return;
+        auto cloud = create_pointcloud(point_count, stamp);
+        for (int i = 0; i < num_shots; ++i)
+        {
+            const auto &shot = msg->partial_scan[i];
+            if (shot.shot_size <= 0 || shot.shot_size > lidar_shot_size || !shot.distance)
+                continue;
+            float az_deg = shot.angle;
+            float az_rad = -az_deg * static_cast<float>(M_PI) / 180.0f;
+            float cos_az = std::cos(az_rad);
+            float sin_az = std::sin(az_rad);
+            for (int j = 0; j < shot.shot_size; ++j)
+            {
+                uint8_t intensity = shot.intensity ? static_cast<uint8_t>(shot.intensity[j]) : 0;
+                append_point(cloud, shot.distance[j], intensity, j, i, shot.shot_size, cos_az, sin_az);
+            }
+        }
+        publish_lidar_scan(cloud, msg->timestamp, "variable_scan:" + std::to_string(lidar_sensor_id));
+    }
+    catch (const std::exception &error)
+    {
+        ROS_ERROR("Erro ao converter variable_scan: %s", error.what());
     }
 }
 
@@ -484,8 +398,8 @@ read_parameters(int argc, char **argv)
     carmen_param_allow_unfound_variables(0);
     try
     {
-        if (lidar_shot_size <= 0 || lidar_shot_size > max_rays)
-            throw std::runtime_error("shot_size deve estar entre 1 e " + std::to_string(max_rays));
+        if (lidar_shot_size <= 0)
+            throw std::runtime_error("shot_size deve ser positivo");
         if (range_division_factor <= 0)
             throw std::runtime_error("range_division_factor deve ser positivo");
         if (!std::isfinite(lidar_max_range) || lidar_max_range <= 0.0)
@@ -554,15 +468,14 @@ main(int argc, char **argv)
 {
     ros::init(argc, argv, "carmen_to_ros_lidar_raw", ros::init_options::NoSigintHandler);
     ros::NodeHandle node;
-    setup_publishers(node);
+    carmen_ipc_initialize(argc, argv);
+    read_parameters(argc, argv);
     if (!ros::ok())
     {
         IPC_disconnect();
         return 1;
     }
-
-    read_parameters(argc, argv);
-    carmen_ipc_initialize(argc, argv);
+    setup_publishers(node);
     signal(SIGINT, shutdown_module);
     signal(SIGTERM, shutdown_module);
     subscribe_to_ipc_message();

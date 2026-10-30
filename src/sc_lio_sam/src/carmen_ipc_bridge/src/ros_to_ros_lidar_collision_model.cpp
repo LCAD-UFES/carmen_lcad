@@ -1031,19 +1031,18 @@ main(int argc, char **argv)
 {
     ros::init(argc, argv, "ros_to_ros_lidar_collision_model", ros::init_options::NoSigintHandler);
     ros::NodeHandle node;
-    setup_publishers(node);
-    ros::Subscriber points_raw_subscriber = node.subscribe("/points_raw", 5, points_raw_handler);
-    ros::WallTimer car_model_timer;
-    if (publish_car_model)
-        car_model_timer = node.createWallTimer(ros::WallDuration(1.0), car_model_timer_handler);
+    carmen_ipc_initialize(argc, argv);
+    read_parameters(argc, argv);
     if (!ros::ok())
     {
         IPC_disconnect();
         return 1;
     }
-    
-    read_parameters(argc, argv);
-    carmen_ipc_initialize(argc, argv);
+    setup_publishers(node);
+    ros::Subscriber points_raw_subscriber = node.subscribe("/points_raw", 5, points_raw_handler);
+    ros::WallTimer car_model_timer;
+    if (publish_car_model)
+        car_model_timer = node.createWallTimer(ros::WallDuration(1.0), car_model_timer_handler);
     signal(SIGINT, shutdown_module);
     signal(SIGTERM, shutdown_module);
     setup_collision_filter();
