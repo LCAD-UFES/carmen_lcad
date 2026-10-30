@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>carmen_ipc_bridge</name>
+  <name>carmen_ros_bridge</name>
   <version>0.0.0</version>
   <description>
     Bridge CARMEN IPC -> ROS1 (Noetic). Publica /velodyne_raw_ipc, /scan e

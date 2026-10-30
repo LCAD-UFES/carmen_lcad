@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(carmen_ipc_bridge)
+project(carmen_ros_bridge)
 
 option(MAKE_IN_CARMEn "Build against the Carmen APIs instead of Astro" OFF)
 if(MAKE_IN_CARMEn)

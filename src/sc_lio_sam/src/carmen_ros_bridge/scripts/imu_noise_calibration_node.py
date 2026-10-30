@@ -12,7 +12,7 @@ parado), igual o campo "imuGravity" que ja existe comentado no seu yaml.
 Como usar:
   1. Deixa o sensor PARADO numa superficie estavel (bancada, chao).
   2. chmod +x imu_noise_calibration_node.py
-  3. rosrun carmen_ipc_bridge imu_noise_calibration_node.py _duration:=1800
+  3. rosrun carmen_ros_bridge imu_noise_calibration_node.py _duration:=1800
      (ou solta sem _duration e aperta Ctrl+C quando quiser fechar --
       calcula com o que tiver coletado ate ali)
   4. Ele imprime o bloco pronto pra colar no lio_sam.yaml.

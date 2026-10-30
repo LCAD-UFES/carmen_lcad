@@ -1,4 +1,4 @@
-#include "carmen_ipc_bridge/platform.hpp"
+#include "carmen_ros_bridge/platform.hpp"
 /*
  * fused_odometry_from_slam_node.cpp  (ROS1 / Noetic)
  *
@@ -66,7 +66,7 @@
 #include <memory>
 
 
-#include "carmen_ipc_bridge/carmen_time.hpp"
+#include "carmen_ros_bridge/carmen_time.hpp"
 
 // Forward decl: o handler IPC do clique "posicionar robo" (navigator_gui/
 // viewer_3D) e' um free function (CARMEN_EXTERN_FUNCTION/carmen_handler_t nao

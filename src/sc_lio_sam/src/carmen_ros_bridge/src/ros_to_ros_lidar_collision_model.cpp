@@ -1,4 +1,4 @@
-#include "carmen_ipc_bridge/platform.hpp"
+#include "carmen_ros_bridge/platform.hpp"
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -17,7 +17,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include "carmen_ipc_bridge/carmen_time.hpp"
+#include "carmen_ros_bridge/carmen_time.hpp"
 #include <csignal>
 
 struct trailer_model

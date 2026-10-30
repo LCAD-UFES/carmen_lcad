@@ -1,4 +1,4 @@
-#include "carmen_ipc_bridge/platform.hpp"
+#include "carmen_ros_bridge/platform.hpp"
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <rosgraph_msgs/Clock.h>
@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "carmen_ipc_bridge/carmen_time.hpp"
+#include "carmen_ros_bridge/carmen_time.hpp"
 #include <csignal>
 #include <sstream>
 #include <stdexcept>

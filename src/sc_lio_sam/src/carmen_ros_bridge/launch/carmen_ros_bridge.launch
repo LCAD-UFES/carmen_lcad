@@ -19,22 +19,22 @@
        deixo os dois aqui; muda pra [1] se quiser rodar só com uma. -->
   <arg name="gps_nrs" default="[1, 2]" />
 
-  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_gps_nmea" name="carmen_to_ros_gps_nmea" output="screen">
+  <node pkg="carmen_ros_bridge" type="carmen_to_ros_gps_nmea" name="carmen_to_ros_gps_nmea" output="screen">
     <param name="gps_frame_id" value="utm" />
     <param name="publish_gps" value="$(arg publish_gps)" />
   </node>
 
-  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_gps_xyz" name="carmen_to_ros_gps_xyz" output="screen">
+  <node pkg="carmen_ros_bridge" type="carmen_to_ros_gps_xyz" name="carmen_to_ros_gps_xyz" output="screen">
     <param name="gps_frame_id" value="utm" />
     <param name="publish_gps" value="$(arg publish_gps)" />
   </node>
 
-  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_odometry" name="carmen_to_ros_odometry" output="screen">
+  <node pkg="carmen_ros_bridge" type="carmen_to_ros_odometry" name="carmen_to_ros_odometry" output="screen">
     <param name="base_frame_id" value="base_link" />
     <param name="publish_ackermann" value="$(arg publish_ackermann)" />
   </node>
 
-  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_imu_xsens" name="carmen_to_ros_imu_xsens" output="screen">
+  <node pkg="carmen_ros_bridge" type="carmen_to_ros_imu_xsens" name="carmen_to_ros_imu_xsens" output="screen">
     <param name="base_frame_id" value="base_link" />
     <param name="imu_frame_id" value="imu_link" />
     <param name="publish_imu" value="$(arg publish_imu)" />
@@ -42,7 +42,7 @@
     <param name="ipc_host" value="$(arg ipc_host)" />
   </node>
 
-  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_imu_lidar" name="carmen_to_ros_imu_lidar" output="screen">
+  <node pkg="carmen_ros_bridge" type="carmen_to_ros_imu_lidar" name="carmen_to_ros_imu_lidar" output="screen">
     <param name="warn_on_xsens" value="$(arg warn_on_xsens)" />
     <param name="lidar_imu_sensor_id" value="$(arg lidar_sensor_id)" />
     <param name="base_frame_id" value="base_link" />
@@ -52,13 +52,13 @@
     <param name="ipc_host" value="$(arg ipc_host)" />
   </node>
 
-  <node pkg="carmen_ipc_bridge" type="carmen_to_ros_lidar_raw" name="carmen_to_ros_lidar_raw" output="screen">
+  <node pkg="carmen_ros_bridge" type="carmen_to_ros_lidar_raw" name="carmen_to_ros_lidar_raw" output="screen">
     <param name="laser_frame_id" value="velodyne" />
     <param name="lidar_sensor_id" value="$(arg lidar_sensor_id)" />
     <param name="use_exact_lidar_timestamp" value="$(arg use_exact_lidar_timestamp)" />
   </node>
 
-  <node pkg="carmen_ipc_bridge" type="ros_to_ros_lidar_collision_model" name="ros_to_ros_lidar_collision_model" output="screen">
+  <node pkg="carmen_ros_bridge" type="ros_to_ros_lidar_collision_model" name="ros_to_ros_lidar_collision_model" output="screen">
     <param name="base_frame_id" value="base_link" />
     <param name="laser_frame_id" value="velodyne" />
     <param name="lidar_sensor_id" value="$(arg lidar_sensor_id)" />
@@ -67,7 +67,7 @@
   <!-- Fusão/correção de GPS (lê /gps/xyz_raw/gps_<nr> + /gps/heading_raw +
        /ackermann/odom_raw, aplica o braço de alavanca lido do param_daemon
        e publica /odometry/gps; é isso que o SC-LIO-SAM consome. -->
-  <node pkg="carmen_ipc_bridge" type="gps_localization_node" name="gps_localization_node" output="screen">
+  <node pkg="carmen_ros_bridge" type="gps_localization_node" name="gps_localization_node" output="screen">
     <rosparam param="gps_nrs" subst_value="true">$(arg gps_nrs)</rosparam>
     <param name="lio_sam_gps_topic"   value="/odometry/gps" />
     <param name="gps_output_frame_id" value="utm" />

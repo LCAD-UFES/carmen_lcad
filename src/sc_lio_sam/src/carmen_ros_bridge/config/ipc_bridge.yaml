@@ -1,6 +1,6 @@
 # ipc_bridge.yaml  (ROS1 / Noetic)
 #
-# Configuração do carmen_ipc_bridge para uso com LIO-SAM + Hesai XT-32.
+# Configuração do carmen_ros_bridge para uso com LIO-SAM + Hesai XT-32.
 # Formato ROS1: chaves FLAT (sem "ros__parameters:" do ROS2) — carregadas
 # dentro do namespace privado do nó via <rosparam file="..." command="load"/>
 # colocado DENTRO da tag <node> no .launch.

@@ -1,12 +1,12 @@
-#include "carmen_ipc_bridge/platform.hpp"
+#include "carmen_ros_bridge/platform.hpp"
 /*
  * gps_localization_node.cpp  (ROS1 / Noetic)
  *
  * Ver gps_localization_node.hpp pra explicação do algoritmo.
  */
 
-#include "carmen_ipc_bridge/gps_localization_node.hpp"
-#include "carmen_ipc_bridge/carmen_time.hpp"
+#include "carmen_ros_bridge/gps_localization_node.hpp"
+#include "carmen_ros_bridge/carmen_time.hpp"
 #include <tf2/utils.h>
 #include <cmath>
 #include <algorithm>
