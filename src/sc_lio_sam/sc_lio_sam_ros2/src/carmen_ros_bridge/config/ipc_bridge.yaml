@@ -1,0 +1,17 @@
+# Optional native ROS2 node parameters; collision heights use the vehicle YAML.
+carmen_to_ros_lidar_raw:
+  ros__parameters:
+    laser_frame_id: velodyne
+    lidar_sensor_id: 5
+    use_exact_lidar_timestamp: false
+carmen_to_ros_imu_xsens:
+  ros__parameters:
+    imu_frame_id: imu_link
+    imu_rotation: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+carmen_to_ros_imu_lidar:
+  ros__parameters:
+    imu_frame_id: imu_link
+    lidar_imu_sensor_id: 5
+    warn_on_xsens: true
+    xsens_node_name: carmen_to_ros_imu_xsens
+    imu_rotation: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
