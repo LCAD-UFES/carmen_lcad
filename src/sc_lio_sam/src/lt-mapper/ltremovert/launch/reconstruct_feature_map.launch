@@ -1,4 +1,0 @@
-<launch>
-  <rosparam file="$(find removert)/config/params_reconstruct.yaml" command="load" />
-  <node pkg="removert" type="removert_reconstruct_feature_map" name="reconstruct_feature_map" output="screen" />
-</launch>

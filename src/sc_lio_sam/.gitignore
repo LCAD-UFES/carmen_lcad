@@ -1,9 +1,0 @@
-# Workspace catkin: gerados por catkin_make, nao versionados
-build/
-devel/
-.catkin_tools/
-.catkin_workspace
-src/CMakeLists.txt
-
-# Generated artifacts retained only for relocation rollback.
-/relocation_build_backup/

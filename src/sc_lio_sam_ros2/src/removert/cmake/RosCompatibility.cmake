@@ -1,0 +1,13 @@
+# Keep packages buildable with Foxy exports and modern ament imported targets.
+function(target_ros_dependencies target)
+  if(COMMAND ament_target_dependencies)
+    ament_target_dependencies(${target} PUBLIC ${ARGN})
+  else()
+    foreach(dependency IN LISTS ARGN)
+      if(NOT ${dependency}_TARGETS)
+        message(FATAL_ERROR "${dependency} does not export CMake targets")
+      endif()
+      target_link_libraries(${target} PRIVATE ${${dependency}_TARGETS})
+    endforeach()
+  endif()
+endfunction()

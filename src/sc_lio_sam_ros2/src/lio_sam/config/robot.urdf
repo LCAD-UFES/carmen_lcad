@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<robot name="lio">
+
+  <link name="base_link"></link>
+
+  <link name="imu_link"> </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="imu_link" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+</robot>

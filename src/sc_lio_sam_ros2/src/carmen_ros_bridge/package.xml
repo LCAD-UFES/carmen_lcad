@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>carmen_ros_bridge</name>
+  <version>0.1.0</version>
+  <description>Native CARMEN IPC and ROS2 sensor, odometry and localization interfaces.</description>
+  <maintainer email="eduardo.abreu@lcad.inf.ufes.br">eduardo</maintainer>
+  <license>TODO: License declaration</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>rcl_interfaces</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>rosgraph_msgs</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>boost</depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>rosidl_runtime_py</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>lio_sam</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ros2launch</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

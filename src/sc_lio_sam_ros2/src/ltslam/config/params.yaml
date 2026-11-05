@@ -1,0 +1,17 @@
+ltslam:
+  sessions_dir: /dados/sc_lio_sam_output/
+  central_sess_name: ype_amparo_atego1730-3
+  query_sess_name: ype_amparo_atego1730
+  save_directory: ''
+  is_display_debug_msgs: true
+  loopFitnessScoreThreshold: 0.3
+  kNumSCLoopsUpperBound: 500000
+  kNumRSLoopsUpperBound: 500000
+  numberOfCores: 16
+  query_anchor_init_x: 0.0
+  query_anchor_init_y: 0.0
+  query_anchor_init_z: 0.0
+  query_anchor_init_yaw_deg: 3.141592653589793
+  scDistThres: 0.6
+  scNumCandidates: 60
+  rsSearchRadius: 300.0

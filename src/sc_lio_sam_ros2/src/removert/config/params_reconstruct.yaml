@@ -1,0 +1,57 @@
+map_reconstruct:
+  output_dir: ''
+  corner_leaf_size: 0.2
+  surf_leaf_size: 0.4
+  global_leaf_size: 0.3
+  scan_predownsample_leaf: 0.1
+  feature_knn: 18
+  linearity_thresh: 0.6
+  planarity_thresh: 0.6
+  accumulate_flush_every: 50
+  use_precomputed_global_map: true
+  precomputed_global_map_path: /dados/sc_lio_sam_output/mapa_final_limpo-ype/updated_map.pcd
+removert:
+  isScanFileKITTIFormat: false
+  saveMapPCD: true
+  saveCleanScansPCD: true
+  save_pcd_directory: ''
+  central_sess_scan_dir: /dados/sc_lio_sam_output/ype_amparo_atego1730-2/Scans/
+  central_sess_pose_path: /dados/sc_lio_sam_output/mapa_alinhado-ype/ype_amparo_atego1730-2_central_aft_intersession_loops.txt
+  query_sess_scan_dir: /dados/sc_lio_sam_output/ype_amparo_atego1730-1/Scans/
+  query_sess_pose_path: /dados/sc_lio_sam_output/mapa_alinhado-ype/ype_amparo_atego1730-1_central_aft_intersession_loops.txt
+  sequence_vfov: 32
+  sequence_hfov: 360
+  ExtrinsicLiDARtoPoseBase:
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  use_keyframe_gap: true
+  keyframe_gap: 1
+  start_idx: 0
+  end_idx: 10000000
+  clean_for_all_scan: true
+  batch_size: 150
+  valid_ratio_to_save: 0.75
+  remove_resolution_list:
+  - 1.5
+  revert_resolution_list:
+  - 1.5
+  downsample_voxel_size: 0.05
+  num_nn_points_within: 2
+  dist_nn_points_within: 0.2
+  num_omp_cores: 8
+  rimg_color_min: 0.0
+  rimg_color_max: 20.0
