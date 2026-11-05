@@ -4,3 +4,6 @@ devel/
 .catkin_tools/
 .catkin_workspace
 src/CMakeLists.txt
+
+# Generated artifacts retained only for relocation rollback.
+/relocation_build_backup/

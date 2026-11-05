@@ -1,5 +1,9 @@
 # SC-LIO-SAM
 
+A versão ativa ROS2 está em `~/carmen_lcad/src/sc_lio_sam_ros2`. Consulte o README
+desse workspace e `doc/realocacao_ros2.md`. As instruções abaixo descrevem
+o workspace histórico.
+
 > Technical Responsible: Eduardo Piassaroli de Abreu, Miguel Victoria
 
 *******
@@ -207,7 +211,7 @@ orientation with high uncertainty; Astro retains the receiver's `theta`.
 The launch starts this node automatically. Private parameters are
 `gps_frame_id` (default `utm`) and `publish_gps`. IPC uses the inherited
 `CENTRALHOST`, with a single processing loop and no ROS spin. GPS heading
-is published by `carmen_to_ros_gps_nmea`; `gps_localization_node` still performs fusion.
+is published by `carmen_to_ros_gps_nmea`; `ros_to_ros_gps_msg_to_gps_odometry` still performs fusion.
 
 ### GPS NMEA bridge
 

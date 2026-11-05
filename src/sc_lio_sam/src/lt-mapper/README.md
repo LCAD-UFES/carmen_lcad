@@ -1,3 +1,10 @@
+# ROS2 version
+
+The active native ROS2 packages are in `~/carmen_lcad/src/sc_lio_sam_ros2/src/ltslam`
+and `~/carmen_lcad/src/sc_lio_sam_ros2/src/removert`. Execution and validation are
+in `~/carmen_lcad/src/sc_lio_sam_ros2/doc/ltmapper_ros2.md`.
+The ROS1 sources below are retained as a comparison reference.
+
 # LT-mapper: A Modular Framework for LiDAR-based Lifelong Mapping
 
 

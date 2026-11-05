@@ -18,7 +18,7 @@
 set -u
 
 # Nós do sc_lio_sam + o que o ROS sobe sozinho.
-PATTERNS='roslaunch|rosmaster|roscore|rosout|rviz|robot_state_publisher|ipc_bridge_node|pointcloud_node|gps_localization_node|fused_odometry_from_slam_node|lio_sam_(imageProjection|featureExtraction|imuPreintegration|mapOptmization)|ltslam_ltslam|removert_'
+PATTERNS='roslaunch|rosmaster|roscore|rosout|rviz|robot_state_publisher|ipc_bridge_node|pointcloud_node|ros_to_ros_gps_msg_to_gps_odometry|fused_odometry_from_slam_node|ros_to_carmen_globalpos|lio_sam_(imageProjection|featureExtraction|imuPreintegration|mapOptmization)|ltslam_ltslam|removert_'
 
 # Exclui a si mesmo E toda a ancestralidade (o bash que chamou o script casa
 # com o padrao porque a linha de comando dele contem o nome do script).

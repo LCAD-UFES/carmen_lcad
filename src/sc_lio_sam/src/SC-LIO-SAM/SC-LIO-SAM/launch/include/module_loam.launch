@@ -2,9 +2,9 @@
 
     <arg name="project" default="lio_sam"/>
     
-    <node pkg="$(arg project)" type="$(arg project)_imuPreintegration"   name="$(arg project)_imuPreintegration"    output="screen" 	respawn="true"/>
-    <node pkg="$(arg project)" type="$(arg project)_imageProjection"     name="$(arg project)_imageProjection"      output="screen"     respawn="true"/>
-    <node pkg="$(arg project)" type="$(arg project)_featureExtraction"   name="$(arg project)_featureExtraction"    output="screen"     respawn="true"/>
+    <node pkg="$(arg project)" type="run_lio_sam_ros2.py"   name="$(arg project)_imuPreintegration"    output="screen" 	respawn="true"/>
+    <node pkg="$(arg project)" type="run_lio_sam_ros2.py" args="--executable lio_sam_imageProjection"     name="$(arg project)_imageProjection"      output="screen"     respawn="true"/>
+    <node pkg="$(arg project)" type="run_lio_sam_ros2.py" args="--executable lio_sam_featureExtraction"   name="$(arg project)_featureExtraction"    output="screen"     respawn="true"/>
     <node pkg="$(arg project)" type="$(arg project)_mapOptmization"      name="$(arg project)_mapOptmization"       output="screen"     respawn="true"/>
     
 </launch>

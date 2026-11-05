@@ -4,7 +4,7 @@ lio_sam:
   pointCloudTopic: "/points_raw_no_vehicle"   # nuvem ja' sem os pontos sobre o veiculo
   imuTopic: "/imu_raw"                        # IMU cru
   odomTopic: "odometry/imu"                   # odometria da pre-integracao do IMU
-  gpsTopic: "odometry/gps"                    # GPS fundido (UTM) do gps_localization_node
+  gpsTopic: "odometry/gps"                    # GPS fundido (UTM) do ros_to_ros_gps_msg_to_gps_odometry
   ackermannTopic: "/ackermann/odom_raw"       # v e phi do bridge (TwistStamped)
 
   # ── Odometria de predicao ──────────────────────────────────────────────
@@ -26,7 +26,7 @@ lio_sam:
   # ── GPS ────────────────────────────────────────────────────────────────
   useImuHeadingInitialization: true   # inicializa o rumo pelo IMU
   useGpsElevation: true               # usa a altitude do GPS
-  gpsCovThreshold: 2.0                # m^2, limiar pra aceitar fix no grafo
+  gpsCovThreshold: 2000.0                # m^2, limiar pra aceitar fix no grafo
   poseCovThreshold: 25.0              # m^2, limiar da covariancia da pose SLAM
   gpsAnchorIgnoreCov: false           # DEBUG: ignora o limiar so' pra gravar gps_utm_anchor.txt
 
@@ -142,8 +142,17 @@ lio_sam:
   globalMapVisualizationPoseDensity: 10.0     # m, espacamento das poses amostradas
   globalMapVisualizationLeafSize: 0.01        # m, voxel do downsample da visualizacao
 
-ipc_bridge:
+carmen_ros_bridge:
   # Vehicle collision cylinders: heights and radius margin in meters.
   robot_collision_height: 2.5          # m, do chao ao topo dos cilindros do caminhao
   semi_trailer_collision_height: 5.0   # m, idem para o semi-reboque
   collision_safety_margin: 0.25        # m, somado ao raio de todos os circulos
+
+  # GPS XYZ: desvios padrão horizontais em metros; a variância publicada é sigma².
+  gps_sigma_xy_quality_1: 5.0    # gps_quality = 1
+  gps_sigma_xy_quality_2: 1.0    # gps_quality = 2
+  gps_sigma_xy_quality_4: 0.02   # gps_quality = 4
+  gps_sigma_xy_quality_5: 0.20   # gps_quality = 5
+  gps_sigma_xy_default: 50.0    # Demais qualidades >= 1; valores < 1 são descartados.
+  # Fator adimensional: sigma_z = sigma_xy * fator; variância Z = sigma_z².
+  gps_sigma_z_multiplier: 3.0

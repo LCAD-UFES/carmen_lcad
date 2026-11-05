@@ -1497,12 +1497,12 @@ public:
     }
 
     // FIX: a ancora GPS<->mapa agora é responsabilidade do SC-LIO-SAM (antes
-    // era do gps_localization_node, que precisava correlacionar com a
+    // era do ros_to_ros_gps_msg_to_gps_odometry, que precisava correlacionar com a
     // odometria local do LIO-SAM -- em localizationMode essa odometria
     // começa ERRADA (semente do yaml) até o robô encaixar no mapa, um
-    // problema de ovo-e-galinha que corrompia a âncora). gps_localization_node
+    // problema de ovo-e-galinha que corrompia a âncora). ros_to_ros_gps_msg_to_gps_odometry
     // agora só funde antena+heading+latência e publica RAW, sem tentar
-    // ancorar em frame nenhum (ver gps_localization_node.cpp). Essa classe:
+    // ancorar em frame nenhum (ver ros_to_ros_gps_msg_to_gps_odometry.cpp). Essa classe:
     //   - MAPEAMENTO: âncora UMA VEZ contra a própria pose SLAM (sempre
     //     confiável aqui, sendo construída do zero) assim que tiver GPS bom
     //     o suficiente; grava em savePCDDirectory/gps_utm_anchor.txt junto
@@ -1585,7 +1585,7 @@ public:
 
         // ===== FRAME DO FIX x FRAME DA POSE SLAM =====
         //
-        // O fix vem do gps_localization_node ja' com o braco de alavanca da antena
+        // O fix vem do ros_to_ros_gps_msg_to_gps_odometry ja' com o braco de alavanca da antena
         // aplicado: e' a pose do BASE_LINK (centro do eixo traseiro -- o mesmo ponto
         // que o modelo Ackermann usa como origem). Ja' transformTobeMapped e' a pose
         // do LIDAR. Misturar os dois insere um erro do tamanho do braco base_link->
@@ -4695,7 +4695,7 @@ public:
         }
 
         // Pose do carro em UTM: ja' vem com o braco de alavanca da antena
-        // aplicado pelo gps_localization_node, e a orientacao e' o rumo.
+        // aplicado pelo ros_to_ros_gps_msg_to_gps_odometry, e a orientacao e' o rumo.
         tf::Quaternion q_utm;
         tf::quaternionMsgToTF(gpsMsg->pose.pose.orientation, q_utm);
         double utmRoll, utmPitch, utmYaw;

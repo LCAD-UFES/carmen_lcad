@@ -186,7 +186,7 @@ lio_sam:
   globalMapVisualizationPoseDensity: 10.0     # m, espacamento das poses amostradas
   globalMapVisualizationLeafSize: 0.01        # m, voxel do downsample da visualizacao
 
-ipc_bridge:
+carmen_ros_bridge:
   # Vehicle collision cylinders: heights and radius margin in meters.
   robot_collision_height: 0.70         # m, do chao ao topo do robo
   semi_trailer_collision_height: 0.70  # m, sem reboque: repete o valor acima (nao pode ser 0)
