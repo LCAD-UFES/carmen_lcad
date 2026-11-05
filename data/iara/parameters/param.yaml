@@ -37,7 +37,7 @@ lio_sam:
   numberOfCores: 12
   mappingProcessInterval: 0.015  # Intervalo mínimo entre scans processados [s].
 
-  # Localização: pose inicial de base_link no mapa [m, rad]
+  # Localização pose inicial de base_link no mapa [m, rad]
   localizationMode: true  # Ignorado pelos launches ROS 2; passe via linha de comando.
   initialPoseX: 0.0
   initialPoseY: 0.0
@@ -46,17 +46,17 @@ lio_sam:
   initialPosePitch: 0.0
   initialPoseYaw: 0.0
 
-  # poses_opt.dat: grava após o encaixe no mapa, em localização
+  # poses_opt.dat grava após o encaixe no mapa, em localização
   posesEnable: true
   posesOutputFile: "/dados/sc_lio_sam_output/poses_opt.dat"
   posesStartTime: 0.0  # Timestamp ROS mínimo [s]; 0 desativa o corte.
   posesSettleScans: 20  # Scans descartados após cada encaixe.
   posesInterpolateMaxError: 0.10  # Erro máximo da interpolação [m].
   posesInterpolateMaxGap: 5.0  # Intervalo máximo [s]; 0 desativa a interpolação.
-  posesAstroStampTopic: "/astro/scan_time_reference"  # Referência de tempo ASTRO/ROS.
+  posesCarmenStampTopic: "/carmen/scan_time_reference"  # Referência de tempo CARMEN/ROS.
   posesAckermannTopic: "/ackermann/odom_raw"  # Preenche odometry_ts; sem mensagem, usa -1.
 
-  # Origem: x=northing, y=-easting [m]; yaw relativo [rad]
+  # Origem x=northing, y=-easting [m]; yaw relativo [rad]
   posesOriginMode: "gps"  # manual | gps; manual usa posesOrigin*.
   # Origem manual: manter |x| >= 1000000 para publicar globalpos.
   posesOriginX: 1000000.0
@@ -136,12 +136,12 @@ lio_sam:
 
 carmen_ros_bridge:
 
-  # Colisão: alturas e margem dos cilindros [m]
+  # Colisão alturas e margem dos cilindros [m]
   robot_collision_height: 2.5
   semi_trailer_collision_height: 5.0
   collision_safety_margin: 0.25
 
-  # GPS XYZ: sigma horizontal [m]; covariância = sigma²
+  # GPS XYZ sigma horizontal [m]; covariância = sigma²
   gps_sigma_xy_quality_1: 5.0
   gps_sigma_xy_quality_2: 1.0
   gps_sigma_xy_quality_4: 0.02
