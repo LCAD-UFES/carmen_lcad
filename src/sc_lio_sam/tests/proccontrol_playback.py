@@ -17,8 +17,8 @@ parser.add_argument('--allow-rviz-shutdown-crash', action='store_true')
 parser.add_argument('--require-nvidia-rendering', action='store_true')
 args = parser.parse_args()
 carmen = Path(os.environ.get('CARMEN_HOME', str(Path.home() / 'carmen_lcad')))
-source = carmen / ('data/iara/process/process-playback_iara-sc.ini' if args.vehicle == 'iara'
-                   else 'bin/argos/process-argos-playback-lio-sam.ini')
+source = carmen / ('data/iara/process/process-iara-playback-sc-3d-slam.ini' if args.vehicle == 'iara'
+                   else 'bin/argos/process-argos-playback-sc-3d-slam.ini')
 logs = Path(tempfile.mkdtemp(prefix='proccontrol-' + args.vehicle + '-'))
 print('Results:', logs, flush=True)
 # Preserve module commands and startup flags; redirect their log files only.

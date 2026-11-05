@@ -77,7 +77,7 @@ troque `lyrical` por `foxy` no comando abaixo:
 
 ```bash
 source /opt/ros/lyrical/setup.bash
-cd "$CARMEN_HOME/src/sc_lio_sam_ros2"
+cd "$CARMEN_HOME/src/sc_lio_sam"
 MAKEFLAGS=-j2 colcon build --parallel-workers 1
 ```
 
@@ -89,6 +89,23 @@ no launch.
 
 ## Executar com proccontrol
 
+### Padrão de nomes dos processos
+
+Substitua `robo` por `argos` ou `iara` ao criar um processo:
+
+| Nome | Finalidade |
+|---|---|
+| `process-robo-playback-sc-3d-slam.ini` | Gera mapa 3D |
+| `process-robo-playback-sc-poses-opt.ini` | Gera `poses_opt` |
+| `process-robo-playback-sc-2d-slam.ini` | Gera mapa 2D |
+| `process-robo-playback-sc-localize.ini` | Localiza em mapa 3D durante playback |
+| `process-robo-sc-globalpos.ini` | Navegação autônoma em mapa 3D |
+
+Os processos principais ficam em `bin/argos` e `data/iara/process`.
+Para gerar `poses_opt`, configure `posesEnable: true` e `posesOutputFile`
+no YAML do veículo. Na IARA, ative o módulo `SC-LIO-SAM` no proccontrol nos
+processos `poses-opt`, `localize` e `sc-globalpos`, onde ele começa desligado.
+
 Antes de iniciar, ajuste no `.ini` os caminhos do log, do YAML, do
 `setup.bash` e de `SC_LIO_SAM_MAP_PATH`. Execute um processo por vez:
 
@@ -96,10 +113,10 @@ Antes de iniciar, ajuste no `.ini` os caminhos do log, do YAML, do
 cd ~/carmen_lcad/bin
 
 # IARA
-./proccontrol ../data/iara/process/process-playback_iara-sc.ini
+./proccontrol ../data/iara/process/process-iara-playback-sc-3d-slam.ini
 
 # Argos
-./proccontrol argos/process-argos-playback-lio-sam.ini
+./proccontrol argos/process-argos-playback-sc-3d-slam.ini
 ```
 
 Os processos iniciam os serviços CARMEN, o playback e os nós ROS 2.
@@ -119,7 +136,7 @@ Os YAMLs usados são:
 Os exemplos abaixo usam a IARA. Em um terminal, inicie a ponte:
 
 ```bash
-source ~/carmen_lcad/src/sc_lio_sam_ros2/setup.bash
+source ~/carmen_lcad/src/sc_lio_sam/setup.bash
 ros2 launch carmen_ros_bridge carmen_ros_bridge.launch.py \
   params_file:=$HOME/carmen_lcad/data/iara/parameters/param.yaml \
   lidar_sensor_id:=0 use_sim_time:=true
@@ -128,7 +145,7 @@ ros2 launch carmen_ros_bridge carmen_ros_bridge.launch.py \
 Em outro terminal, inicie o mapeamento:
 
 ```bash
-source ~/carmen_lcad/src/sc_lio_sam_ros2/setup.bash
+source ~/carmen_lcad/src/sc_lio_sam/setup.bash
 mkdir -p "$HOME/sc_lio_sam_output"
 ros2 launch lio_sam run.launch.py \
   params_file:=$HOME/carmen_lcad/data/iara/parameters/param.yaml \
@@ -175,10 +192,10 @@ Não é necessário executar sensores ou IPC nesta etapa.
 Exemplo em `/dados/ltmapper`; ajuste todos os caminhos se usar outra pasta:
 
 ```bash
-source ~/carmen_lcad/src/sc_lio_sam_ros2/setup.bash
+source ~/carmen_lcad/src/sc_lio_sam/setup.bash
 export LT_ROOT=/dados/ltmapper
 mkdir -p "$LT_ROOT/config" "$LT_ROOT/sessoes"
-cd ~/carmen_lcad/src/sc_lio_sam_ros2
+cd ~/carmen_lcad/src/sc_lio_sam
 cp src/ltslam/config/params.yaml "$LT_ROOT/config/ltslam.yaml"
 cp src/removert/config/params_ltmapper.yaml "$LT_ROOT/config/removert.yaml"
 cp src/removert/config/params_reconstruct.yaml "$LT_ROOT/config/reconstruct.yaml"
@@ -281,7 +298,7 @@ ros2 topic echo /odometry/gps --once
 Para verificar o workspace compilado, com o ambiente carregado:
 
 ```bash
-cd ~/carmen_lcad/src/sc_lio_sam_ros2
+cd ~/carmen_lcad/src/sc_lio_sam
 python3 tests/ros_compatibility.py
 python3 tests/run_scancontext_geometry_test.py
 python3 tests/gps_covariance_parameters.py
