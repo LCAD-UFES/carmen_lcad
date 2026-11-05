@@ -90,7 +90,7 @@ $CARMEN_HOME/data/pi_nit/venv/bin/python3 pi_nit_server.py \
 ```bash
 cd $CARMEN_HOME/bin
 ./central &
-./param_daemon argos/carmen-argos.ini &
+./param_daemon ../data/argos/parameters/carmen-argos.ini &
 
 # as 3 "cameras": o mesmo video publicado nas mensagens 3, 4 e 5
 for n in 3 4 5; do

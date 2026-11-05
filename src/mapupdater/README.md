@@ -160,7 +160,7 @@ Este erro ocorre quando o arquivo de modelo de colisão do robô não é encontr
 
 1. **Configurar o arquivo de colisão** no `carmen.ini`:
    ```ini
-   robot_collision_file argos/argos_col.txt
+   robot_collision_file ../data/argos/parameters/argos_col.txt
    ```
 
 2. **Criar um arquivo de colisão simples** (se não tiver um):

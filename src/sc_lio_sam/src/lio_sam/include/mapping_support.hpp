@@ -52,8 +52,7 @@ public:
     float ackermannCurvBiasDist;
     float poseCovThreshold;
     bool useGpu;
-    bool savePCD;
-    std::string savePCDDirectory;
+    std::string map_directory;
     bool localizationMode;
     float initialPoseX;
     float initialPoseY;
@@ -128,8 +127,7 @@ public:
         ackermannCurvBiasDist = mapping_numeric_parameter("ackermannCurvBiasDist", 0.0);
         poseCovThreshold = mapping_numeric_parameter("poseCovThreshold", 25.0);
         useGpu = node->declare_parameter<bool>("useGpu", false);
-        savePCD = node->declare_parameter<bool>("savePCD", false);
-        savePCDDirectory = node->declare_parameter<std::string>("savePCDDirectory", "/Downloads/LOAM/");
+        map_directory = node->declare_parameter<std::string>("map_directory");
         localizationMode = node->declare_parameter<bool>("localizationMode", false);
         initialPoseX = mapping_numeric_parameter("initialPoseX", 0.0);
         initialPoseY = mapping_numeric_parameter("initialPoseY", 0.0);

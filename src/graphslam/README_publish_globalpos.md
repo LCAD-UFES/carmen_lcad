@@ -137,12 +137,12 @@ aparece no `proccontrol_viewoutput` ou na janela de output do `proccontrol_gui`)
 
 ## `.ini` pronto: EE2
 
-`bin/argos/process-argos-EE2-globalpos.ini` roda o log `log_argos_EE_20260817-1.txt` com o
+`data/argos/process/process-argos-EE2-globalpos.ini` roda o log `log_argos_EE_20260817-1.txt` com o
 `poses_opt.dat` do EE2, **sem `localize_ackerman`**, com o gate de pose ligado e gravando a
 globalpos em `/dados/sc_lio_sam_output/EE2/globalpos_EE2.txt`:
 
 ```
-./proccontrol argos/process-argos-EE2-globalpos.ini
+./proccontrol ../data/argos/process/process-argos-EE2-globalpos.ini
 ```
 
 ### Reaproveitando um mapeamento antigo: `bin/optimized_poses_to_poses_opt.py`
@@ -173,7 +173,7 @@ Repare que **não há `localize_ackerman`**:
 
 ```ini
 SET LOG_PATH=/dados/logs_argos/log_argos_EE_20260817-1.txt
-SET PARAM_PATH=argos/carmen-argos.ini
+SET PARAM_PATH=../data/argos/parameters/carmen-argos.ini
 SET POSES_PATH=/dados/sc_lio_sam_output/EE2/poses_opt.dat
 SET MAP_FILES_PATH=/dados/sc_lio_sam_output/EE2/map2d
 
@@ -219,7 +219,7 @@ Limpe o `map_path` antes de cada rodada: blocos velhos em coordenadas erradas fa
 | `src/graphslam/graphslam_publish_globalpos_main.cpp` | **novo** |
 | `src/graphslam/Makefile` | novo alvo; `graphslam_publish` intacto |
 | `src/mapper/mapper.cpp` | gate de pose (desligado por padrão) + 3 parâmetros |
-| `bin/argos/process-argos-EE2-globalpos.ini` | **novo** — `.ini` de teste do EE2, sem `localize_ackerman` |
+| `data/argos/process/process-argos-EE2-globalpos.ini` | **novo** — `.ini` de teste do EE2, sem `localize_ackerman` |
 | `bin/optimized_poses_to_poses_opt.py` | **novo** — gera `poses_opt.dat` da saída crua do SC-LIO-SAM |
 | `src/grid_mapping/grid_mapping.c` | correção incidental: `full_map_path[100]` → `[1024]` em `carmen_grid_mapping_save_block_map_by_origin`. Um `map_path` com mais de ~80 caracteres estourava a pilha e matava o `mapper` com `*** buffer overflow detected ***`. A função irmã da linha 420 já usava 1024. |
 

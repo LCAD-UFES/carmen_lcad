@@ -21,14 +21,15 @@ def stop(p):
         try:p.wait(timeout=12)
         except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait();raise RuntimeError('shutdown timed out with paused clock')
 
-for name,path in [('iara','data/iara/parameters/param.yaml'),('argos','bin/argos/params_argos.yaml')]:
+for name,path in [('iara','data/iara/parameters/param.yaml'),('argos','data/argos/parameters/params_argos.yaml')]:
     config=yaml.safe_load((Path(os.environ.get('CARMEN_HOME', str(Path.home()/'carmen_lcad')))/path).read_text())
-    config['lio_sam'].update(posesEnable=False,posesOutputFile='',posesOriginMode='manual',
+    poses_file=logs/(name+'-poses_opt.dat');poses_file.write_text('existing poses must be preserved\n')
+    config['lio_sam'].update(posesEnable=True,posesOutputFile=str(poses_file),posesOriginMode='manual',
         lidarFrame='base_link',baselinkFrame='base_link',loopClosureEnableFlag=False)
     params=logs/(name+'.yaml');params.write_text(yaml.safe_dump(config))
     with (logs/(name+'.log')).open('w') as out:
         mapper=subprocess.Popen(ros2(['ros2','launch','lio_sam','map_optimization.launch.py',
-            'params_file:='+str(params),'savePCDDirectory:='+str(map_dir),'localizationMode:=true','use_sim_time:=true']),
+            'params_file:='+str(params),'map_directory:='+str(map_dir),'localizationMode:=true','posesEnable:=false','use_sim_time:=true']),
             stdout=out,stderr=subprocess.STDOUT,start_new_session=True)
     observer=None
     try:
@@ -48,5 +49,6 @@ for name,path in [('iara','data/iara/parameters/param.yaml'),('argos','bin/argos
         stop(mapper)
     assert mapper.returncode==0,(name,mapper.returncode,str(logs))
     assert hashes()==original,'Localization modified the saved map'
+    assert poses_file.read_text()=='existing poses must be preserved\n','Localization truncated the poses file'
     print('PASS',name,'shutdown while paused; map files unchanged',flush=True)
 print('Logs:',logs)

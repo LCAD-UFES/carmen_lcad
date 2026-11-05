@@ -1,60 +1,34 @@
-# Exemplo opcional de parâmetros ROS2 para executar os nós individualmente.
-# Uso (com o ambiente ROS2 e CARMEN preparado):
-# ros2 run carmen_ros_bridge carmen_to_ros_lidar_raw --ros-args --params-file /caminho/simple_example.yaml
-# Para uma IMU ou GPS, use o executável correspondente à seção abaixo.
-# Cada seção usa o nome do nó; ros__parameters contém seus parâmetros ROS2.
-# O launch carmen_ros_bridge.launch.py não carrega este exemplo automaticamente.
-# No launch, use os argumentos para configurar sensores/frames e params_file
-# para o YAML do veículo, com a seção carmen_ros_bridge de colisão e incerteza GPS.
-# Ajuste os IDs abaixo ao veículo; 5 é apenas um exemplo.
+# Nós individuais: ros2 run carmen_ros_bridge <nó> --ros-args --params-file <arquivo>.
+# Para o launch, use o YAML do veículo. Ajuste os IDs dos sensores.
 
 carmen_to_ros_lidar_raw:
   ros__parameters:
-    # Frame de referência informado no cabeçalho da nuvem de pontos publicada.
     laser_frame_id: velodyne
-    # ID do LiDAR no CARMEN: seleciona as mensagens e a seção lidar5 do param_daemon.
-    lidar_sensor_id: 5
-    # true: mantém o timestamp CARMEN de fim da varredura.
-    # false: subtrai a duração da varredura para estimar seu início.
-    use_exact_lidar_timestamp: false
+    lidar_sensor_id: 5  # ID CARMEN e seção lidarN do param_daemon.
+    use_exact_lidar_timestamp: false  # true: fim do scan; false: estima o início.
 
 carmen_to_ros_imu_xsens:
   ros__parameters:
-    # Frame de referência informado no cabeçalho das mensagens da IMU Xsens.
     imu_frame_id: imu_link
-    # Matriz 3x3 em ordem de linhas, aplicada à aceleração e à velocidade angular.
-    # A identidade preserva os eixos; o quaternion de orientação não é alterado.
-    imu_rotation: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    imu_rotation: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]  # Matriz 3×3 por linhas; gira aceleração e giroscópio, não a orientação.
 
 carmen_to_ros_imu_lidar:
   ros__parameters:
-    # Frame de referência informado no cabeçalho das mensagens da IMU do LiDAR.
     imu_frame_id: imu_link
-    # ID usado para assinar as mensagens IPC da IMU integrada ao LiDAR no CARMEN.
     lidar_imu_sensor_id: 5
-    # Avisa se a IMU do LiDAR já publicou e o nó Xsens também publica em /imu_raw.
-    # Apenas emite aviso; não seleciona nem desativa sensores.
-    warn_on_xsens: true
-    # Nome do nó Xsens a identificar no aviso; um nome relativo usa o namespace atual.
-    xsens_node_name: carmen_to_ros_imu_xsens
-    # Matriz 3x3 em ordem de linhas, aplicada à aceleração e à velocidade angular.
-    # A identidade preserva os eixos; o quaternion de orientação não é alterado.
-    imu_rotation: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    warn_on_xsens: true  # Apenas avisa sobre duas IMUs em /imu_raw.
+    xsens_node_name: carmen_to_ros_imu_xsens  # Nó Xsens identificado no aviso.
+    imu_rotation: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]  # Matriz 3×3 por linhas; gira aceleração e giroscópio, não a orientação.
 
 carmen_to_ros_gps_xyz:
   ros__parameters:
-    # Frame global das posições GPS e habilitação da publicação.
     gps_frame_id: utm
     publish_gps: true
-    # Desvios padrão horizontais, em metros, selecionados pelo gps_quality.
-    # A covariância publicada em X e Y é o quadrado do desvio padrão.
+    # Incerteza GPS: sigmas XY [m], positivos e finitos; covariância = sigma².
+    # Valores lidos na inicialização; reinicie o nó após alterar.
     gps_sigma_xy_quality_1: 5.0
     gps_sigma_xy_quality_2: 1.0
     gps_sigma_xy_quality_4: 0.02
     gps_sigma_xy_quality_5: 0.20
-    # Demais qualidades >= 1; mensagens com gps_quality < 1 são descartadas.
-    gps_sigma_xy_default: 50.0
-    # Fator sem unidade: sigma_z = sigma_xy * fator, antes de elevar ao quadrado.
-    # Todos os parâmetros de incerteza devem ser finitos e positivos.
-    # São lidos na inicialização; reinicie o nó após alterar o arquivo.
-    gps_sigma_z_multiplier: 3.0
+    gps_sigma_xy_default: 50.0  # Demais qualidades >= 1; qualidade < 1 é descartada.
+    gps_sigma_z_multiplier: 3.0  # sigma_z = sigma_xy × fator.

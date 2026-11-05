@@ -87,6 +87,10 @@ não há toolkit. Para forçar CPU, acrescente
 Para usar a busca de mapa na GPU, passe `gpu:=true`
 no launch. 
 
+A GPU é controlada apenas pelo argumento opcional `gpu:=true` dos launches
+`run.launch.py` e `map_optimization.launch.py`, com padrão `false`.
+Não configure `useGpu` no YAML.
+
 ## Executar com proccontrol
 
 ### Padrão de nomes dos processos
@@ -101,10 +105,9 @@ Substitua `robo` por `argos` ou `iara` ao criar um processo:
 | `process-robo-playback-sc-localize.ini` | Localiza em mapa 3D durante playback |
 | `process-robo-sc-globalpos.ini` | Navegação autônoma em mapa 3D |
 
-Os processos principais ficam em `bin/argos` e `data/iara/process`.
+Os processos ficam em `data/argos/process` e `data/iara/process`.
 Para gerar `poses_opt`, configure `posesEnable: true` e `posesOutputFile`
-no YAML do veículo. Na IARA, ative o módulo `SC-LIO-SAM` no proccontrol nos
-processos `poses-opt`, `localize` e `sc-globalpos`, onde ele começa desligado.
+no YAML do veículo.
 
 Antes de iniciar, ajuste no `.ini` os caminhos do log, do YAML, do
 `setup.bash` e de `SC_LIO_SAM_MAP_PATH`. Execute um processo por vez:
@@ -116,7 +119,7 @@ cd ~/carmen_lcad/bin
 ./proccontrol ../data/iara/process/process-iara-playback-sc-3d-slam.ini
 
 # Argos
-./proccontrol argos/process-argos-playback-sc-3d-slam.ini
+./proccontrol ../data/argos/process/process-argos-playback-sc-3d-slam.ini
 ```
 
 Os processos iniciam os serviços CARMEN, o playback e os nós ROS 2.
@@ -131,7 +134,7 @@ Os YAMLs usados são:
 | Veículo | YAML | LiDAR | Relógio dos processos de playback |
 |---|---|---|---|
 | IARA | `~/carmen_lcad/data/iara/parameters/param.yaml` | ID 0 | `use_sim_time:=true` |
-| Argos | `~/carmen_lcad/bin/argos/params_argos.yaml` | ID 5 | `use_sim_time:=false` |
+| Argos | `~/carmen_lcad/data/argos/parameters/params_argos.yaml` | ID 5 | `use_sim_time:=true` |
 
 Os exemplos abaixo usam a IARA. Em um terminal, inicie a ponte:
 
@@ -139,7 +142,7 @@ Os exemplos abaixo usam a IARA. Em um terminal, inicie a ponte:
 source ~/carmen_lcad/src/sc_lio_sam/setup.bash
 ros2 launch carmen_ros_bridge carmen_ros_bridge.launch.py \
   params_file:=$HOME/carmen_lcad/data/iara/parameters/param.yaml \
-  lidar_sensor_id:=0 use_sim_time:=true
+  lidar_sensor_id:=0
 ```
 
 Em outro terminal, inicie o mapeamento:
@@ -149,8 +152,8 @@ source ~/carmen_lcad/src/sc_lio_sam/setup.bash
 mkdir -p "$HOME/sc_lio_sam_output"
 ros2 launch lio_sam run.launch.py \
   params_file:=$HOME/carmen_lcad/data/iara/parameters/param.yaml \
-  savePCDDirectory:=$HOME/sc_lio_sam_output/sessao_nova \
-  localizationMode:=false use_sim_time:=true
+  map_directory:=$HOME/sc_lio_sam_output/sessao_nova \
+  localizationMode:=false
 ```
 
 Para localizar em um mapa salvo, substitua o comando de mapeamento por:
@@ -158,21 +161,47 @@ Para localizar em um mapa salvo, substitua o comando de mapeamento por:
 ```bash
 ros2 launch lio_sam run.launch.py \
   params_file:=$HOME/carmen_lcad/data/iara/parameters/param.yaml \
-  savePCDDirectory:=$HOME/sc_lio_sam_output/mapa_existente \
-  localizationMode:=true use_sim_time:=true \
-  initialPoseX:=0.0 initialPoseY:=0.0 initialPoseZ:=0.0 \
-  initialPoseRoll:=0.0 initialPosePitch:=0.0 initialPoseYaw:=0.0
+  map_directory:=$HOME/sc_lio_sam_output/mapa_existente \
+  localizationMode:=true
 ```
 
-Ajuste a pose inicial no referencial do mapa: metros e radianos.
+`localizationMode:=true` ou `localizationMode:=false` é obrigatório nos launches
+`run.launch.py` e `map_optimization.launch.py`; o valor do YAML é ignorado.
+O diretório do mapa também é obrigatório na linha de comando, como
+`map_directory:=/caminho/do/mapa`, tanto para mapeamento quanto para localização.
+Ele não é lido do YAML.
+Com `localizationMode:=false`, os scans são gravados durante o mapeamento e o
+mapa é salvo ao encerrar normalmente. Com `localizationMode:=true`, o mapa
+existente é carregado e não é sobrescrito.
+Todos os launches do LIO-SAM também descartam `sensor` e
+`surroundingKeyframeSize` do YAML, pois não têm efeito no processamento atual.
+
+Ajuste a pose inicial na seção `lio_sam` do YAML do veículo, em metros e
+radianos no referencial do mapa:
+
+```yaml
+  initialPoseX: 0.0
+  initialPoseY: 0.0
+  initialPoseZ: 0.0
+  initialPoseRoll: 0.0
+  initialPosePitch: 0.0
+  initialPoseYaw: 0.0
+```
+
 Também é possível usar **2D Pose Estimate** no RViz.
 
-| Opção | Uso |
-|---|---|
-| `use_sim_time` | Use o mesmo valor na ponte e no SLAM |
-| `rviz:=false` | Executar sem interface gráfica |
-| `rviz_software_rendering:=true` | Alternativa quando houver falha no renderizador do RViz |
-| `gpu:=true` | Habilitar busca de mapa CUDA, se compilada |
+As opções abaixo são opcionais. Passe um valor apenas para mudar o padrão:
+
+| Opção | Padrão | Uso |
+|---|---|---|
+| `use_sim_time` | `true` | Tempo simulado na ponte e no SLAM |
+| `publish_imu` | `true` | Publicar IMU pela ponte |
+| `publish_gps` | `true` | Publicar GPS pela ponte |
+| `warn_on_xsens` | `true` | Avisar sobre publicação simultânea das IMUs |
+| `rviz` | `true` | Passe `false` para executar sem interface gráfica |
+| `rviz_software_rendering` | `false` | Passe `true` se precisar da renderização por software |
+| `gpu` | `false` | Passe `true` para habilitar a busca de mapa CUDA, se compilada |
+| `posesEnable` | Valor do YAML | Passe `false` para localizar sem gravar ou truncar `poses_opt.dat` |
 
 Os YAMLs precisam das seções `lio_sam` e `carmen_ros_bridge`, com calibração
 do LiDAR/IMU e geometria de colisão do veículo. Para listar os argumentos:
@@ -201,7 +230,7 @@ cp src/removert/config/params_ltmapper.yaml "$LT_ROOT/config/removert.yaml"
 cp src/removert/config/params_reconstruct.yaml "$LT_ROOT/config/reconstruct.yaml"
 ```
 
-Coloque as sessões gravadas com `savePCD:true` em `sessoes/central` e
+Coloque as sessões geradas com `localizationMode:=false` em `sessoes/central` e
 `sessoes/query`. Cada sessão deve conter `Scans/*.pcd`, `SCDs/*.scd`
 e `singlesession_posegraph.g2o`.
 
@@ -267,7 +296,7 @@ ros2 launch removert reconstruct_feature_map.launch.py \
   output_dir:=$LT_ROOT/localizacao
 ```
 
-Use `$LT_ROOT/localizacao` como `savePCDDirectory` com
+Use `$LT_ROOT/localizacao` como `map_directory` com
 `localizationMode:=true`. Use pastas novas nas etapas 3 e 4 para evitar
 arquivos antigos misturados aos resultados.
 
@@ -299,6 +328,9 @@ Para verificar o workspace compilado, com o ambiente carregado:
 
 ```bash
 cd ~/carmen_lcad/src/sc_lio_sam
+python3 tests/launch_initial_pose.py
+python3 tests/launch_defaults.py
+python3 tests/mapping_mode_save.py
 python3 tests/ros_compatibility.py
 python3 tests/run_scancontext_geometry_test.py
 python3 tests/gps_covariance_parameters.py

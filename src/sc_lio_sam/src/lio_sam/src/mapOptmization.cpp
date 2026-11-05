@@ -148,7 +148,7 @@ public:
     std::atomic<bool> locAutoRelocArmed{true};
 
     // Ancora GPS(raw)<->mapa. Calculada uma vez em modo mapeamento (ver
-    // gpsHandler) e persistida em savePCDDirectory/gps_utm_anchor.txt; em
+    // gpsHandler) e persistida em map_directory/gps_utm_anchor.txt; em
     // localizationMode e' lida desse arquivo no loadMap(). Sem ela, GPS e'
     // simplesmente ignorado (gpsAnchorValid fica false pra sempre).
     bool gpsAnchorValid = false;
@@ -481,9 +481,9 @@ public:
 
         pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
 
-        saveSCDDirectory = savePCDDirectory + "SCDs/"; // SCD: scan context descriptor 
-        saveNodePCDDirectory = savePCDDirectory + "Scans/";
-        saveMapFilesDirectory = savePCDDirectory + "map_files/";
+        saveSCDDirectory = map_directory + "SCDs/"; // SCD: scan context descriptor
+        saveNodePCDDirectory = map_directory + "Scans/";
+        saveMapFilesDirectory = map_directory + "map_files/";
 
         if (localizationMode)
         {
@@ -566,9 +566,9 @@ public:
         {
             // giseop
             // create directory and remove old files;
-            // savePCDDirectory = std::getenv("HOME") + savePCDDirectory; // rather use global path
-            int unused = system((std::string("exec rm -r ") + savePCDDirectory).c_str());
-            unused = system((std::string("mkdir ") + savePCDDirectory).c_str());
+            // map_directory = std::getenv("HOME") + map_directory; // rather use global path
+            int unused = system((std::string("exec rm -r ") + map_directory).c_str());
+            unused = system((std::string("mkdir ") + map_directory).c_str());
 
             unused = system((std::string("exec rm -r ") + saveSCDDirectory).c_str());
             unused = system((std::string("mkdir -p ") + saveSCDDirectory).c_str());
@@ -577,15 +577,15 @@ public:
             unused = system((std::string("mkdir -p ") + saveNodePCDDirectory).c_str());
 
             // Pasta extra da sessao: fica dentro da pasta do mapa, ao lado de Scans/ e SCDs/.
-            // Precisa ser recriada aqui porque o "rm -r savePCDDirectory" acima apaga a pasta
+            // Precisa ser recriada aqui porque o "rm -r map_directory" acima apaga a pasta
             // inteira -- e o mapper/map_server ja' subiram apontando para ela.
             unused = system((std::string("exec rm -r ") + saveMapFilesDirectory).c_str());
             unused = system((std::string("mkdir -p ") + saveMapFilesDirectory).c_str());
 
-            pgSaveStream = std::fstream(savePCDDirectory + "singlesession_posegraph.g2o", std::fstream::out);
-            pgTimeSaveStream = std::fstream(savePCDDirectory + "times.txt", std::fstream::out); pgTimeSaveStream.precision(dbl::max_digits10);
-            // pgVertexSaveStream = std::fstream(savePCDDirectory + "singlesession_vertex.g2o", std::fstream::out);
-            // pgEdgeSaveStream = std::fstream(savePCDDirectory + "singlesession_edge.g2o", std::fstream::out);
+            pgSaveStream = std::fstream(map_directory + "singlesession_posegraph.g2o", std::fstream::out);
+            pgTimeSaveStream = std::fstream(map_directory + "times.txt", std::fstream::out); pgTimeSaveStream.precision(dbl::max_digits10);
+            // pgVertexSaveStream = std::fstream(map_directory + "singlesession_vertex.g2o", std::fstream::out);
+            // pgEdgeSaveStream = std::fstream(map_directory + "singlesession_edge.g2o", std::fstream::out);
         }
 
         // Resumo do gate anti-giro/anti-salto no boot. Sem isto nao da' pra saber, so'
@@ -705,12 +705,12 @@ public:
         // Load a previously saved map so it can be used only for localization.
         // The saved global feature clouds are used as a fixed map for scan-to-map matching.
         cout << "****************************************************" << endl;
-        cout << "Localization mode: loading map from " << savePCDDirectory << endl;
+        cout << "Localization mode: loading map from " << map_directory << endl;
 
-        const std::string cornerFile = savePCDDirectory + "cloudCorner.pcd";
-        const std::string surfFile   = savePCDDirectory + "cloudSurf.pcd";
-        const std::string trajFile   = savePCDDirectory + "trajectory.pcd";
-        const std::string transFile  = savePCDDirectory + "transformations.pcd";
+        const std::string cornerFile = map_directory + "cloudCorner.pcd";
+        const std::string surfFile   = map_directory + "cloudSurf.pcd";
+        const std::string trajFile   = map_directory + "trajectory.pcd";
+        const std::string transFile  = map_directory + "transformations.pcd";
 
         if (pcl::io::loadPCDFile<PointType>(cornerFile, *laserCloudCornerFromMapDS) == -1)
         {
@@ -745,7 +745,7 @@ public:
         // loopClosureThread (auto-relocalize) da segfault (.back() de vetor
         // vazio em polarcontext_invkeys_mat_/polarcontexts_).
         {
-            const std::string scdDir = savePCDDirectory + "SCDs/";
+            const std::string scdDir = map_directory + "SCDs/";
             int numLoadedSCD = 0;
             for (size_t i = 0; i < cloudKeyPoses6D->size(); ++i)
             {
@@ -771,7 +771,7 @@ public:
         // gpsAnchorValid fica false e o GPS e' simplesmente ignorado pro
         // auto-relocalize -- cai pro Scan Context / clique manual.
         {
-            const std::string anchorFile = savePCDDirectory + "gps_utm_anchor.txt";
+            const std::string anchorFile = map_directory + "gps_utm_anchor.txt";
             std::ifstream f(anchorFile);
             if (f.good() && (f >> gpsAnchorX >> gpsAnchorY >> gpsAnchorYaw))
             {
@@ -795,7 +795,7 @@ public:
 
         // NOVO: mapa denso pra ICP de re-localização. Se cloudGlobal.pcd não existir,
         // cai pro corner+surf mesmo (mais esparso, mas funciona).
-        const std::string globalCloudFile = savePCDDirectory + "cloudGlobal.pcd";
+        const std::string globalCloudFile = map_directory + "cloudGlobal.pcd";
         if (pcl::io::loadPCDFile<PointType>(globalCloudFile, *locIcpTargetMap) == -1)
         {
             RCLCPP_WARN_STREAM(node->get_logger(), "Localization mode: cloudGlobal.pcd nao encontrado (" << globalCloudFile
@@ -1041,7 +1041,7 @@ public:
     // esta' VAZIA ("Input point cloud has no data!"). Como isso acontecia dentro de
     // uma thread sem try/catch, virava std::terminate -> SIGABRT -> o no' morria. E
     // como o launch tem respawn="true" (module_loam.launch), o roslaunch subia o no'
-    // de novo, cujo construtor em modo mapeamento roda "rm -r savePCDDirectory" --
+    // de novo, cujo construtor em modo mapeamento roda "rm -r map_directory" --
     // APAGANDO o mapa que ja' estava pronto. Foi assim que o mapa se perdeu.
     // Uma nuvem vazia e' um scan ruim, nao motivo pra derrubar o mapeamento inteiro.
     template<typename PointT>
@@ -1068,8 +1068,8 @@ public:
     // drena o que restou pra nao perder keyframes do fim da sessao.
     void pcdWriterThread()
     {
-        if (localizationMode || !savePCD)
-            return;   // em localizacao nada e' gravado
+        if (localizationMode)
+            return;   // em localizacao nenhum scan do mapa e' gravado
 
         rclcpp::WallRate rate(20);   // tempo de parede: nao depende do /clock do playback
         while (rclcpp::ok())
@@ -1495,7 +1495,7 @@ public:
     // ancorar em frame nenhum (ver ros_to_ros_gps_msg_to_gps_odometry.cpp). Essa classe:
     //   - MAPEAMENTO: âncora UMA VEZ contra a própria pose SLAM (sempre
     //     confiável aqui, sendo construída do zero) assim que tiver GPS bom
-    //     o suficiente; grava em savePCDDirectory/gps_utm_anchor.txt junto
+    //     o suficiente; grava em map_directory/gps_utm_anchor.txt junto
     //     com o resto do mapa (ver fim de visualizeGlobalMapThread()).
     //   - LOCALIZAÇÃO: lê a âncora do arquivo salvo (ver loadMap()) e usa
     //     pra converter cada fix RAW pro frame do mapa antes de disparar o
@@ -1726,7 +1726,7 @@ public:
                      "'%sgps_utm_anchor.txt' quando o mapa for salvo.\033[0m",
                      gpsAnchorX, gpsAnchorY, gpsAnchorYaw, gpsAnchorYaw * 180.0 / M_PI,
                      mBase, std::atan2(gdy, gdx) * 180.0 / M_PI, std::atan2(mdy, mdx) * 180.0 / M_PI,
-                     savePCDDirectory.c_str());
+                     map_directory.c_str());
         }
 
         if (!gpsAnchorValid)
@@ -1873,7 +1873,7 @@ public:
         }
 
         // In localization mode the map must not be overwritten on shutdown.
-        if (savePCD == false || localizationMode)
+        if (localizationMode)
             return;
 
         // save pose graph (runs when programe is closing)
@@ -1889,7 +1889,7 @@ public:
         // pgVertexSaveStream.close();
         // pgEdgeSaveStream.close();
 
-        const std::string kitti_format_pg_filename {savePCDDirectory + "optimized_poses.txt"};
+        const std::string kitti_format_pg_filename {map_directory + "optimized_poses.txt"};
         saveOptimizedVerticesKITTIformat(isamCurrentEstimate, kitti_format_pg_filename);
 
         // save map 
@@ -1903,8 +1903,8 @@ public:
         }
 
         // save key frame transformations
-        safeSavePCD(savePCDDirectory + "trajectory.pcd", *cloudKeyPoses3D);
-        safeSavePCD(savePCDDirectory + "transformations.pcd", *cloudKeyPoses6D);
+        safeSavePCD(map_directory + "trajectory.pcd", *cloudKeyPoses3D);
+        safeSavePCD(map_directory + "transformations.pcd", *cloudKeyPoses6D);
         // Origem do mundo estimada pelo GPS, junto com o resto do mapa -- assim a
         // localizacao depois reaproveita o que o mapeamento calculou.
         if (posesOriginReady.load())
@@ -1969,11 +1969,11 @@ public:
         // down-sample and save corner cloud
         downSizeFilterCorner.setInputCloud(globalCornerCloud);
         downSizeFilterCorner.filter(*globalCornerCloudDS);
-        safeSavePCD(savePCDDirectory + "cloudCorner.pcd", *globalCornerCloudDS);
+        safeSavePCD(map_directory + "cloudCorner.pcd", *globalCornerCloudDS);
         // down-sample and save surf cloud
         downSizeFilterSurf.setInputCloud(globalSurfCloud);
         downSizeFilterSurf.filter(*globalSurfCloudDS);
-        safeSavePCD(savePCDDirectory + "cloudSurf.pcd", *globalSurfCloudDS);
+        safeSavePCD(map_directory + "cloudSurf.pcd", *globalSurfCloudDS);
 
         // OTIMIZACAO: cloudGlobal.pcd agora sai das nuvens JA' DOWNSAMPLEADAS.
         // Antes somava globalCornerCloud + globalSurfCloud CRUS -- por isso o arquivo
@@ -1985,7 +1985,7 @@ public:
         // que os outros arquivos ja' nao tivessem.
         *globalMapCloud += *globalCornerCloudDS;
         *globalMapCloud += *globalSurfCloudDS;
-        safeSavePCD(savePCDDirectory + "cloudGlobal.pcd", *globalMapCloud);
+        safeSavePCD(map_directory + "cloudGlobal.pcd", *globalMapCloud);
         cout << "cloudGlobal.pcd: " << globalMapCloud->size() << " pontos (downsampleado na origem)." << endl;
 
         // FIX: salva a ancora GPS<->mapa junto com o resto do mapa (ver
@@ -1995,7 +1995,7 @@ public:
         // so' vai avisar que o arquivo nao existe e seguir sem GPS.
         if (gpsAnchorValid)
         {
-            const std::string anchorFile = savePCDDirectory + "gps_utm_anchor.txt";
+            const std::string anchorFile = map_directory + "gps_utm_anchor.txt";
             std::ofstream f(anchorFile);
             if (f.is_open())
             {
@@ -4731,7 +4731,7 @@ public:
         return std::sqrt(-2.0 * std::log(R)) * 180.0 / M_PI;
     }
 
-    std::string worldOriginFile() const { return savePCDDirectory + "map_world_origin.txt"; }
+    std::string worldOriginFile() const { return map_directory + "map_world_origin.txt"; }
 
     // Persiste a origem do mundo junto do mapa. Apagar esse arquivo faz o modo
     // "gps" recomecar do zero e o "manual" voltar aos posesOrigin* do yaml

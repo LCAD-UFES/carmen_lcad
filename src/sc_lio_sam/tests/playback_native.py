@@ -25,15 +25,15 @@ def stop(p):
 
 try:
     start('central',['./central','-p14849']);time.sleep(1)
-    param='../data/iara/parameters/carmen.ini' if vehicle=='iara' else 'argos/carmen-argos.ini'
-    yaml=carmen/('data/iara/parameters/param.yaml' if vehicle=='iara' else 'bin/argos/params_argos.yaml')
+    param='../data/iara/parameters/carmen.ini' if vehicle=='iara' else '../data/argos/parameters/carmen-argos.ini'
+    yaml=carmen/('data/iara/parameters/param.yaml' if vehicle=='iara' else 'data/argos/parameters/params_argos.yaml')
     sensor='0' if vehicle=='iara' else '5'
-    sim_time='use_sim_time:='+('true' if vehicle=='iara' else 'false')
+    sim_time='use_sim_time:=true'
     log='/dados/log_iara-2026-10-02_15-09-00.txt' if vehicle=='iara' else '/dados/log_argos_mapa_ufes-1.txt'
     start('params',['./param_daemon',param]);time.sleep(2)
     start('bridge',launch('carmen_ros_bridge', 'carmen_ros_bridge.launch.py','params_file:='+str(yaml),'lidar_sensor_id:='+sensor,sim_time))
-    start('slam',launch('lio_sam', 'run.launch.py','params_file:='+str(yaml),'savePCDDirectory:='+str(logs/'map'),
-                  sim_time,'rviz:=false'))
+    start('slam',launch('lio_sam', 'run.launch.py','params_file:='+str(yaml),'map_directory:='+str(logs/'map'),
+                  sim_time,'rviz:=false','localizationMode:=false'))
     start('playback',['./playback',log]);time.sleep(8)
     assert all(p.poll() is None for _,p in processes),str(logs)
     subprocess.run(['/tmp/playback_command','t 30:90'],env=os.environ,check=True,stdout=subprocess.DEVNULL)

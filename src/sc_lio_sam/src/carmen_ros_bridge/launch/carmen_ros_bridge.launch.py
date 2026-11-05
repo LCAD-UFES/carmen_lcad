@@ -78,7 +78,7 @@ def setup(context):
 
 def generate_launch_description():
     defaults = {
-        'use_sim_time': 'false', 'lidar_sensor_id': '0', 'laser_frame_id': 'velodyne',
+        'use_sim_time': 'true', 'lidar_sensor_id': '0', 'laser_frame_id': 'velodyne',
         'base_frame_id': 'base_link', 'imu_frame_id': 'imu_link', 'gps_frame_id': 'utm',
         'use_exact_lidar_timestamp': 'false', 'gps_nrs': '[1, 2]',
         'publish_imu': 'true', 'publish_gps': 'true', 'publish_ackermann': 'true',

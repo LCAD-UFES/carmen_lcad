@@ -12,22 +12,10 @@
         <col id="0" translatable="yes">Robot</col>
       </row>
       <row>
-        <col id="0" translatable="yes">CT13</col>
+        <col id="0" translatable="yes">Fim</col>
       </row>
       <row>
-        <col id="0" translatable="yes">CT3</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">CT7</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">Honofre</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">IC1</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">LCAD</col>
+        <col id="0" translatable="yes">Inicio</col>
       </row>
     </data>
   </object>

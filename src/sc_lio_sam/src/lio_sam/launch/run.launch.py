@@ -18,16 +18,22 @@ def setup(context):
         return text == 'true'
     with open(value('params_file')) as stream:
         parameters = yaml.safe_load(stream)['lio_sam']
+    for key in ('sensor', 'surroundingKeyframeSize', 'localizationMode', 'useGpu',
+                'savePCD', 'savePCDDirectory', 'map_directory'):
+        parameters.pop(key, None)
     for key in ('extrinsicRPY', 'extrinsicTrans'):
         if key in parameters:
             parameters[key] = [float(v) for v in parameters[key]]
-    directory = Path(value('savePCDDirectory')).expanduser().resolve()
+    map_directory = value('map_directory')
+    if not map_directory.strip():
+        raise ValueError('map_directory must not be empty')
+    directory = Path(map_directory).expanduser().resolve()
     if directory in (Path('/'), Path.home()):
-        raise ValueError('savePCDDirectory must be a dedicated map directory')
-    parameters.update(savePCDDirectory=str(directory)+'/', use_sim_time=boolean('use_sim_time'),
+        raise ValueError('map_directory must be a dedicated map directory')
+    parameters.update(map_directory=str(directory)+'/', use_sim_time=boolean('use_sim_time'),
                       localizationMode=boolean('localizationMode'), useGpu=boolean('gpu'))
-    for key in ('initialPoseX','initialPoseY','initialPoseZ','initialPoseRoll','initialPosePitch','initialPoseYaw'):
-        parameters[key] = float(value(key))
+    if value('posesEnable'):
+        parameters['posesEnable'] = boolean('posesEnable')
     nodes = [Node(package='lio_sam', executable='lio_sam_'+kind, parameters=[parameters],
                   output='screen', respawn=True, respawn_delay=1.)
              for kind in ('imuPreintegration','imageProjection','featureExtraction','mapOptmization')]
@@ -47,9 +53,12 @@ def setup(context):
 
 
 def generate_launch_description():
-    defaults={'use_sim_time':'false','localizationMode':'false','gpu':'false','rviz':'true',
-              'rviz_software_rendering':'false',
-              'initialPoseX':'0.0','initialPoseY':'0.0','initialPoseZ':'0.0',
-              'initialPoseRoll':'0.0','initialPosePitch':'0.0','initialPoseYaw':'0.0'}
-    return LaunchDescription([DeclareLaunchArgument('params_file'),DeclareLaunchArgument('savePCDDirectory')]+
+    defaults={'use_sim_time':'true','gpu':'false','rviz':'true',
+              'rviz_software_rendering':'false'}
+    return LaunchDescription([DeclareLaunchArgument('params_file'),
+        DeclareLaunchArgument('map_directory', description='Required map directory; recreated in mapping mode'),
+        DeclareLaunchArgument('localizationMode', choices=['true', 'false'],
+                              description='Required: true to localize, false to build a map'),
+        DeclareLaunchArgument('posesEnable', default_value='', choices=['', 'true', 'false'],
+                              description='Override YAML pose recording; empty uses the YAML value')]+
         [DeclareLaunchArgument(k,default_value=v) for k,v in defaults.items()]+[OpaqueFunction(function=setup)])
