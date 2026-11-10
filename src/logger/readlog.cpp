@@ -1535,6 +1535,20 @@ char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velod
 }
 
 
+static void
+clear_variable_velodyne_scan(carmen_velodyne_variable_scan_message* msg)
+{
+	for (int i = 0; i < msg->number_of_shots; i++)
+	{
+		free(msg->partial_scan[i].distance);
+		free(msg->partial_scan[i].intensity);
+	}
+	free(msg->partial_scan);
+	msg->partial_scan = NULL;
+	msg->number_of_shots = 0;
+}
+
+
 char* 
 carmen_string_and_file_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg)
 {
@@ -1556,37 +1570,54 @@ carmen_string_and_file_to_variable_velodyne_scan_message(char* string, carmen_ve
 	}
 
 	velodyne_number = CLF_READ_INT(&current_pos);
-	velodyne_number = velodyne_number;             // Only to make the compiler happy
 
 	shot_size = CLF_READ_INT(&current_pos);
-	msg->number_of_shots = CLF_READ_INT(&current_pos);
+	int number_of_shots = CLF_READ_INT(&current_pos);
 
-	msg->partial_scan = (carmen_velodyne_shot*) realloc (msg->partial_scan, msg->number_of_shots * sizeof(carmen_velodyne_shot));
-	for (int i = 0; i < msg->number_of_shots; i++)
+	// Each shot owns its distance and intensity buffers. Release them before
+	// replacing the shot array, and reuse them while the scan dimensions match.
+	if (msg->partial_scan == NULL || msg->number_of_shots != number_of_shots)
 	{
-		msg->partial_scan[i].distance = (unsigned int*)malloc(shot_size*sizeof(unsigned int));
-		msg->partial_scan[i].intensity = (unsigned short*)malloc(shot_size*sizeof(unsigned short));
+		clear_variable_velodyne_scan(msg);
+		if (number_of_shots > 0)
+		{
+			msg->partial_scan = (carmen_velodyne_shot*) calloc(number_of_shots, sizeof(carmen_velodyne_shot));
+			carmen_test_alloc(msg->partial_scan);
+		}
+		msg->number_of_shots = number_of_shots;
+	}
+
+	for (i = 0; i < msg->number_of_shots; i++)
+	{
+		if (msg->partial_scan[i].distance == NULL || msg->partial_scan[i].shot_size != shot_size)
+		{
+			msg->partial_scan[i].distance = (unsigned int*) realloc(msg->partial_scan[i].distance, shot_size * sizeof(unsigned int));
+			msg->partial_scan[i].intensity = (unsigned short*) realloc(msg->partial_scan[i].intensity, shot_size * sizeof(unsigned short));
+			if (shot_size > 0)
+			{
+				carmen_test_alloc(msg->partial_scan[i].distance);
+				carmen_test_alloc(msg->partial_scan[i].intensity);
+			}
+			msg->partial_scan[i].shot_size = shot_size;
+		}
 	}
 
 	FILE *pointcloud_file = fopen(full_path, "rb");
 	if (pointcloud_file)
 	{
-
 		for (i = 0; i < msg->number_of_shots; i++)
 		{
 			fread(&(msg->partial_scan[i].angle), sizeof(double), 1, pointcloud_file);
 			fread(msg->partial_scan[i].distance, sizeof(unsigned int), shot_size, pointcloud_file);
 			fread(msg->partial_scan[i].intensity, sizeof(unsigned short), shot_size, pointcloud_file);
-			msg->partial_scan[i].shot_size = shot_size;
 		}
 
 		fclose(pointcloud_file);
 	}
 	else
 	{
-		msg->number_of_shots = 0;
+		clear_variable_velodyne_scan(msg);
 		printf("Could not load lidar %d:\n%s\n", velodyne_number, path);
-
 	}
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
