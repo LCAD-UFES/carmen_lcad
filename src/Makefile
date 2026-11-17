@@ -148,15 +148,17 @@ phase2:
 	$(ECHO) "Done making binaries..."
 
 # Modulos privados (fonte fora do git: route_planner, offroad_planner, hesai...) sobem so'
-# como binario, um conjunto por versao do Ubuntu, em $(CARMEN_HOME)/prebuilt/ubuntu<NN>/{bin,lib}.
-# Este alvo copia o conjunto da versao desta maquina para bin/ e lib/. Se bin/<x> for um
-# symlink valido (voce tem o fonte e compilou localmente), o seu build e' mantido.
+# como binario, um conjunto por versao do Ubuntu e arquitetura, em
+# $(CARMEN_HOME)/prebuilt/ubuntu<NN>-<arch>/{bin,lib} (ex.: ubuntu20-x86_64, ubuntu26-x86_64,
+# ubuntu20-aarch64 para a Jetson). Este alvo copia o conjunto desta maquina para bin/ e lib/.
+# Se bin/<x> for um symlink valido (voce tem o fonte e compilou localmente), o seu build e' mantido.
 UBUNTU_MAJOR := $(shell . /etc/os-release 2>/dev/null && echo $${VERSION_ID%%.*})
-PREBUILT_DIR := $(CARMEN_HOME)/prebuilt/ubuntu$(UBUNTU_MAJOR)
+PREBUILT_ARCH := $(shell uname -m)
+PREBUILT_DIR := $(CARMEN_HOME)/prebuilt/ubuntu$(UBUNTU_MAJOR)-$(PREBUILT_ARCH)
 
 prebuilt:
 	$(SILENT) if [ ! -d "$(PREBUILT_DIR)" ]; then \
-		echo "    ---- prebuilt: nao ha binarios para ubuntu$(UBUNTU_MAJOR) ($(PREBUILT_DIR))"; exit 0; fi; \
+		echo "    ---- prebuilt: nao ha binarios para ubuntu$(UBUNTU_MAJOR)-$(PREBUILT_ARCH) ($(PREBUILT_DIR))"; exit 0; fi; \
 	for sub in bin lib; do \
 		for f in "$(PREBUILT_DIR)/$$sub"/*; do \
 			[ -f "$$f" ] || continue; \
@@ -165,7 +167,7 @@ prebuilt:
 				echo "    ---- prebuilt: $$sub/$$(basename "$$f") mantido (build local)"; continue; fi; \
 			cmp -s "$$f" "$$dst" && continue; \
 			rm -f "$$dst" && cp -p "$$f" "$$dst" && \
-			echo "    ---- prebuilt: $$sub/$$(basename "$$f") <- ubuntu$(UBUNTU_MAJOR)"; \
+			echo "    ---- prebuilt: $$sub/$$(basename "$$f") <- ubuntu$(UBUNTU_MAJOR)-$(PREBUILT_ARCH)"; \
 		done; \
 	done
 

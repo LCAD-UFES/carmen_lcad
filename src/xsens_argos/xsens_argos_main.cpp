@@ -106,6 +106,31 @@ void LowStateCallback(const void* message)
     }
 }
 
+// Parseia --hz e --print_xsens manualmente ANTES do CARMEN tocar em argc/argv.
+// O carmen_param com categoria "commandline" NÃO lê argv diretamente — ele busca
+// os valores via IPC central no carmen.ini, então nunca funciona para flags locais.
+static void
+parse_argv_flags(int argc, char **argv)
+{
+    for (int i = 1; i < argc; i++)
+    {
+        // Suporta: --hz 1000  ou  --hz=1000
+        if (strcmp(argv[i], "--hz") == 0 && i + 1 < argc)
+        {
+            publish_hz = atoi(argv[i + 1]);
+            i++; // pula o próximo token (o valor)
+        }
+        else if (strncmp(argv[i], "--hz=", 5) == 0)
+        {
+            publish_hz = atoi(argv[i] + 5);
+        }
+        else if (strcmp(argv[i], "--print_xsens") == 0 || strcmp(argv[i], "--print_xsens=on") == 0)
+        {
+            print_xsens = 1;
+        }
+    }
+}
+
 static int 
 read_parameters(int argc, char **argv)
 {
@@ -114,13 +139,6 @@ read_parameters(int argc, char **argv)
     };
     carmen_param_allow_unfound_variables(0);
     carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
-
-    carmen_param_t optional_param_list[] = {
-        {(char *) "commandline", (char *) "print_xsens", CARMEN_PARAM_ONOFF, &print_xsens, 0, NULL},
-        {(char *) "commandline", (char *) "hz", CARMEN_PARAM_INT, &publish_hz, 0, NULL},
-    };
-    carmen_param_allow_unfound_variables(1);
-    carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list)/sizeof(optional_param_list[0]));
 
     return 0;
 }
@@ -146,7 +164,13 @@ void shutdown_module(int signo)
 
 int main(int argc, char **argv) 
 {
-    // Inicialização CARMEN[cite: 1]
+    // Parseia --hz e --print_xsens ANTES do CARMEN inicializar.
+    // O CARMEN consome/modifica argv durante a inicialização, e o sistema de
+    // parâmetros com categoria "commandline" não lê argv diretamente — busca
+    // via IPC central. Por isso é necessário parsear manualmente aqui.
+    parse_argv_flags(argc, argv);
+
+    // Inicialização CARMEN
     carmen_ipc_initialize(argc, argv);
     carmen_param_check_version(argv[0]);
     read_parameters(argc, argv);

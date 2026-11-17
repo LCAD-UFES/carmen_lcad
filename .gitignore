@@ -851,11 +851,23 @@ bin/pi_nit_camera_publisher
 # entra no repositorio.
 /data/pi_nit/
 
-# Binarios de modulos privados: a copia versionada fica em prebuilt/ubuntu<NN>/ e o
+# Binarios de modulos privados: a copia versionada fica em prebuilt/ubuntu<NN>-<arch>/ e o
 # `make` (alvo prebuilt do src/Makefile) copia a da versao do Ubuntu para bin/ e lib/.
 /bin/route_planner
 /bin/offroad_planner
 /bin/hesai_driver
 /bin/task_manager
 /bin/frenet_path_planner
+/bin/road_network_generator
 /lib/libtrailer_nlp.so
+/lib/libaudit_interface.a
+/lib/libaudit_write.a
+/lib/libcargo_interface.a
+/lib/libextra_keys_interface.a
+/lib/libfrenet_path_planner_interface.a
+/lib/liboffroad_planner_interface.a
+/lib/libroad_network_generator_utils.a
+/lib/libroute_planner_interface.a
+/lib/libroute_planner_utils.a
+/lib/libtask_manager_interface.a
+/lib/libuser_app_server_interface.a

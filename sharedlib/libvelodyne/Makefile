@@ -5,7 +5,7 @@ MODULE_COMMENT = Velodyne Library for UDP Access
 
 LINK = g++
 CXXFLAGS += -Wno-parentheses -Wno-deprecated-copy -Wno-implicit-fallthrough -Wno-deprecated-declarations
-LFLAGS += -lglobal -lipc 
+LFLAGS += -lglobal -lipc -lz 
  
 SOURCES = input.cpp driver.cpp main.cpp
 TARGETS = test libvelodyne.a 
