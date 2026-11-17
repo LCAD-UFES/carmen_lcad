@@ -1,8 +1,8 @@
 
 #include <iostream>
 #include <Eigen/Core>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/transforms.h>

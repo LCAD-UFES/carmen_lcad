@@ -10,12 +10,14 @@ CXXFLAGS += -std=c++11
 DEL_FILE = rm -f
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/src/car_panel_gui
+# Migração Ubuntu 26.04: Qt4 saiu do apt; o global_graphics_qt agora é compilado contra
+# Qt5 (ver src/global/Makefile), então aqui o -lQtCore vira o nome/caminho do Qt5.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models 
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lglobal -lGLU -lipc -lz -lparam_interface -lmap_interface -llocalize_ackerman_interface -lsimulator_ackerman_interface \
 	  -lobstacle_avoider_interface -lprob_models -llaser_interface -lmapper_interface -lnavigator_ackerman_interface \
-	  -lglobal_graphics_qt -lrrt_planner_interface -lGL -lglut -lGLEW -lQtCore -lpthread -lfused_odometry_interface -lobstacle_avoider_interface \
+	  -lglobal_graphics_qt -lrrt_planner_interface -lGL -lglut -lGLEW `pkg-config --libs Qt5Core 2>/dev/null || echo -lQtCore` -lpthread -lfused_odometry_interface -lobstacle_avoider_interface \
 	  -lmotion_planner_interface -lrobot_ackerman_interface -lbase_ackerman_interface -lford_escape_hybrid_interface
 
 # Source code files (.c, .cpp) 

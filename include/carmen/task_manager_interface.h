@@ -49,6 +49,99 @@ carmen_task_manager_publish_set_semi_trailer_type_and_beta_message(int semi_trai
 void
 carmen_task_manager_read_semi_trailer_parameters(carmen_semi_trailers_config_t *semi_trailer_config, int argc, char **argv, int semi_trailer_type);
 
+
+void
+carmen_task_manager_set_constant_speed_subscribe_message(carmen_task_manager_set_constant_speed_message *message,
+	       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_set_constant_speed_unsubscribe_message(carmen_handler_t handler);
+
+void
+carmen_task_manager_publish_set_constant_speed_message(carmen_task_manager_set_constant_speed_message *message);
+
+void
+carmen_task_manager_set_constant_speed_define_message();
+
+void
+carmen_task_manager_set_maximum_throttle_subscribe_message(carmen_task_manager_set_maximum_throttle_message *message,
+	       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_set_maximum_throttle_unsubscribe_message(carmen_handler_t handler);
+
+void
+carmen_task_manager_publish_set_maximum_throttle_message(carmen_task_manager_set_maximum_throttle_message *message);
+
+void
+carmen_task_manager_set_maximum_throttle_define_message();
+
+void
+carmen_task_manager_set_minimum_throttle_subscribe_message(carmen_task_manager_set_minimum_throttle_message *message,
+	       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_set_minimum_throttle_unsubscribe_message(carmen_handler_t handler);
+
+void
+carmen_task_manager_publish_set_minimum_throttle_message(carmen_task_manager_set_minimum_throttle_message *message);
+
+void
+carmen_task_manager_set_minimum_throttle_define_message();
+
+void
+carmen_task_manager_fast_stop_at_distance_of_region_of_interest_subscribe_message(carmen_task_manager_fast_stop_at_distance_of_region_of_interest_message *message,
+	       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_fast_stop_at_distance_of_region_of_interest_unsubscribe_message(carmen_handler_t handler);
+
+void
+carmen_task_manager_publish_fast_stop_at_distance_of_region_of_interest_message(carmen_task_manager_fast_stop_at_distance_of_region_of_interest_message *message);
+
+void
+carmen_task_manager_fast_stop_at_distance_of_region_of_interest_define_message();
+
+void
+carmen_task_manager_fast_stop_subscribe_message(carmen_task_manager_fast_stop_message *message,
+	       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_fast_stop_unsubscribe_message(carmen_handler_t handler);
+
+void
+carmen_task_manager_publish_fast_stop_message(carmen_task_manager_fast_stop_message *message);
+
+void
+carmen_task_manager_fast_stop_define_message();
+
+void
+carmen_task_manager_distance_to_region_of_interest_subscribe_message(carmen_task_manager_distance_to_region_of_interest_message *message,
+	       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_distance_to_region_of_interest_unsubscribe_message(carmen_handler_t handler);
+
+void
+carmen_task_manager_publish_distance_to_region_of_interest_message(carmen_task_manager_distance_to_region_of_interest_message *message);
+
+void
+carmen_task_manager_distance_to_region_of_interest_define_message();
+
+void
+carmen_task_manager_turn_engine_on_off_subscribe_message(carmen_task_manager_turn_engine_on_off_message *message,
+	       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_task_manager_turn_engine_on_off_unsubscribe_message(carmen_handler_t handler);
+
+void
+carmen_task_manager_publish_turn_engine_on_off_message(carmen_task_manager_turn_engine_on_off_message *message);
+
+void
+carmen_task_manager_turn_engine_on_off_define_message();
+
+
 #ifdef __cplusplus
 }
 #endif

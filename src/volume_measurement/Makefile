@@ -1,5 +1,10 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 ifdef FOR_XAVIER  
 INTERFACE_LIBS = -lxavier_interface -lparam_interface
 else
@@ -21,7 +26,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -L`libpng-config --ldflags`
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface \
 	  -lglobal -lipc -lrotation_geometry
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -lvtkRendering `pkg-config --libs opencv`
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt -lvtkRendering `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 MODULE_NAME = LOGGER
 MODULE_COMMENT = Modules for logging, displaying, and playing back data.
@@ -52,7 +57,7 @@ endif
 
 IFLAGS += -I/usr/include/eigen3 -I/usr/local/include/pcl-1.7/ -I/usr/include/pcl-1.7/  -I/usr/include/vtk-5.8/
 LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
-		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lpcl_segmentation -lvtkGraphics
+		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_thread -lpcl_segmentation -lvtkGraphics
 
 
 logger:			logger.o  liblogger_interface.a libwritelog.a

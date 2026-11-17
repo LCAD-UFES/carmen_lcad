@@ -9,8 +9,8 @@ LINK = g++
 CFLAGS += #-Wall
 CXXFLAGS += -Wno-sign-compare -Wno-write-strings -DUSE_OPENCV 
 
-IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML
-LFLAGS += `pkg-config opencv --libs` -std=c++11
+IFLAGS += `pkg-config opencv4 --cflags 2>/dev/null || pkg-config opencv --cflags` -std=c++14 -DNO_NVML
+LFLAGS += `pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs` -std=c++14
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
@@ -20,7 +20,7 @@ IFLAGS += -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/src/ -I $(CAFFE_HOME)/
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lparam_interface -lmapper_interface -lrotation_geometry \
 		-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lrt -lbase_ackerman_interface \
 		-lLinearMath \
-		-lboost_thread-mt -lrt -lboost_signals -lboost_system \
+		-lboost_thread -lrt \
 		-llocalize_ackerman_interface \
 		-lgrid_mapping -lmapper -lmap_io -lmap_util -lprob_models
 

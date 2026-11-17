@@ -8,7 +8,7 @@
 #ifndef _POST_LOCALIZE_H_
 #define _POST_LOCALIZE_H_
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include "landmark.h"
 #include "landmark_map.h"
 

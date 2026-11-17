@@ -1,6 +1,6 @@
 
 #include <string>
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 

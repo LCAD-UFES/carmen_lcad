@@ -29,6 +29,20 @@
 #include <string>
 #include "../main_utils/Main.h"
 
+/* Migração Ubuntu 26.04: no OpenCV 4 o CV_RGB() visível é o do imgproc.hpp (C++), que
+   devolve cv::Scalar e não converte para o CvScalar esperado pela API C usada aqui
+   (cvRectangle/cvPutText). Redefinido para a versão C. */
+#if CV_MAJOR_VERSION >= 4
+#include <opencv2/imgproc/imgproc_c.h>
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/highgui/highgui_c.h>
+#undef CV_RGB
+#define CV_RGB(r, g, b)  cvScalar((b), (g), (r), 0)
+#endif
+
 using std::string;
 
 namespace tld

@@ -9,7 +9,7 @@ CXXFLAGS += -std=c++0x
 IFLAGS +=
 LFLAGS +=
 
-LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm `pkg-config --cflags opencv` `pkg-config --libs opencv` 
+LFLAGS += -lbumblebee_basic_interface -lcamera_interface -lparam_interface -lipc -lglobal -lm `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` 
 
 SOURCES = pi_camera_client_driver.cpp
 

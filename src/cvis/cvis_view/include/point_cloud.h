@@ -4,8 +4,8 @@
 #include <carmen/carmen.h>
 #include <carmen/stereo_util.h>
 #include <gtk_gui.h>
-#include <opencv/cv.h>
-#include <opencv/cxcore.h>
+#include <opencv2/core.hpp>
+#include <opencv2/core.hpp>
 
 namespace CVIS {
 

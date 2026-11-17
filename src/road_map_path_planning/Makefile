@@ -10,11 +10,11 @@ CXXFLAGS += -std=c++11
 CXXFLAGS += -Wno-ignored-qualifiers
 
 IFLAGS += \
-	`pkg-config --cflags opencv` \
+	`pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` \
 	-I/usr/include/python3.5
 
 LFLAGS += \
-	`python3.5-config --libs` `pkg-config --libs opencv` \
+	`pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs` `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` \
 	-lglobal -lipc -lparam_interface -lvoice_interface_interface \
 	-llocalize_ackerman_interface \
 	-lmap_server_interface \

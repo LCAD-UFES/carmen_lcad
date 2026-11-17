@@ -28,8 +28,13 @@
 #include <GL/glew.h>
 #include <iostream>
 #include <vector>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+/* Migração Ubuntu 26.04: além da API C (headers *_c.h), este arquivo precisa da API C++
+   para carregar imagem — cvLoadImage foi removida do binário do OpenCV >= 4. */
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include <string.h>
 #include <cmath>
 
@@ -284,6 +289,14 @@ static int velodyne_remission_flag;
 static int draw_waypoints_flag;
 static int draw_robot_waypoints_flag;
 
+// Os dois do viewer do fork (astro/src/viewer_3D/viewer_3D.cpp:468 e :480). O padrao do
+// create_trajectory_drawer e 0,1 s, e o frenet_path_planner e o route_planner publicam mais
+// devagar que 10 Hz: qualquer quadro atrasado caia fora da janela e o caminho sumia ate a
+// proxima mensagem. O force_draw_old_messages ignora a janela de vez -- e o que mantem as rotas
+// na tela com o playback pausado. Ini: viewer_3D_force_draw_old_messages.
+static double time_to_consider_that_message_has_stopped = 0.3;
+static int force_draw_old_messages = 0;
+
 static int follow_car_flag;
 static int zero_z_flag;
 
@@ -328,7 +341,11 @@ static AnnotationDrawer *annotation_drawer;
 static symotha_drawer_t *symotha_drawer;
 static CargoDrawer *cargoDrawer;
 
-static double beta[MAX_NUM_TRAILERS];
+/* Migração Ubuntu 26.04: em C++17 o <cmath> passou a expor as mathematical special
+   functions, entre elas std::beta — com "using namespace std" o nome global `beta`
+   virou ambíguo (error: reference to 'beta' is ambiguous). Renomeado para g_beta,
+   convenção que o próprio arquivo já usa para outras globais. */
+static double g_beta[MAX_NUM_TRAILERS];
 static int semi_trailer_engaged = 0;
 
 window *w = NULL;
@@ -650,7 +667,13 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 	int discarded_points = 0;
 
     dt = lidar_message->timestamp - car_fused_time - lidar_message->number_of_shots * lidar_config.time_between_shots;
-	
+
+    // Desvio de azimute por canal (lidar<N>_horizontal_angles). Sem isso os aneis
+    // saem girados uns em relacao aos outros e a nuvem borra -- e' o mesmo ajuste
+    // que o mapper e o localize fazem via variable_scan_update_points_with_horizontal_correction().
+    int apply_horizontal_correction = needs_horizontal_correction(lidar_config.model) &&
+                                      (lidar_config.horizontal_angles_deltas != NULL);
+
     for (int i = 0; i < lidar_message->number_of_shots; i++, dt += lidar_config.time_between_shots)
 	{
 		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi, distance_between_front_and_rear_axles);
@@ -665,7 +688,11 @@ convert_variable_scan_message_to_point_cloud(point_cloud *lidar_points, carmen_v
 				continue;
 			}
 
-			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(lidar_message->partial_scan[i].angle),
+			double horizontal_angle = lidar_message->partial_scan[i].angle;
+			if (apply_horizontal_correction)
+				horizontal_angle += lidar_config.horizontal_angles_deltas[j];
+
+			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(horizontal_angle),
 							carmen_degrees_to_radians(lidar_config.vertical_angles[j]), (double) lidar_message->partial_scan[i].distance[j] / (double) lidar_config.range_division_factor,
 							lidar_to_board_matrix, board_to_car_matrix, lidar_pose_position, sensor_board_1_pose_position);
             carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position, &r_matrix_car_to_global);
@@ -787,7 +814,7 @@ draw_xyz_pointcloud_message(carmen_xyz_pointcloud_lidar_message *message, point_
 #ifdef USE_REAR_BULLBAR
 	if (semi_trailer_config.num_semi_trailers != 0 && xyz_lidar_config.sensor_reference == 2)
 	{
-		choosed_sensor_referenced[xyz_lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
+		choosed_sensor_referenced[xyz_lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, g_beta, semi_trailer_config);
 	}
 	rotation_matrix *board_to_car_matrix = create_rotation_matrix(choosed_sensor_referenced[xyz_lidar_config.sensor_reference].orientation);
 
@@ -871,7 +898,7 @@ draw_variable_scan_message(carmen_velodyne_variable_scan_message *message, point
 #ifdef USE_REAR_BULLBAR
 	if (semi_trailer_config.num_semi_trailers != 0 && lidar_config.sensor_reference == 2)
 	{
-		choosed_sensor_referenced[lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, beta, semi_trailer_config);
+		choosed_sensor_referenced[lidar_config.sensor_reference] = compute_new_rear_bullbar_from_beta(rear_bullbar_pose, g_beta, semi_trailer_config);
 	}
 	rotation_matrix *board_to_car_matrix = create_rotation_matrix(choosed_sensor_referenced[lidar_config.sensor_reference].orientation);
 
@@ -1011,7 +1038,22 @@ find_map_from_data(int x_origin, int y_origin)
 
 //	printf("%s\n", map_filename);
 
-	map = cvLoadImage(map_filename, CV_LOAD_IMAGE_ANYCOLOR);
+#if CV_MAJOR_VERSION >= 4
+	/* cvLoadImage() não existe mais; carrega com o loader C++ e clona para um IplImage,
+	   porque este ponteiro é devolvido ao chamador (que depois faz cvReleaseImage nele) —
+	   uma view sobre a cv::Mat local morreria ao sair da função. */
+	map = NULL;
+	{
+		cv::Mat map_mat = cv::imread(map_filename, cv::IMREAD_ANYCOLOR);
+		if (!map_mat.empty())
+		{
+			IplImage map_ipl = cvIplImage(map_mat);
+			map = cvCloneImage(&map_ipl);
+		}
+	}
+#else
+	map = cvLoadImage(map_filename, cv::IMREAD_ANYCOLOR);
+#endif
 
 	return map;
 
@@ -1216,31 +1258,31 @@ draw_everything()
     if (show_plan_tree_flag)
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
-    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
-    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
     	if (semi_trailer_engaged)
         {
              for (int i = 0; i < semi_trailer_config.num_semi_trailers; i++)
             {
-    		draw_trajectory(offroad_semi_trailer_plan_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    		draw_trajectory(offroad_semi_trailer_plan_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
              }
         }
     }
 
     if (draw_obstacle_avoider_plan_flag)
-        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+        draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
     if (draw_motion_plan_flag)
-        draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+        draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
     if (draw_path_plan_flag)
-        draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+        draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
     if (draw_car_flag)
-        draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+        draw_car_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
     else
-    	draw_car_outline_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+    	draw_car_outline_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
 
     if (draw_stereo_cloud_flag)
     {
@@ -1402,7 +1444,7 @@ draw_everything()
 //        draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
 //        draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
 
-        draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+        draw_collision_range(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
     }
 
     if (draw_map_flag || draw_map_level1_flag || draw_costs_map_flag || draw_offline_map_flag)
@@ -1512,10 +1554,10 @@ draw_everything()
     if (show_path_plans_flag)
 	{
 		for (unsigned int i = 0; i < path_plans_frenet_drawer.size(); i++)
-			draw_trajectory(path_plans_frenet_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+			draw_trajectory(path_plans_frenet_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
     	for (unsigned int i = 0; i < path_plans_nearby_lanes_drawer.size(); i++)
-    		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    		draw_trajectory(path_plans_nearby_lanes_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 	}
 
     if (!gps_fix_flag)
@@ -1721,14 +1763,14 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
         last_localize_ackerman_trail -= localize_ackerman_size;
 
 
-//    beta = localize_ackerman_message->pose.orientation.yaw - localize_ackerman_message->trailer_theta[0];
-//    beta = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[0]);
+//    g_beta = localize_ackerman_message->pose.orientation.yaw - localize_ackerman_message->trailer_theta[0];
+//    g_beta = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[0]);
      for (int i = 0; i < semi_trailer_config.num_semi_trailers; i++)
      {
      	if (i == 0)
-     		beta[i] = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[i]);
+     		g_beta[i] = convert_theta1_to_beta(localize_ackerman_message->pose.orientation.yaw, localize_ackerman_message->trailer_theta[i]);
      	else
-     		beta[i] = convert_theta1_to_beta(localize_ackerman_message->trailer_theta[i - 1], localize_ackerman_message->trailer_theta[i]);
+     		g_beta[i] = convert_theta1_to_beta(localize_ackerman_message->trailer_theta[i - 1], localize_ackerman_message->trailer_theta[i]);
      }
 	semi_trailer_engaged = localize_ackerman_message->semi_trailer_engaged;
 
@@ -1741,13 +1783,13 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 		{
 			if (i == 0)
 			{
-				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - beta[i]);
-				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - beta[i]);
+				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - g_beta[i]);
+				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->globalpos.theta) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - g_beta[i]);
 			}
 			else
 			{
-				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - beta[i]);
-				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - beta[i]);
+				pos.x -= semi_trailer_config.semi_trailers[i].M * cos(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * cos(localize_ackerman_message->globalpos.theta - g_beta[i]);
+				pos.y -= semi_trailer_config.semi_trailers[i].M * sin(localize_ackerman_message->trailer_theta[i - 1]) + semi_trailer_config.semi_trailers[i].d * sin(localize_ackerman_message->globalpos.theta - g_beta[i]);
 			}
 		localize_ackerman_semi_trailer_trail[last_localize_ackerman_semi_trailer_trail] = pos;
 
@@ -3301,9 +3343,9 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 			frenet_trajectory->host = message->host;
 
 			if (j == message->selected_path)
-				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 0.0, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0);
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 0.0, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0, time_to_consider_that_message_has_stopped);
 			else
-				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0);
+				path_plans_frenet_drawer[j] = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 1.0, time_to_consider_that_message_has_stopped);
 			add_trajectory_message(path_plans_frenet_drawer[j], frenet_trajectory);
 		    free(path);
 		    free(frenet_trajectory);
@@ -3346,7 +3388,7 @@ frenet_path_planner_handler(carmen_frenet_path_planner_set_of_paths *message)
 				r = 1.0;
 			else
 				b = 1.0;
-			path_plans_nearby_lanes_drawer[j] = create_trajectory_drawer(r, 0.0, b, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+			path_plans_nearby_lanes_drawer[j] = create_trajectory_drawer(r, 0.0, b, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, time_to_consider_that_message_has_stopped);
 			add_trajectory_message(path_plans_nearby_lanes_drawer[j], nearby_trajectory);
 			free(path);
 			free(nearby_trajectory);
@@ -3980,9 +4022,9 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
 
     i_drawer = create_interface_drawer(window_width, window_height);
     m_drawer = create_map_drawer(argc, argv);
-    path_plan_drawer = create_trajectory_drawer(0.5, 0.5, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
-    motion_plan_drawer = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
-    obstacle_avoider_plan_drawer = create_trajectory_drawer(0.7, 0.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config);
+    path_plan_drawer = create_trajectory_drawer(0.5, 0.5, 1.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, time_to_consider_that_message_has_stopped);
+    motion_plan_drawer = create_trajectory_drawer(0.0, 1.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, time_to_consider_that_message_has_stopped);
+    obstacle_avoider_plan_drawer = create_trajectory_drawer(0.7, 0.0, 0.0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, time_to_consider_that_message_has_stopped);
     offroad_plan_drawer = create_trajectory_drawer(0.9, 0.9, 0.9, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
     offroad_semi_trailer_plan_drawer[0] = create_trajectory_drawer(1.0, 0.502, 0, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
     offroad_semi_trailer_plan_drawer[1] = create_trajectory_drawer(0.0, 0.0, 0.647, robot_size, distance_between_rear_car_and_rear_wheels, semi_trailer_config, 5.0, 1000000.0);
@@ -4460,6 +4502,9 @@ read_parameters_and_init_stuff(int argc, char** argv)
 	{
 			{(char *) "viewer_3D", (char *) "map_mode", CARMEN_PARAM_INT, &map_mode, 0, NULL},
             {(char *) "viewer_3D", (char *) "xyz_pointcloud_size", CARMEN_PARAM_INT, &xyz_pointcloud_size, 0, NULL}, 
+			// 1 = mantem rotas, frenets e faixas na tela por mais velhas que sejam (o
+			// force_draw_old_messages do fork; util com o playback pausado)
+			{(char *) "viewer_3D", (char *) "force_draw_old_messages", CARMEN_PARAM_INT, &force_draw_old_messages, 0, NULL},
 	};
 
 	num_items = sizeof(optional_param_list) / sizeof(optional_param_list[0]);
@@ -4611,36 +4656,36 @@ draw_while_picking()
     {
     	for (unsigned int i = 0; i < t_drawerTree.size(); i++)
         {
-    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    		draw_trajectory(t_drawerTree[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
         }
 
-    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+    	draw_trajectory(offroad_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
     	if (semi_trailer_engaged)
         {
             for (int i = 0; i <semi_trailer_config.num_semi_trailers; i++){
     		
-                draw_trajectory(offroad_semi_trailer_plan_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+                draw_trajectory(offroad_semi_trailer_plan_drawer[i], get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
             }
         }
 
     }
 
 	if (draw_obstacle_avoider_plan_flag)
-		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+		draw_trajectory(obstacle_avoider_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
 	if (draw_motion_plan_flag)
-		draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+		draw_trajectory(motion_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
 	if (draw_path_plan_flag)
-		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
+		draw_trajectory(path_plan_drawer, get_position_offset(), draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged, force_draw_old_messages);
 
 	if (draw_car_flag)
 	{
-		draw_car_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+		draw_car_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
 
 	}
 	else
-		draw_car_outline_at_pose(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+		draw_car_outline_at_pose(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
 
 	if (draw_stereo_cloud_flag)
 	{
@@ -4721,7 +4766,7 @@ draw_while_picking()
 //		draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
 //		draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
 
-		draw_collision_range(car_drawer, car_fused_pose, beta, semi_trailer_engaged);
+		draw_collision_range(car_drawer, car_fused_pose, g_beta, semi_trailer_engaged);
 	}
 
 	if (draw_map_flag || draw_map_level1_flag || draw_costs_map_flag || draw_offline_map_flag)

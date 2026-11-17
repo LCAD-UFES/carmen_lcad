@@ -7,13 +7,13 @@ MODULE_COMMENT = Classes and functions related to slam
 LINK = g++ 
 #SUBDIRS += hash_map
 
-CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11 -pg 
+CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++17 -pg 
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
-IFLAGS += -std=c++11 -pg
+IFLAGS += -std=c++17 -pg
 LFLAGS += -pg
 
 IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ \
-	-I /usr/include/vtk-5.10/ -I /usr/include/vtk-6* `pkg-config --cflags opencv`
+	-I /usr/include/vtk-5.10/ -I /usr/include/vtk-6* `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 
 SOURCES = segmap_grid_map.cpp segmap_particle_filter.cpp segmap_preproc.cpp 
 PUBLIC_INCLUDES = segmap_grid_map.h segmap_particle_filter.h segmap_preproc.h 

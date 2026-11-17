@@ -6,6 +6,10 @@
 #include <netdb.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/imgproc/imgproc_c.h>
 
 char* tcp_ip_address;
 

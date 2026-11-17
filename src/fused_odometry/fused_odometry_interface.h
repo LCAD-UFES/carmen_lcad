@@ -27,6 +27,15 @@ carmen_fused_odometry_unsubscribe_fused_odometry_particle_message(carmen_handler
 void
 carmen_fused_odometry_publish_message(carmen_fused_odometry_message *message);
 
+/*
+ * Define as mensagens de fused_odometry neste processo. Nao precisa ser chamada a mao:
+ * os subscribe/publish desta interface ja' chamam. Existe para quebrar a dependencia de
+ * ordem de subida -- IPC_subscribe exige a mensagem definida, e um assinante que sobe
+ * antes do publicador falharia EM SILENCIO. Idempotente.
+ */
+void
+carmen_fused_odometry_define_messages(void);
+
 void
 carmen_fused_odometry_publish_particles(carmen_fused_odometry_particle_message *message);
 

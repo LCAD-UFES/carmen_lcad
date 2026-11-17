@@ -8,8 +8,8 @@
 #ifndef __SPECTOGRAM_H_
 #define __SPECTOGRAM_H_
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 void spectogram_alloc (void);
 void spectogram_create_fft_input (unsigned int);

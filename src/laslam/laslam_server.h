@@ -8,7 +8,7 @@
 #include <carmen/stereo_util.h>
 #include <tf.h>
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 class LandmarkSlamServer
 {

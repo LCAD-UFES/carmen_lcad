@@ -27,7 +27,7 @@ LFLAGS += -L/usr/lib/qt-3.3/lib
 endif
 LFLAGS += -lqt-mt
 endif
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt
 
 SOURCES = utils.c color.c strings.c mdalloc.c read-script.c read-rec.c \
 	  write-file.c parse-lines.c correction.c graphics.c \

@@ -1,6 +1,6 @@
 INC_DIR = ../../nn_lib
 INC_CMD = -I $(INC_DIR)
-LIB_CMD = `pkg-config --libs opencv`
+LIB_CMD = `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 all:
 	g++ -Wall -o simple_face_parts_recognition simple_face_parts_recognition.cpp $(INC_CMD) $(LIB_CMD)

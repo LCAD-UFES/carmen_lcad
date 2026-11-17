@@ -46,7 +46,10 @@ int doHardwareScan_Manual(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[], char* port
 void doMtSettings(xsens::Cmt3 &, CmtOutputMode &, CmtOutputSettings &, CmtDeviceId []);
 */
 
-void initializeXsens(xsens::Cmt3&, CmtOutputMode&, CmtOutputSettings&, unsigned long&, char* portName = NULL);
+#define CARMEN_XSENS_DEFAULT_BAUDRATE 460800
+
+void initializeXsens(xsens::Cmt3&, CmtOutputMode&, CmtOutputSettings&, unsigned long&, char* portName = NULL,
+        int baudrate = CARMEN_XSENS_DEFAULT_BAUDRATE);
 void getDataFromXsens(xsens::Cmt3&, xsens::Packet* packet, CmtOutputMode& mode, CmtOutputSettings& settings, xsens_global& data);
 void shutDownXsens(xsens::Cmt3&);
 

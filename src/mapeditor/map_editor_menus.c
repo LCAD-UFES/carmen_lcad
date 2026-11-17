@@ -38,6 +38,15 @@
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgcodecs/imgcodecs_c.h>
+#elif CV_VERSION_MAJOR >= 4
+/* Migração Ubuntu 26.04: o OpenCV >= 4 removeu o opencv2/imgcodecs/imgcodecs_c.h (API C
+   de cvLoadImage/cvSaveImage); restou só o loader C++ (opencv2/imgcodecs.hpp). Este
+   arquivo é .c mas é compilado com g++ (ver CC = g++ no Makefile do módulo), então dá
+   para usar cv::imread e converter o resultado para IplImage. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/imgcodecs.hpp>
 #else
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -849,8 +858,16 @@ int bmp_open(char *filename, int have_graphics __attribute__ ((unused)))
 {
 	int x,y;
 	CvScalar pixel;
-	IplImage* bmpfile = (IplImage*)malloc(sizeof(IplImage));
-	bmpfile = cvLoadImage(filename,CV_LOAD_IMAGE_GRAYSCALE);
+#if CV_VERSION_MAJOR >= 4
+	/* cvLoadImage() (API C) foi removida do binário do OpenCV >= 4; carrega pelo loader
+	   C++ e embrulha o resultado numa view IplImage, para o resto desta função (toda
+	   baseada em IplImage) continuar igual. */
+	cv::Mat bmpfile_mat = cv::imread(filename, cv::IMREAD_GRAYSCALE);
+	IplImage bmpfile_ipl = cvIplImage(bmpfile_mat);
+	IplImage* bmpfile = &bmpfile_ipl;
+#else
+	IplImage* bmpfile = cvLoadImage(filename,cv::IMREAD_GRAYSCALE);
+#endif
 	int width = bmpfile->width;
 	int height = bmpfile->height;
 	double resolution = 0.1;
@@ -908,7 +925,7 @@ int bmp_open(char *filename, int have_graphics __attribute__ ((unused)))
 		{
 		#if CV_MAJOR_VERSION == 2
 			pixel = cvGetAt(bmpfile,height-y-1,x);
-		#elif CV_MAJOR_VERSION == 3
+		#elif CV_MAJOR_VERSION >= 3
 			pixel = CV_IMAGE_ELEM(bmpfile, CvScalar,height-y-1,x);
 		#endif
 			new_map->map[x][y] = 1-pixel.val[0]/255;

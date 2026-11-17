@@ -5,8 +5,9 @@
 #include <carmen/stereo_messages.h>
 #include <carmen/stereo_interface.h>
 #include "stereo_velodyne.h"
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include <string.h>
 
 static int camera;

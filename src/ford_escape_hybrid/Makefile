@@ -29,11 +29,11 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 #$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += `python3.5-config --libs`
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 else ifeq ($(UBUNTU_VERSION),"18.04")
-	LFLAGS += `python3.6-config --libs`
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 else
-	LFLAGS += `python3.8-config --embed --libs` -pthread
+	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -pthread
 endif
 
 MODULE_NAME = FORD_ESCAPE_HYBRID

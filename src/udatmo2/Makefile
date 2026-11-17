@@ -9,7 +9,7 @@ LINK = g++
 
 IFLAGS += \
 	-I$(CARMEN_HOME)/sharedlib/prob_models \
-	`pkg-config --cflags opencv`
+	`pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 
 LFLAGS += \
 	-lcollision_detection \
@@ -20,7 +20,7 @@ LFLAGS += \
 	-lrddf_interface \
 	-lparam_interface -lipc -lglobal \
 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf \
-	`pkg-config --libs opencv`
+	`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 # Add logging dependencies as required
 ifeq ("$(CARMEN_LOGGING)","ON")
@@ -29,7 +29,7 @@ LFLAGS += \
 	-lboost_log_setup \
 	-lboost_log \
 	-lboost_thread \
-	-lboost_system
+	
 endif
 
 # If you set graphics support in configure.

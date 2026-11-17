@@ -1,8 +1,12 @@
 #include <carmen/carmen.h>
 #include <carmen/grid_mapping.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include <string.h>
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage (API C) foram removidas do OpenCV 4;
+   este header as reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 //./slice_map 150.0 512 /media/My\ Passport/parte_final.png 0 0 0 0 ../../data/google_block_map/ 7756300 -365250
 
 int main(int argc __attribute__ ((unused)), char **argv)
@@ -41,7 +45,7 @@ int main(int argc __attribute__ ((unused)), char **argv)
 
 	//slive_size_in_pixles = slive_size_in_meters / (big_slice_size_in_pixels / big_slice_size_in_meters);
 
-	IplImage *big_map_image_colour = cvLoadImage(map_image_name, CV_LOAD_IMAGE_COLOR);
+	IplImage *big_map_image_colour = cvLoadImage(map_image_name, cv::IMREAD_COLOR);
 	IplImage *big_map_image_gray = cvCreateImage(cvSize(big_map_image_colour->width, big_map_image_colour->height), IPL_DEPTH_8U, 1);
 //	IplImage *big_map_image_gray2 = cvCreateImage(cvSize((int)(9250), (int)(10500)), IPL_DEPTH_8U, 1);
 

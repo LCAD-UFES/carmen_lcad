@@ -138,4 +138,9 @@ void interface_mouse_func(interface_drawer* i_drawer, int type, int button, int 
 void draw_interface(interface_drawer* i_drawer, int window_width, int window_height);
 void update_buttons_size(interface_drawer* i_drawer, int window_width, int window_height);
 
+// Sobe todos os botoes de menu em 'offset' pixels, para que um painel colado na base da janela
+// nao os esconda. Depois de mudar, chame update_buttons_size() para o novo valor valer.
+void interface_drawer_set_bottom_offset(double offset);
+double interface_drawer_get_bottom_offset(void);
+
 #endif

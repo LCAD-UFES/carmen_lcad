@@ -4,7 +4,7 @@ MODULE_NAME = Localize Neural 2.0
 MODULE_COMMENT = Classifies the images of the environment and delivers the location.
 
 LINK = g++ -g
-CXXFLAGS = -std=c++11 -g
+CXXFLAGS = -std=c++17 -g
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/darknet4/src -I$(CARMEN_HOME)/sharedlib/darknet4/include 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet4/
@@ -18,14 +18,14 @@ IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/
 
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/include/vtk-6*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC))
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
-IFLAGS += `pkg-config --cflags opencv` `pkg-config --cflags bullet`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` `pkg-config --cflags bullet`
 
 LFLAGS += -lglobal -lipc -pthread -llocalize_ackerman_interface -lfused_odometry_interface -lvelodyne_interface -lparam_interface -lGL -lglut -lGLU \
-	 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lboost_system \
-		-lrt -lboost_signals 
+	 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread \
+		-lrt 
 LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 		-lmap_io -lmap_util -llaser_interface -lfused_odometry_interface -lvelodyne_interface \
 		-lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \
@@ -41,21 +41,21 @@ else
 endif
 
 LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
-		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_thread -lrt
 
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
-LFLAGS += `pkg-config --libs opencv`	  
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`	  
 LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 
 # fim da flags GICP
 
 
 
-CFLAGS += `pkg-config --cflags opencv` -I/usr/include/gflags
+CFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -I/usr/include/gflags
 
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lgps_xyz_interface -lcamera_drivers -lvelodyne_interface
-LFLAGS += -fPIC -lgflags -ldarknet4 -lstdc++ `pkg-config --libs opencv` 
+LFLAGS += -fPIC -lgflags -ldarknet4 -lstdc++ `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` 
 
 SOURCES = deep_vgl-test.cpp deep_vgl-eval.cpp deep_vgl_main.cpp deep_vgl_icp_test.cpp
 

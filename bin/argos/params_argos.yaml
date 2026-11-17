@@ -1,11 +1,16 @@
 lio_sam:
 
   # Topics
-  pointCloudTopic: "/points_raw"               # Point cloud data
+  # /points_raw = nuvem crua; /points_raw_no_vehicle = ja' sem os pontos que caem
+  # sobre o modelo de colisao do robo (pointcloud_node.cpp:127). Num quadrupede as
+  # proprias pernas entram no scan e sujam o mapa, entao usamos a filtrada -- e' o
+  # que a IARA faz. Depende do bloco robot_collision_height/... la' embaixo.
+  # Para voltar ao comportamento anterior, troque por "/points_raw".
+  pointCloudTopic: "/points_raw_no_vehicle"    # Point cloud data
   imuTopic: "/imu_raw"                         # IMU data
   odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
   gpsTopic: "odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file
-  ackermannTopic: "/ackermann/odom_raw"       # Ackermann odometry (v, phi) from astro_ipc_bridge (TwistStamped)
+  ackermannTopic: "/ackermann/odom_raw"       # Ackermann odometry (v, phi) from carmen_ipc_bridge (TwistStamped)
 
   # Prediction odometry source: "imu" | "ackermann" | "fusion"
   #   imu       = so IMU (pre-integracao)
@@ -21,6 +26,7 @@ lio_sam:
   ackermannSlipNoiseX: 0.05       # slip longitudinal  [m/sqrt(s)]
   ackermannSlipNoiseY: 0.05       # slip lateral       [m/sqrt(s)]
   ackermannSlipNoiseTheta: 0.02   # slip angular       [rad/sqrt(s)]
+  ackermannYawLockKeyframes: 0    # reforco: trava o yaw ate' N keyframes; 0 = so' "mapa global > 0"
 
   # Frames
   lidarFrame: "velodyne"
@@ -51,6 +57,53 @@ lio_sam:
   initialPosePitch: 0.0
   initialPoseYaw: 0.0
 
+  # ── Gravacao de poses (formato graphslam poses_opt.dat) ────────────────
+  # So' em localizationMode, e so' depois que o robo encaixa no mapa. E' este
+  # arquivo que alimenta o graphslam pra gerar o mapa CARMEN.
+  posesEnable: true               # liga/desliga a gravacao inteira
+  posesOutputFile: "/dados/sc_lio_sam_output/poses_opt.dat"
+  posesStartTime: 0.0             # so' grava scans com stamp ROS >= isto; 0 = desligado
+  posesSettleScans: 20            # scans descartados apos cada encaixe (~1 s a 20 Hz)
+  posesInterpolateMaxError: 0.10  # m, flecha maxima (s*dyaw/8) pra interpolar scan nao processado
+  posesInterpolateMaxGap: 5.0     # s, teto de sanidade da interpolacao; 0 = desliga
+  # posesCarmenStampTopic e' GATE DURO: todo scan sem timestamp CARMEN casado e'
+  # descartado (mapOptmization.cpp:4713). Quem publica e' o pointcloud_node do
+  # bridge (pointcloud_node.cpp:191), junto com a nuvem.
+  posesCarmenStampTopic: "/carmen/scan_time_reference"
+  # posesAckermannTopic NAO afeta SE a linha e' gravada, mas preenche a COLUNA
+  # odometry_ts do poses_opt.dat: writePoseLine() chama nearestAckermannStamp()
+  # (mapOptmization.cpp:4220), que procura no deque ackermannCarmenStamps dentro de
+  # uma janela de 0,2 s. Sem publicador desse topico a coluna sai -1 (sentinela),
+  # e ai o `graphslam_publish -poses_from odometry` descarta TODAS as poses, porque
+  # ele exige odometry_timestamp > 0 (publish_poses.cpp:136).
+  # No ARGOS, que nao tem odometria Ackermann, use `-poses_from lidar`: a coluna
+  # lidar_ts e' preenchida com o proprio timestamp CARMEN do scan, sempre valida.
+  posesAckermannTopic: "/ackermann/odom_raw"
+
+  # ── Origem do mundo (transformacao T_out = T_origem * T_base) ──────────
+  # O ARGOS NAO TEM GPS, entao a origem e' manual: o modo "gps" calcularia a
+  # ancora a partir de um fix real + rumo, e sem GPS ele nunca ficaria valido e
+  # o poses_opt.dat sairia em coordenadas puras do SC-LIO-SAM (perto de zero).
+  posesOriginMode: "manual"    # "manual" = usa posesOrigin* abaixo | "gps" = calcula do fix + rumo
+  # Convencao do CARMEN (src/gps_xyz/gps_xyz.cpp:460-461): x = northing da UTM, y = -easting.
+  # Os valores abaixo sao a UTM zona 24S de 20.2769 S / 40.3044 W (UFES) -- as
+  # MESMAS coordenadas do util_publish_dummy_gps no process ini, pra que o mapa
+  # gerado e a posicao que o resto do CARMEN enxerga fiquem no mesmo lugar.
+  # Cuidado ao trocar: o localize_ackerman se recusa a publicar globalpos com
+  # |x| < 1.000.000 (localize_ackerman_main.cpp:3428), e sem log nenhum. Por isso
+  # nao da' pra usar (0,0) aqui -- nao sairia mapa.
+  posesOriginX: 7757339.037
+  posesOriginY: -363784.117
+  posesOriginZ: 0.0
+  posesOriginYaw: 0.0          # DIFERENCA de rumo entre os frames, NAO o yaw absoluto do CARMEN
+  posesOriginLock: true        # em modo manual mantenha travado: nada de GPS mexer na origem
+  # Os quatro abaixo so' valem no modo "gps"; ficam aqui so' pra documentar.
+  posesOriginRefine: false     # modo gps: segue refinando enquanto encaixado; false congela
+  posesOriginMinSamples: 20    # modo gps: amostras antes de a origem valer
+  posesOriginMaxDt: 0.50       # s, buraco maximo entre scans pra interpolar a pose no instante do fix
+  posesOriginMinBaseline: 1.0  # m, deslocamento minimo pra tirar rumo do movimento
+  posesOriginRelPosNoise: 0.25 # m^2, erro RELATIVO do GPS
+
   # Sensor Settings
   sensor: velodyne
   N_SCAN: 32                               # number of lidar channel (i.e., 16, 32, 64, 128)
@@ -67,20 +120,19 @@ lio_sam:
   imuRPYWeight: 0.3                     # Peso da orientação RPY do IMU na fusão; 0=ignora IMU, 1=confia só no IMU
 
 
-  # Extrinsics (lidar -> IMU)
+  # Extrinsics (IMU -> LiDAR frame, REP-105)
   extrinsicTrans: [0.0, 0.0, 0.19]
-  extrinsicRot: [1, 0, 0,
-                  0, 1, 0,
-                  0, 0, 1]
-  extrinsicRPY: [1,  0, 0,
-                 0, 1, 0,
-                  0, 0, 1]
-  # extrinsicRot: [1, 0, 0,
-  #                 0, 1, 0,
-  #                 0, 0, 1]
-  # extrinsicRPY: [1, 0, 0,
-  #                 0, 1, 0,
-  #                 0, 0, 1]
+  extrinsicRPY: [0.0, 0.0, 0.0]  # roll, pitch, yaw [rad]
+
+  # ── Modelo de colisao 3D do veiculo (usado pelo bridge) ────────────────
+  # E' o filtro que tira do scan os pontos que batem no proprio robo
+  # (pointcloud_node.cpp:1303 ensure_collision_heights()). ATENCAO: o bridge so'
+  # carrega o filtro se robot_collision_height E semi_trailer_collision_height
+  # forem AMBOS > 0 -- mesmo o ARGOS nao tendo reboque, deixar o segundo em 0
+  # desliga o filtro inteiro em silencio. Valores de partida, ajuste medindo.
+  robot_collision_height: 0.70         # m, do chao ao topo do robo
+  semi_trailer_collision_height: 0.70  # m, sem reboque: repete o valor acima (nao pode ser 0)
+  collision_safety_margin: 0.10        # m, somado ao raio de todos os circulos
 
   # ── LOAM feature threshold ───────────────────────────────────────────
   # ALTERADO: valores anteriores (edgeThreshold=0.05, edgeFeatureMinValidNum=1)
@@ -108,6 +160,10 @@ lio_sam:
   # CPU Params
   numberOfCores: 8                              # number of cores for mapping optimization
   mappingProcessInterval: 0.015                  # seconds, regulate mapping frequency
+  slamQueueSize: 1        # fila dos subscribers da cadeia SLAM. 1 = descarta scan velho (tempo real);
+                          # 50-100 em playback/mapa = absorve transiente sem perder pose
+  useGpu: true           # busca de mapa na GPU (CUDA). Deixado off por seguranca;
+                          # o roslaunch com gpu:=true sobrescreve este valor
 
   # ── Surrounding map ────────────────────────────────────────────────────
   surroundingkeyframeAddingDistThreshold: 0.1 #1.0   # Distância mínima (m) para adicionar novo keyframe; ref = 1.0 (outdoor com carro)
@@ -124,74 +180,8 @@ lio_sam:
   historyKeyframeSearchNum: 10 #25          # Número de keyframes históricos agregados para formar a nuvem do loop candidate
   historyKeyframeFitnessScore: 0.3      # Score máximo de ICP para aceitar um loop closure; menor = mais restritivo
 
-  # ── Visualização ───────────────────────────────────────────────────────
-  globalMapVisualizationSearchRadius: 1000.0  # Raio (m) ao redor da pose atual para visualizar o mapa global no RViz
-  globalMapVisualizationPoseDensity: 1.0     # Espaçamento (m) entre poses amostradas para publicar o mapa global
-  globalMapVisualizationLeafSize: 0.1         # Tamanho do voxel (m) do downsampling do mapa global para visualização
+  # ── Visualizacao ───────────────────────────────────────────────────────
+  globalMapVisualizationSearchRadius: 1000.0  # m, raio do mapa global publicado
+  globalMapVisualizationPoseDensity: 10.0     # m, espacamento das poses amostradas
+  globalMapVisualizationLeafSize: 0.01        # m, voxel do downsample da visualizacao
 
-
-
-# Navsat (convert GPS coordinates to Cartesian)
-navsat:
-  frequency: 50
-  wait_for_datum: false
-  delay: 0.0
-  magnetic_declination_radians: 0
-  yaw_offset: 0
-  zero_altitude: true
-  broadcast_utm_transform: false
-  broadcast_utm_transform_as_parent_frame: false
-  publish_filtered_gps: false
-
-# EKF for Navsat
-ekf_gps:
-  publish_tf: false
-  map_frame: map
-  odom_frame: odom
-  base_link_frame: base_link
-  world_frame: odom
-
-  frequency: 50
-  two_d_mode: false
-  sensor_timeout: 0.01
-  # -------------------------------------
-  # External IMU:
-  # -------------------------------------
-  imu0: imu_correct
-  # make sure the input is aligned with ROS REP105. "imu_correct" is manually transformed by myself. EKF can also transform the data using tf between your imu and base_link
-  imu0_config: [false, false, false,
-                true,  true,  true,
-                false, false, false,
-                false, false, true,
-                true,  true,  true]
-  imu0_differential: false
-  imu0_queue_size: 50 
-  imu0_remove_gravitational_acceleration: true
-  # -------------------------------------
-  # Odometry (From Navsat):
-  # -------------------------------------
-  odom0: odometry/gps
-  odom0_config: [true,  true,  true,
-                 false, false, false,
-                 false, false, false,
-                 false, false, false,
-                 false, false, false]
-  odom0_differential: false
-  odom0_queue_size: 10
-
-  #                            x     y     z     r     p     y   x_dot  y_dot  z_dot  r_dot p_dot y_dot x_ddot y_ddot z_ddot
-  process_noise_covariance: [  1.0,  0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
-                               0,    1.0,  0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
-                               0,    0,    10.0, 0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
-                               0,    0,    0,    0.03, 0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
-                               0,    0,    0,    0,    0.03, 0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
-                               0,    0,    0,    0,    0,    0.1,  0,     0,     0,     0,    0,    0,    0,    0,      0,
-                               0,    0,    0,    0,    0,    0,    0.25,  0,     0,     0,    0,    0,    0,    0,      0,
-                               0,    0,    0,    0,    0,    0,    0,     0.25,  0,     0,    0,    0,    0,    0,      0,
-                               0,    0,    0,    0,    0,    0,    0,     0,     0.04,  0,    0,    0,    0,    0,      0,
-                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0.01, 0,    0,    0,    0,      0,
-                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0.01, 0,    0,    0,      0,
-                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0.5,  0,    0,      0,
-                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0.01, 0,      0,
-                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0.01,   0,
-                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0.015]

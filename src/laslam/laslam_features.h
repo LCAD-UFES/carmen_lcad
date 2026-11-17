@@ -1,7 +1,8 @@
 #ifndef LASLAM_FEATURES_H_
 #define LASLAM_FEATURES_H_
 
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <vector>
 
 std::vector<cv::KeyPoint> extract_features(const IplImage* rightImg);

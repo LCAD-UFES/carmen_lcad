@@ -3,7 +3,7 @@
 #define __CARMEN_IMAGE_LOADER_H__
 
 #include <carmen/synchronized_data_package.h>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 class CarmenImageLoader
 {

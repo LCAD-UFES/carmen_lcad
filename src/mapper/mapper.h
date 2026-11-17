@@ -82,7 +82,7 @@ void carmen_mapper_sort_ray_order_by_vertical_correction_angles(sensor_parameter
 
 void carmen_mapper_sort_vertical_correction_angles(sensor_parameters_t params);
 
-void carmen_mapper_get_lidars_sensor_params();
+void carmen_mapper_get_lidars_sensor_params(int argc, char **argv);
 
 void carmen_mapper_init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char ***intencity, carmen_pose_3D_t **robot_pose_out,
 		carmen_vector_3D_t **robot_velocity_out, double **robot_timestamp_out, double **robot_phi_out, double **points_timestamp_out);
@@ -106,6 +106,6 @@ carmen_map_set_t *get_a_map_set(carmen_map_config_t map_config, bool use_merge_b
 
 bool map_valid(carmen_map_t *map);
 
-void change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle);
+void change_sensor_rear_range_max(sensor_parameters_t *sensor_params, carmen_sphere_coord_t sphere_point);
 
 #endif /* MAPPER_H_ */

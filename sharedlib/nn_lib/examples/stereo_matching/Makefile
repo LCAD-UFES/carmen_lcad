@@ -1,6 +1,6 @@
 INC_DIR = ../../nn_lib
 INC_CMD = -I $(INC_DIR)
-LIB_CMD = `pkg-config --libs opencv`
+LIB_CMD = `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 all:
 	g++ -Wall -O3 -o neural_stereo_matching neural_stereo_matching.cpp $(INC_CMD) $(LIB_CMD)

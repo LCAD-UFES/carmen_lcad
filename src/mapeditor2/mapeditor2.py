@@ -13,7 +13,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QStatusBar, QMessageBox, QProgressDialog, QDoubleSpinBox,
                              QComboBox, QSpinBox, QListWidget, QInputDialog, 
                              QGraphicsLineItem, QGraphicsTextItem, QGraphicsItem, 
-                             QGraphicsPolygonItem, QStyle)
+                             QGraphicsPolygonItem, QStyle, QPlainTextEdit,
+                             QStackedWidget, QCheckBox, QScrollArea, QFrame)
 from PyQt5.QtCore import Qt, QRectF, QPointF, QTimer
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QPen, QPainterPath, QBrush, QPolygonF, QFont
 
@@ -450,6 +451,25 @@ class MapGraphicsItem(QGraphicsPixmapItem):
             self.paint_on_grid(event.pos())
             event.accept()
             
+        elif bm.current_mode == 1 and bm.drawing_rddf and event.button() == Qt.LeftButton:
+            # Desenhando um RDDF do zero: cada clique acrescenta um vertice
+            sp = event.scenePos()
+            gx = sp.x() * bm.global_res
+            gy = -(sp.y() + 1) * bm.global_res
+            bm.add_draw_rddf_point(gx, gy)
+            event.accept()
+
+        elif bm.current_mode == 3 and bm.pending_mission_goal and event.button() == Qt.LeftButton:
+            # Escolhendo o destino de uma task da missao: clica e arrasta para o theta
+            sp = event.scenePos()
+            gx = sp.x() * bm.global_res
+            gy = -(sp.y() + 1) * bm.global_res
+            node = PlaceNode("ALVO", gx, gy, 0.0, bm.global_res, bm)
+            bm.scene.addItem(node)
+            node.rotating = True
+            bm.mission_goal_node = node
+            event.accept()
+
         elif bm.current_mode == 2 and bm.pending_place_name and event.button() == Qt.LeftButton:
             # Novo Place disparado com clique apenas SE O BOTÃO FOI ATIVADO (+)
             scene_pos = event.scenePos()
@@ -458,6 +478,7 @@ class MapGraphicsItem(QGraphicsPixmapItem):
             
             node = PlaceNode(bm.pending_place_name, gx, gy, 0.0, bm.global_res, bm)
             node.setFlag(QGraphicsItem.ItemIsMovable, True)
+            node.setVisible(bm.chk_show_places.isChecked())
             bm.scene.addItem(node)
             bm.place_nodes.append(node)
             bm.update_place_list()
@@ -491,6 +512,11 @@ class MapGraphicsItem(QGraphicsPixmapItem):
             dx = event.scenePos().x() - node.scenePos().x()
             dy = node.scenePos().y() - event.scenePos().y()
             node.set_theta(math.atan2(dy, dx))
+        elif bm.current_mode == 3 and getattr(bm, 'mission_goal_node', None):
+            node = bm.mission_goal_node
+            dx = event.scenePos().x() - node.scenePos().x()
+            dy = node.scenePos().y() - event.scenePos().y()
+            node.set_theta(math.atan2(dy, dx))
         else: super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -498,6 +524,17 @@ class MapGraphicsItem(QGraphicsPixmapItem):
         if bm.current_mode == 2 and getattr(bm, 'active_new_place_node', None):
             bm.active_new_place_node.rotating = False
             bm.active_new_place_node = None
+        elif bm.current_mode == 3 and getattr(bm, 'mission_goal_node', None):
+            node = bm.mission_goal_node
+            gx = node.scenePos().x() * bm.global_res
+            gy = -(node.scenePos().y() + 1) * bm.global_res
+            theta = node.theta
+            bm.scene.removeItem(node)
+            bm.mission_goal_node = None
+            bm.pending_mission_goal = False
+            bm.view.viewport().setCursor(Qt.ArrowCursor)
+            bm.view.setDragMode(QGraphicsView.ScrollHandDrag)
+            bm.mission_insert_goal(gx, gy, theta)
         else:
             super().mouseReleaseEvent(event)
 
@@ -553,8 +590,28 @@ class MapEditor(QMainWindow):
         self.current_annotations_filepath = None
         self.pending_place_name = None 
 
-        # 0 = MAPA | 1 = RDDF | 2 = PLACES (ANOTAÇÕES)
+        # 0 = MAPA | 1 = RDDF | 2 = PLACES (ANOTAÇÕES) | 3 = MISSÃO
         self.current_mode = 0
+
+        # --- desenho de RDDF do zero ---
+        self.drawing_rddf = False
+        self.draw_rddf_points = []   # [(gx, gy)] em metros
+        self.draw_rddf_items = []    # itens graficos do preview
+
+        # --- editor de missoes ---
+        self.mission_dir = None
+        self.current_mission_path = None
+        self.mission_dirty = False
+        self.pending_mission_goal = False   # esperando clique no mapa
+        self.mission_goal_node = None       # no temporario para girar o theta
+        self.mission_preview_items = []     # o que a missao desenha no mapa
+        self.mission_places_cache = {}      # nome -> (x, y, theta)
+
+        # --- grafo (.gr) ---
+        self.graph_nodes = []        # [(x, y, theta)]
+        self.graph_edges = []        # [(u, v)]
+        self.graph_items = []
+        self.current_graph_filepath = None
 
         # Timers de debounce
         self._res_timer = QTimer(self)
@@ -566,6 +623,11 @@ class MapEditor(QMainWindow):
         self._density_timer.setSingleShot(True)
         self._density_timer.setInterval(120)
         self._density_timer.timeout.connect(self.apply_rddf_filter)
+
+        self._mission_timer = QTimer(self)
+        self._mission_timer.setSingleShot(True)
+        self._mission_timer.setInterval(250)
+        self._mission_timer.timeout.connect(self.mission_render_preview)
 
         main = QWidget()
         layout = QVBoxLayout()
@@ -600,7 +662,8 @@ class MapEditor(QMainWindow):
         self.combo_mode.addItems([
             "Pintar Mapa",
             "Editar Caminho (RDDF)",
-            "Editar Locais (Anotações)"
+            "Editar Locais (Anotações)",
+            "Criar/Editar Missão"
         ])
 
         self.combo_mode.setStyleSheet(
@@ -612,7 +675,32 @@ class MapEditor(QMainWindow):
         )
 
         toolbar1.addWidget(self.combo_mode)
-        
+
+        # --- CAMADAS: o que aparece no mapa, independente do modo ---
+        sep = QFrame(); sep.setFrameShape(QFrame.VLine); sep.setFrameShadow(QFrame.Sunken)
+        toolbar1.addWidget(sep)
+        toolbar1.addWidget(QLabel("<b>Mostrar:</b>"))
+
+        self.chk_show_rddf = QCheckBox("RDDF")
+        self.chk_show_rddf.setChecked(True)
+        self.chk_show_rddf.stateChanged.connect(self.apply_layer_visibility)
+        toolbar1.addWidget(self.chk_show_rddf)
+
+        self.chk_show_graph = QCheckBox("Grafo")
+        self.chk_show_graph.setChecked(True)
+        self.chk_show_graph.stateChanged.connect(self.apply_layer_visibility)
+        toolbar1.addWidget(self.chk_show_graph)
+
+        self.chk_show_places = QCheckBox("Locais")
+        self.chk_show_places.setChecked(True)
+        self.chk_show_places.stateChanged.connect(self.apply_layer_visibility)
+        toolbar1.addWidget(self.chk_show_places)
+
+        self.chk_show_mission = QCheckBox("Missão")
+        self.chk_show_mission.setChecked(True)
+        self.chk_show_mission.stateChanged.connect(self.apply_layer_visibility)
+        toolbar1.addWidget(self.chk_show_mission)
+
         toolbar1.addStretch()
 
         # --- TOOLBAR 2: PINTURA DE MAPA ---
@@ -666,8 +754,17 @@ class MapEditor(QMainWindow):
 
         # --- TOOLBAR 3: EDIÇÃO DE RDDF ---
         self.toolbar_rddf = QWidget()
-        t3_layout = QHBoxLayout(self.toolbar_rddf)
-        t3_layout.setContentsMargins(0,0,0,0)
+        t3_outer = QVBoxLayout(self.toolbar_rddf)
+        t3_outer.setContentsMargins(0, 0, 0, 0)
+        t3_outer.setSpacing(2)
+
+        _row_a = QWidget(); t3_layout = QHBoxLayout(_row_a)
+        t3_layout.setContentsMargins(0, 0, 0, 0)
+        _row_b = QWidget(); t3b_layout = QHBoxLayout(_row_b)
+        t3b_layout.setContentsMargins(0, 0, 0, 0)
+        t3_outer.addWidget(_row_a)
+        t3_outer.addWidget(_row_b)
+
         t3_layout.addWidget(QLabel("<b>RDDF:</b> Arquivo:"))
 
         self.combo_rddf = QComboBox()
@@ -685,8 +782,49 @@ class MapEditor(QMainWindow):
         btn_save_rddf.setStyleSheet("color: #0000FF; font-weight: bold;")
         btn_save_rddf.clicked.connect(self.save_rddf)
         t3_layout.addWidget(btn_save_rddf)
+
+        # --- desenhar um RDDF do zero, clicando no mapa ---
+        self.btn_draw_rddf = QPushButton("Desenhar Novo")
+        self.btn_draw_rddf.setIcon(self.style().standardIcon(QStyle.SP_FileDialogNewFolder))
+        self.btn_draw_rddf.setStyleSheet("background-color: #FF9800; color: white; font-weight: bold;")
+        self.btn_draw_rddf.setToolTip("Cria um caminho do zero: clique ponto a ponto no mapa.")
+        self.btn_draw_rddf.clicked.connect(self.toggle_draw_rddf)
+        t3_layout.addWidget(self.btn_draw_rddf)
+
+        self.btn_finish_draw = QPushButton("Finalizar Desenho")
+        self.btn_finish_draw.setEnabled(False)
+        self.btn_finish_draw.clicked.connect(self.finish_draw_rddf)
+        t3_layout.addWidget(self.btn_finish_draw)
+
+        self.btn_undo_draw = QPushButton("Apagar Último Ponto")
+        self.btn_undo_draw.setEnabled(False)
+        self.btn_undo_draw.clicked.connect(self.undo_draw_point)
+        t3_layout.addWidget(self.btn_undo_draw)
+
+        t3_layout.addWidget(QLabel(" Espaç.(m):"))
+        self.spin_draw_spacing = QDoubleSpinBox()
+        self.spin_draw_spacing.setRange(0.1, 10.0)
+        self.spin_draw_spacing.setValue(0.5)
+        self.spin_draw_spacing.setSingleStep(0.1)
+        self.spin_draw_spacing.setFixedWidth(60)
+        self.spin_draw_spacing.setToolTip("Distancia entre pontos gerados ao longo do traco.")
+        t3_layout.addWidget(self.spin_draw_spacing)
+
+        t3_layout.addWidget(QLabel(" Vel.(m/s):"))
+        self.spin_draw_v = QDoubleSpinBox()
+        self.spin_draw_v.setRange(0.1, 30.0)
+        self.spin_draw_v.setValue(2.777778)
+        self.spin_draw_v.setDecimals(3)
+        self.spin_draw_v.setFixedWidth(70)
+        self.spin_draw_v.setToolTip("Velocidade gravada em cada ponto do RDDF.")
+        t3_layout.addWidget(self.spin_draw_v)
         
-        t3_layout.addWidget(QLabel(" | Detalhe Curva (\xb0):"))
+        t3_layout.addStretch()
+
+        # ---- segunda linha: parametros e grafo ----
+        t3b_layout.addWidget(QLabel("<b>Ajustes:</b>"))
+        t3_layout = t3b_layout   # o resto dos widgets cai na segunda linha
+        t3_layout.addWidget(QLabel("Detalhe Curva (\xb0):"))
         self.slider_density = QSlider(Qt.Horizontal)
         self.slider_density.setRange(1, 45)
         self.slider_density.setValue(8)
@@ -724,11 +862,44 @@ class MapEditor(QMainWindow):
         self.spin_res.setFixedWidth(60)
         self.spin_res.valueChanged.connect(self.on_res_changed)
         t3_layout.addWidget(self.spin_res)
+
+        sep2 = QFrame(); sep2.setFrameShape(QFrame.VLine); sep2.setFrameShadow(QFrame.Sunken)
+        t3_layout.addWidget(sep2)
+        t3_layout.addWidget(QLabel("<b>Grafo:</b>"))
+        self.combo_graph = QComboBox()
+        self.combo_graph.setMinimumWidth(160)
+        self.combo_graph.addItem("-- Selecione o Grafo --", None)
+        self.combo_graph.currentIndexChanged.connect(self.on_combo_graph_changed)
+        t3_layout.addWidget(self.combo_graph)
+
+        btn_load_graph = QPushButton("Abrir .gr")
+        btn_load_graph.clicked.connect(self.load_graph_manual)
+        t3_layout.addWidget(btn_load_graph)
+
+        btn_clear_graph = QPushButton("Remover")
+        btn_clear_graph.clicked.connect(self.clear_graph)
+        t3_layout.addWidget(btn_clear_graph)
+
         t3_layout.addStretch()
 
-        layout.addLayout(toolbar1)
-        layout.addWidget(self.toolbar_map)
-        layout.addWidget(self.toolbar_rddf)
+        def _scrollable(w, altura):
+            sa = QScrollArea()
+            sa.setWidget(w)
+            sa.setWidgetResizable(True)
+            sa.setFrameShape(QFrame.NoFrame)
+            sa.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            sa.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            sa.setFixedHeight(altura)
+            return sa
+
+        _tb1_w = QWidget(); _tb1_w.setLayout(toolbar1)
+        self.scroll_toolbar1 = _scrollable(_tb1_w, 46)
+        self.scroll_toolbar_map = _scrollable(self.toolbar_map, 46)
+        self.scroll_toolbar_rddf = _scrollable(self.toolbar_rddf, 82)
+
+        layout.addWidget(self.scroll_toolbar1)
+        layout.addWidget(self.scroll_toolbar_map)
+        layout.addWidget(self.scroll_toolbar_rddf)
 
         # PAINEL INFERIOR: MAPA (Esquerda) + ANOTAÇÕES (Direita)
         h_split = QHBoxLayout()
@@ -795,6 +966,124 @@ class MapEditor(QMainWindow):
         ann_layout.addWidget(lbl_info)
 
         h_split.addWidget(self.panel_ann, 0) 
+
+        # --- PAINEL LATERAL DE MISSOES ---
+        self.panel_mission = QWidget()
+        self.panel_mission.setFixedWidth(420)
+        mis_layout = QVBoxLayout(self.panel_mission)
+
+        mis_layout.addWidget(QLabel("<h3 style='margin:0;'>Missão</h3>"))
+
+        row_dir = QHBoxLayout()
+        self.lbl_mission_dir = QLabel("<i>nenhuma pasta</i>")
+        self.lbl_mission_dir.setStyleSheet("color:#666;")
+        self.lbl_mission_dir.setWordWrap(True)
+        btn_mission_dir = QPushButton("Pasta...")
+        btn_mission_dir.setIcon(self.style().standardIcon(QStyle.SP_DirOpenIcon))
+        btn_mission_dir.setToolTip("Pasta 'missoes/' que o navigator_gui2 lista no combo Mission.")
+        btn_mission_dir.clicked.connect(self.mission_choose_dir)
+        row_dir.addWidget(self.lbl_mission_dir, 1)
+        row_dir.addWidget(btn_mission_dir, 0)
+        mis_layout.addLayout(row_dir)
+
+        self.combo_mission = QComboBox()
+        self.combo_mission.addItem("-- Nova missão --", None)
+        self.combo_mission.currentIndexChanged.connect(self.on_combo_mission_changed)
+        mis_layout.addWidget(self.combo_mission)
+
+        row_new = QHBoxLayout()
+        btn_mission_new = QPushButton("Nova")
+        btn_mission_new.setIcon(self.style().standardIcon(QStyle.SP_FileIcon))
+        btn_mission_new.clicked.connect(self.mission_new)
+        row_new.addWidget(btn_mission_new)
+        btn_mission_tpl = QPushButton("Modelo")
+        btn_mission_tpl.setToolTip("Insere o esqueleto de missão que funciona.")
+        btn_mission_tpl.clicked.connect(self.mission_insert_template)
+        row_new.addWidget(btn_mission_tpl)
+        btn_mission_del = QPushButton("Excluir")
+        btn_mission_del.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
+        btn_mission_del.clicked.connect(self.mission_delete)
+        row_new.addWidget(btn_mission_del)
+        mis_layout.addLayout(row_new)
+
+        self.edit_mission = QPlainTextEdit()
+        self.edit_mission.setStyleSheet("font-family: monospace; font-size: 12px;")
+        self.edit_mission.setPlaceholderText(
+            "Uma task por linha.\n\n"
+            "Toda task na coluna 0 -- linha comecando com espaco e' IGNORADA.\n"
+            "Use o par 'set course to' + 'go'. Nunca 'go after set course to'.\n"
+            "So' ponha 'stop' se a missao navegar de verdade."
+        )
+        self.edit_mission.textChanged.connect(self._on_mission_text_changed)
+        mis_layout.addWidget(self.edit_mission, 1)
+
+        mis_layout.addWidget(QLabel("<b>Inserir na posição do cursor:</b>"))
+
+        row_ins = QHBoxLayout()
+        self.btn_pick_goal = QPushButton("Destino pelo mapa")
+        self.btn_pick_goal.setIcon(self.style().standardIcon(QStyle.SP_ArrowForward))
+        self.btn_pick_goal.setStyleSheet("background-color: #2196F3; color: white; font-weight: bold;")
+        self.btn_pick_goal.setToolTip("Clique no mapa e arraste para definir o theta; insere 'set course to x y theta' + 'go'.")
+        self.btn_pick_goal.clicked.connect(self.mission_start_pick_goal)
+        row_ins.addWidget(self.btn_pick_goal)
+        mis_layout.addLayout(row_ins)
+
+        row_place = QHBoxLayout()
+        self.combo_mission_place = QComboBox()
+        self.combo_mission_place.setToolTip("Locais (places tipo 13) carregados das anotações.")
+        row_place.addWidget(self.combo_mission_place, 1)
+        btn_ins_place = QPushButton("Inserir place")
+        btn_ins_place.clicked.connect(self.mission_insert_place)
+        row_place.addWidget(btn_ins_place, 0)
+        mis_layout.addLayout(row_place)
+
+        row_save = QHBoxLayout()
+        self.btn_mission_redraw = QPushButton("Ver no mapa")
+        self.btn_mission_redraw.setToolTip("Redesenha a rota e os destinos da missão sobre o mapa.")
+        self.btn_mission_redraw.clicked.connect(self.mission_render_preview)
+        row_save.addWidget(self.btn_mission_redraw)
+
+        self.btn_mission_check = QPushButton("Verificar")
+        self.btn_mission_check.setToolTip("Procura as armadilhas que quebram a missão em silêncio.")
+        self.btn_mission_check.clicked.connect(self.mission_validate)
+        row_save.addWidget(self.btn_mission_check)
+        btn_mission_save = QPushButton("Salvar")
+        btn_mission_save.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))
+        btn_mission_save.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold;")
+        btn_mission_save.clicked.connect(self.mission_save)
+        row_save.addWidget(btn_mission_save)
+        btn_mission_saveas = QPushButton("Salvar como...")
+        btn_mission_saveas.clicked.connect(self.mission_save_as)
+        row_save.addWidget(btn_mission_saveas)
+        mis_layout.addLayout(row_save)
+
+        lbl_legenda = QLabel(
+            "<b>No mapa:</b> "
+            "<span style='color:#FFFFFF;background:#555;'>&nbsp;S&nbsp;</span> pose inicial &nbsp;"
+            "<span style='color:#0078FF;'>\u25cf</span> set course to &nbsp;"
+            "<span style='color:#A03CDC;'>\u25cf</span> park at &nbsp;"
+            "<span style='color:#FFC800;'>\u25cf</span> final goal &nbsp;"
+            "<span style='color:#DC2828;'>\u25cf</span> task quebrada<br>"
+            "A linha azul grossa é a rota pelo RDDF carregado; cinza tracejada é reta "
+            "(sem RDDF para seguir)."
+        )
+        lbl_legenda.setStyleSheet("color:#444; font-size:11px;")
+        lbl_legenda.setWordWrap(True)
+        mis_layout.addWidget(lbl_legenda)
+
+        lbl_mis_info = QLabel(
+            "<b>Lembre:</b><br>"
+            "- A última linha precisa terminar com quebra de linha.<br>"
+            "- Task escrita errada não para a missão, só é ignorada.<br>"
+            "- Vírgula só entre números.<br>"
+            "- Para aparecer no combo do navigator_gui2, salve em <code>missoes/</code> "
+            "e reinicie o navigator_gui2."
+        )
+        lbl_mis_info.setStyleSheet("color: #666;")
+        lbl_mis_info.setWordWrap(True)
+        mis_layout.addWidget(lbl_mis_info)
+
+        h_split.addWidget(self.panel_mission, 0)
         layout.addLayout(h_split)
         
         main.setLayout(layout)
@@ -814,29 +1103,43 @@ class MapEditor(QMainWindow):
         self.pending_place_name = None 
         self.view.viewport().setCursor(Qt.ArrowCursor) 
         
-        if index == 0: 
+        # O modo decide apenas O QUE PODE SER ARRASTADO. O que APARECE no mapa e'
+        # decidido pelas caixas "Mostrar:" da barra de cima -- antes o modo escondia
+        # o RDDF e as anotacoes sozinho, e elas sumiam a cada troca de modo.
+        arrastar_rddf = (index == 1)
+        arrastar_place = (index == 2)
+        for n in self.rddf_nodes:
+            n.setFlag(QGraphicsItem.ItemIsMovable, arrastar_rddf)
+        for p in self.place_nodes:
+            p.setFlag(QGraphicsItem.ItemIsMovable, arrastar_place)
+
+        if index == 0:
             self.status.showMessage("MODO MAPA: Desenhe obstáculos no grid.")
-            for n in self.rddf_nodes: 
-                n.setFlag(QGraphicsItem.ItemIsMovable, False)
-                n.setVisible(False) # Oculta RDDF
-            for p in self.place_nodes: 
-                p.setFlag(QGraphicsItem.ItemIsMovable, False)
-            
-        elif index == 1: 
+        elif index == 1:
             self.status.showMessage("MODO RDDF: Arraste as bolinhas vermelhas para modificar a trajetória.")
-            for n in self.rddf_nodes: 
-                n.setFlag(QGraphicsItem.ItemIsMovable, True)
-                n.setVisible(True) # Exibe RDDF
-            for p in self.place_nodes: 
-                p.setFlag(QGraphicsItem.ItemIsMovable, False)
-            
-        elif index == 2: 
+        elif index == 2:
             self.status.showMessage("MODO PLACES: Selecione Locais. Arraste para mover ou Clique Direito para rotacionar.")
-            for n in self.rddf_nodes: 
-                n.setFlag(QGraphicsItem.ItemIsMovable, False)
-                n.setVisible(False) # Oculta RDDF
-            for p in self.place_nodes: 
-                p.setFlag(QGraphicsItem.ItemIsMovable, True)
+        elif index == 3:
+            self.status.showMessage("MODO MISSÃO: escreva a missão. Use 'Destino pelo mapa' para inserir coordenadas.")
+            self.mission_refresh_places()
+            self.mission_render_preview()
+
+        # Sai do desenho de RDDF se trocar de modo
+        if index != 1 and self.drawing_rddf:
+            self.cancel_draw_rddf()
+        # Cancela a espera de clique da missao se trocar de modo (o desenho fica,
+        # e' uma camada agora)
+        if index != 3:
+            self.pending_mission_goal = False
+
+        # Toolbars e paineis conforme o modo
+        self.scroll_toolbar_map.setVisible(index == 0)
+        self.scroll_toolbar_rddf.setVisible(index == 1)
+        self.panel_ann.setVisible(index == 2)
+        self.panel_mission.setVisible(index == 3)
+        self.apply_layer_visibility()
+        if index != 3:
+            self.view.viewport().setCursor(Qt.ArrowCursor)
 
 
     # =========================================================================
@@ -873,23 +1176,43 @@ class MapEditor(QMainWindow):
             with open(filepath, 'r') as f:
                 for line in f:
                     line_str = line.strip()
-                    if line_str.startswith("RDDF_PLACE_"):
-                        parts = line_str.split()
-                        if len(parts) >= 6:
+                    parts = line_str.split()
+
+                    # O que faz de uma anotacao um "local" e' o TIPO 13
+                    # (RDDF_ANNOTATION_TYPE_PLACE_OF_INTEREST), nao o prefixo do nome.
+                    # Antes so' entrava quem comecasse com RDDF_PLACE_, entao places
+                    # criadas fora do editor (as do tramontina, por exemplo) sumiam.
+                    eh_place = False
+                    if len(parts) >= 6 and not line_str.startswith("#"):
+                        try:
+                            eh_place = (int(parts[1]) == 13)
+                        except ValueError:
+                            eh_place = False
+
+                    if eh_place:
+                        try:
                             name = parts[0]
                             theta = float(parts[3])
                             gx = float(parts[4])
                             gy = float(parts[5])
-                            
-                            node = PlaceNode(name, gx, gy, theta, self.global_res, self)
-                            node.setFlag(QGraphicsItem.ItemIsMovable, self.current_mode == 2)
-                            self.scene.addItem(node)
-                            self.place_nodes.append(node)
+                        except ValueError:
+                            self.original_annotations.append(line)
+                            continue
+
+                        node = PlaceNode(name, gx, gy, theta, self.global_res, self)
+                        node.setFlag(QGraphicsItem.ItemIsMovable, self.current_mode == 2)
+                        node.setVisible(self.chk_show_places.isChecked())
+                        self.scene.addItem(node)
+                        self.place_nodes.append(node)
                     else:
                         self.original_annotations.append(line) 
             
             self.current_annotations_filepath = filepath
             self.update_place_list()
+            self.apply_layer_visibility()
+            if self.current_mode == 3:
+                self.mission_refresh_places()
+                self.mission_render_preview()
             self.status.showMessage(f"Anotações carregadas: {len(self.place_nodes)} locais encontrados.")
             
         except Exception as e:
@@ -1003,7 +1326,11 @@ class MapEditor(QMainWindow):
 
         if not self.original_rddf_data: return
         self.current_rddf_filepath = filepath
+        self._rddf_xy_cache_len = None
         self.apply_rddf_filter()
+        self.apply_layer_visibility()
+        if self.current_mode == 3:
+            self.mission_render_preview()
         self.status.showMessage(f"RDDF Carregado: {os.path.basename(filepath)} com {len(self.original_rddf_data)} pontos.")
 
     def apply_rddf_filter(self):
@@ -1307,7 +1634,774 @@ class MapEditor(QMainWindow):
             node._last_scene_y = sy
         self.schedule_rddf_update()
 
+    # =========================================================================
+    # GRAFO (.gr) -- a malha de navegacao que o route_planner usa
+    # =========================================================================
+    def load_graph_manual(self):
+        filepath, _ = QFileDialog.getOpenFileName(self, "Abrir Grafo", "", "Grafo (*.gr);;Todos (*)")
+        if filepath:
+            self.load_graph_from_path(filepath)
+
+    def on_combo_graph_changed(self, index):
+        filepath = self.combo_graph.itemData(index)
+        if filepath:
+            self.load_graph_from_path(filepath)
+
+    def load_graph_from_path(self, filepath):
+        """Le o .gr: linhas NODE <id> ? ? x y theta ... e EDGE_<k> <u> <v> <custo>."""
+        nodes, edges = [], []
+        try:
+            with open(filepath, 'r') as f:
+                for line in f:
+                    parts = line.split()
+                    if not parts:
+                        continue
+                    if parts[0] == "NODE" and len(parts) >= 7:
+                        try:
+                            nodes.append((float(parts[4]), float(parts[5]), float(parts[6])))
+                        except ValueError:
+                            pass
+                    elif re.match(r"^EDGE_\d+$", parts[0]) and len(parts) >= 3:
+                        try:
+                            edges.append((int(parts[1]), int(parts[2])))
+                        except ValueError:
+                            pass
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Erro ao ler o grafo:\n{e}")
+            return
+
+        if not nodes:
+            QMessageBox.warning(self, "Aviso", "Nenhum NODE encontrado nesse arquivo.")
+            return
+
+        self.graph_nodes = nodes
+        self.graph_edges = [(u, v) for (u, v) in edges if 0 <= u < len(nodes) and 0 <= v < len(nodes)]
+        self.current_graph_filepath = filepath
+        self._graph_xy = np.array([[n[0], n[1]] for n in nodes], dtype=float)
+        self.render_graph()
+        if self.current_mode == 3:
+            self.mission_render_preview()
+        self.status.showMessage(f"Grafo carregado: {os.path.basename(filepath)} — "
+                                f"{len(nodes)} nós, {len(self.graph_edges)} arestas.")
+
+    def clear_graph(self):
+        for it in self.graph_items:
+            try: self.scene.removeItem(it)
+            except Exception: pass
+        self.graph_items = []
+        self.graph_nodes = []
+        self.graph_edges = []
+        self._graph_xy = None
+        self.current_graph_filepath = None
+        self.combo_graph.blockSignals(True); self.combo_graph.setCurrentIndex(0); self.combo_graph.blockSignals(False)
+        if self.current_mode == 3:
+            self.mission_render_preview()
+        self.status.showMessage("Grafo removido.")
+
+    def render_graph(self):
+        for it in self.graph_items:
+            try: self.scene.removeItem(it)
+            except Exception: pass
+        self.graph_items = []
+        if not self.graph_nodes:
+            return
+
+        res = self.global_res
+
+        # Arestas em um unico item: 930 linhas soltas deixariam a cena pesada.
+        caminho = QPainterPath()
+        for (u, v) in self.graph_edges:
+            ax, ay, _ = self.graph_nodes[u]
+            bx, by, _ = self.graph_nodes[v]
+            caminho.moveTo(ax / res, -ay / res - 1)
+            caminho.lineTo(bx / res, -by / res - 1)
+        item_e = QGraphicsPathItem(caminho)
+        pen = QPen(QColor(0, 170, 90, 170), 0)
+        pen.setCosmetic(True)
+        pen.setWidth(2)
+        item_e.setPen(pen)
+        item_e.setZValue(12)
+        item_e.setVisible(self.chk_show_graph.isChecked())
+        self.scene.addItem(item_e)
+        self.graph_items.append(item_e)
+
+        # Nos como pontos pequenos, tambem em um item so'
+        caminho_n = QPainterPath()
+        r = 1.6
+        for (x, y, _t) in self.graph_nodes:
+            sx, sy = x / res, -y / res - 1
+            caminho_n.addEllipse(QPointF(sx, sy), r, r)
+        item_n = QGraphicsPathItem(caminho_n)
+        item_n.setBrush(QBrush(QColor(0, 130, 70, 200)))
+        pen_n = QPen(Qt.NoPen)
+        item_n.setPen(pen_n)
+        item_n.setZValue(13)
+        item_n.setVisible(self.chk_show_graph.isChecked())
+        self.scene.addItem(item_n)
+        self.graph_items.append(item_n)
+
+    # =========================================================================
+    # CAMADAS: o que aparece no mapa, independente do modo de edicao
+    # =========================================================================
+    def apply_layer_visibility(self):
+        mostrar_rddf = self.chk_show_rddf.isChecked()
+        for n in self.rddf_nodes:
+            n.setVisible(mostrar_rddf)
+        for it in self.rddf_path_items:
+            it.setVisible(mostrar_rddf)
+
+        mostrar_grafo = self.chk_show_graph.isChecked()
+        for it in self.graph_items:
+            it.setVisible(mostrar_grafo)
+
+        mostrar_places = self.chk_show_places.isChecked()
+        for p in self.place_nodes:
+            p.setVisible(mostrar_places)
+
+        mostrar_missao = self.chk_show_mission.isChecked()
+        for it in self.mission_preview_items:
+            it.setVisible(mostrar_missao)
+
+    # =========================================================================
+    # DESENHAR UM RDDF DO ZERO
+    # =========================================================================
+    def toggle_draw_rddf(self):
+        if self.drawing_rddf:
+            self.cancel_draw_rddf()
+        else:
+            self.start_draw_rddf()
+
+    def start_draw_rddf(self):
+        if not self.maps:
+            QMessageBox.warning(self, "Aviso", "Carregue a pasta do ambiente primeiro.")
+            return
+        if self.original_rddf_data:
+            r = QMessageBox.question(self, "Descartar RDDF atual?",
+                                     "Ja' existe um caminho carregado. Descartar e desenhar do zero?",
+                                     QMessageBox.Yes | QMessageBox.No)
+            if r != QMessageBox.Yes:
+                return
+            self.clear_rddf()
+
+        if self.current_mode != 1:
+            self.combo_mode.setCurrentIndex(1)
+
+        self.drawing_rddf = True
+        self.draw_rddf_points = []
+        self._clear_draw_preview()
+        self.btn_draw_rddf.setText("Cancelar Desenho")
+        self.btn_finish_draw.setEnabled(True)
+        self.btn_undo_draw.setEnabled(True)
+        self.view.setDragMode(QGraphicsView.NoDrag)
+        self.view.viewport().setCursor(Qt.CrossCursor)
+        self.status.showMessage("DESENHANDO: clique no mapa para marcar os vértices do caminho. "
+                                "Depois use 'Finalizar Desenho'.")
+
+    def cancel_draw_rddf(self):
+        self.drawing_rddf = False
+        self.draw_rddf_points = []
+        self._clear_draw_preview()
+        self.btn_draw_rddf.setText("Desenhar Novo")
+        self.btn_finish_draw.setEnabled(False)
+        self.btn_undo_draw.setEnabled(False)
+        self.view.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.view.viewport().setCursor(Qt.ArrowCursor)
+        self.status.showMessage("Desenho cancelado.")
+
+    def _clear_draw_preview(self):
+        for it in self.draw_rddf_items:
+            try: self.scene.removeItem(it)
+            except Exception: pass
+        self.draw_rddf_items = []
+
+    def _redraw_draw_preview(self):
+        self._clear_draw_preview()
+        pen_line = QPen(QColor(255, 140, 0), 0)
+        pen_line.setCosmetic(True)
+        pen_line.setWidth(2)
+        prev = None
+        for i, (gx, gy) in enumerate(self.draw_rddf_points):
+            sx = gx / self.global_res
+            sy = -gy / self.global_res - 1
+            r = 3.0
+            dot = QGraphicsEllipseItem(sx - r, sy - r, 2 * r, 2 * r)
+            dot.setBrush(QBrush(QColor(255, 140, 0)))
+            dot.setPen(QPen(Qt.black, 0))
+            dot.setZValue(60)
+            self.scene.addItem(dot)
+            self.draw_rddf_items.append(dot)
+            if prev is not None:
+                line = QGraphicsLineItem(prev[0], prev[1], sx, sy)
+                line.setPen(pen_line)
+                line.setZValue(59)
+                self.scene.addItem(line)
+                self.draw_rddf_items.append(line)
+            prev = (sx, sy)
+
+    def add_draw_rddf_point(self, gx, gy):
+        self.draw_rddf_points.append((gx, gy))
+        self._redraw_draw_preview()
+        self.status.showMessage(f"DESENHANDO: {len(self.draw_rddf_points)} vértice(s). "
+                                f"Último: {gx:.2f}, {gy:.2f}")
+
+    def undo_draw_point(self):
+        if not self.draw_rddf_points:
+            return
+        self.draw_rddf_points.pop()
+        self._redraw_draw_preview()
+        self.status.showMessage(f"DESENHANDO: {len(self.draw_rddf_points)} vértice(s).")
+
+    def finish_draw_rddf(self):
+        """Interpola os vertices clicados a cada N metros, calcula theta e vira o RDDF atual."""
+        if len(self.draw_rddf_points) < 2:
+            QMessageBox.warning(self, "Aviso", "Marque pelo menos 2 vértices.")
+            return
+
+        spacing = self.spin_draw_spacing.value()
+        v = self.spin_draw_v.value()
+
+        # Reamostra o poligono clicado em passos de 'spacing' metros
+        pts = []
+        for i in range(len(self.draw_rddf_points) - 1):
+            x0, y0 = self.draw_rddf_points[i]
+            x1, y1 = self.draw_rddf_points[i + 1]
+            seg = math.hypot(x1 - x0, y1 - y0)
+            n = max(1, int(round(seg / spacing)))
+            for k in range(n):
+                t = k / float(n)
+                pts.append((x0 + (x1 - x0) * t, y0 + (y1 - y0) * t))
+        pts.append(self.draw_rddf_points[-1])
+
+        # Monta as linhas no formato do rddf: x y theta v phi timestamp
+        rows = []
+        n = len(pts)
+        for i, (gx, gy) in enumerate(pts):
+            if i < n - 1:
+                theta = math.atan2(pts[i + 1][1] - gy, pts[i + 1][0] - gx)
+            else:
+                theta = math.atan2(gy - pts[i - 1][1], gx - pts[i - 1][0])
+            rows.append([gx, gy, theta, v, 0.0, 0.0])
+
+        self.drawing_rddf = False
+        self._clear_draw_preview()
+        self.draw_rddf_points = []
+        self.btn_draw_rddf.setText("Desenhar Novo")
+        self.btn_finish_draw.setEnabled(False)
+        self.btn_undo_draw.setEnabled(False)
+        self.view.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.view.viewport().setCursor(Qt.ArrowCursor)
+
+        self.original_rddf_data = rows
+        self._rddf_xy_cache_len = None
+        self.current_rddf_filepath = None   # ainda nao foi salvo
+        self.apply_rddf_filter()
+        self.apply_layer_visibility()
+        self.status.showMessage(f"RDDF criado com {n} pontos (espaçamento {spacing:.2f} m). "
+                                "Ajuste arrastando as bolinhas e use 'Salvar RDDF'.")
+        QMessageBox.information(self, "RDDF criado",
+                                f"{n} pontos gerados.\n\n"
+                                "Agora dá para arrastar as bolinhas, suavizar, e então "
+                                "'Salvar RDDF'. Depois 'Gerar Grafo (.gr)' se quiser navegar por ele.")
+
+    # =========================================================================
+    # EDITOR DE MISSÕES
+    # =========================================================================
+    MISSION_TEMPLATE = (
+        "# Uma frase dizendo o que a missao faz -- vira a descricao no combo do navigator_gui2.\n"
+        "\n"
+        "publish mission state STARTING_MISSION minha_missao\n"
+        "\n"
+        "set local double v equal to 2.0\n"
+        "set maximum speed to v m/s\n"
+        "\n"
+        "# use sempre o par 'set course to' + 'go'\n"
+        "\n"
+        "stop\n"
+        "\n"
+        "publish mission state MISSION_COMPLETED minha_missao\n"
+        "mission completed\n"
+    )
+
+    def _on_mission_text_changed(self):
+        self.mission_dirty = True
+        if self.current_mode == 3:
+            self._mission_timer.start()
+
+    # ---- preview da missao no mapa ------------------------------------------
+    def mission_collect_places(self):
+        """nome -> (x, y, theta), tanto dos nos na tela quanto do arquivo de anotacoes."""
+        d = {}
+        for raw in self.original_annotations:
+            parts = raw.split()
+            if len(parts) >= 7:
+                try:
+                    if int(parts[1]) == 13:
+                        d[parts[0]] = (float(parts[4]), float(parts[5]), float(parts[3]))
+                except ValueError:
+                    pass
+        for node in self.place_nodes:   # o que esta' na tela vence o arquivo
+            gx = node.scenePos().x() * self.global_res
+            gy = -(node.scenePos().y() + 1) * self.global_res
+            d[node.name] = (gx, gy, node.theta)
+        self.mission_places_cache = d
+        return d
+
+    def mission_parse_steps(self, txt):
+        """Le a missao e devolve os passos que tem posicao, na ordem de execucao.
+
+        Cada passo: dict(tipo, x, y, theta, rotulo, linha). Nao interpreta desvios de
+        label -- e' uma leitura de cima para baixo, que e' o caso da esmagadora maioria
+        das missoes de navegacao."""
+        places = self.mission_collect_places()
+        passos = []
+        naoresolvidos = []
+
+        for i, ln in enumerate(txt.split("\n"), start=1):
+            if not ln or ln[0] in (" ", "\t"):
+                continue                      # o interpretador ignora essas
+            corpo = ln.split("#", 1)[0].strip()
+            if not corpo:
+                continue
+            corpo_v = corpo.replace(",", " ")
+
+            def num3(prefixo):
+                m = re.match(r"^" + prefixo + r"\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)", corpo_v)
+                return (float(m.group(1)), float(m.group(2)), float(m.group(3))) if m else None
+
+            def place(prefixo):
+                m = re.match(r"^" + prefixo + r"\s+place\s+(\S+)", corpo_v)
+                if not m:
+                    return None, None
+                nome = m.group(1)
+                return nome, places.get(nome)
+
+            tipo = None
+            if corpo_v.startswith("set robot pose"):
+                tipo, pref = "pose_inicial", "set robot pose"
+            elif corpo_v.startswith("go after park at"):
+                tipo, pref = "park", "go after park at"
+            elif corpo_v.startswith("go after set course to"):
+                tipo, pref = "curso_quebrado", "go after set course to"
+            elif corpo_v.startswith("park truck and semi-trailer at"):
+                tipo, pref = "park", "park truck and semi-trailer at"
+            elif corpo_v.startswith("park at"):
+                tipo, pref = "park", "park at"
+            elif corpo_v.startswith("set course to"):
+                tipo, pref = "curso", "set course to"
+            elif corpo_v.startswith("set final goal"):
+                tipo, pref = "final_goal", "set final goal"
+            else:
+                continue
+
+            nome, coord = place(pref)
+            if nome is not None:
+                if coord is None:
+                    naoresolvidos.append((i, nome))
+                    continue
+                x, y, th = coord
+                rotulo = nome.replace("RDDF_PLACE_", "")
+            else:
+                c = num3(pref)
+                if c is None:
+                    continue
+                x, y, th = c
+                rotulo = ""
+
+            passos.append(dict(tipo=tipo, x=x, y=y, theta=th, rotulo=rotulo, linha=i))
+
+        return passos, naoresolvidos
+
+    def _rddf_route_between(self, a, b):
+        """Pontos entre A e B para desenhar a rota de verdade.
+
+        Prefere o GRAFO carregado, porque e' ele que o route_planner percorre; se nao
+        houver grafo, cai no RDDF. Sem os dois, devolve None e o preview usa uma reta."""
+        if self.graph_nodes:
+            rows = [(n[0], n[1]) for n in self.graph_nodes]
+        else:
+            rows = self.original_rddf_data
+        if len(rows) < 3:
+            return None
+
+        # numpy: um RDDF real tem dezenas de milhares de pontos e o preview e' redesenhado
+        # a cada tecla digitada (com debounce de 250 ms).
+        if getattr(self, "_rddf_xy_cache_len", None) != len(rows):
+            self._rddf_xy = np.array([[r[0], r[1]] for r in rows], dtype=float)
+            self._rddf_xy_cache_len = len(rows)
+        xy = self._rddf_xy
+
+        def mais_perto(px, py):
+            d2 = (xy[:, 0] - px) ** 2 + (xy[:, 1] - py) ** 2
+            i = int(np.argmin(d2))
+            return i, float(math.sqrt(d2[i]))
+
+        ia, da = mais_perto(a[0], a[1])
+        ib, db = mais_perto(b[0], b[1])
+        if da > 15.0 or db > 15.0:      # o destino nao esta' sobre este caminho
+            return None
+
+        if ib >= ia:
+            trecho = rows[ia:ib + 1]
+        else:
+            trecho = rows[ia:] + rows[:ib + 1]   # o caminho e' um circuito: da a volta
+        if len(trecho) < 2:
+            return None
+        return [(r[0], r[1]) for r in trecho]
+
+    def mission_clear_preview(self):
+        for it in self.mission_preview_items:
+            try:
+                self.scene.removeItem(it)
+            except Exception:
+                pass
+        self.mission_preview_items = []
+
+    def _prev_add(self, item, z):
+        item.setZValue(z)
+        self.scene.addItem(item)
+        self.mission_preview_items.append(item)
+
+    def mission_render_preview(self):
+        """Desenha no mapa a rota e as posicoes que a missao aberta vai percorrer."""
+        self.mission_clear_preview()
+        if self.current_mode != 3 or not self.maps:
+            return
+
+        passos, naoresolvidos = self.mission_parse_steps(self.edit_mission.toPlainText())
+        res = self.global_res
+
+        def to_scene(x, y):
+            return x / res, -y / res - 1
+
+        # --- a rota, ligando um destino ao seguinte ---
+        anteriores = [p for p in passos]
+        for k in range(len(anteriores) - 1):
+            a = anteriores[k]
+            b = anteriores[k + 1]
+            traj = self._rddf_route_between((a["x"], a["y"]), (b["x"], b["y"]))
+            caminho = QPainterPath()
+            if traj:
+                sx, sy = to_scene(*traj[0])
+                caminho.moveTo(sx, sy)
+                for (px, py) in traj[1:]:
+                    caminho.lineTo(*to_scene(px, py))
+                pen = QPen(QColor(0, 120, 255, 200), 0)
+                pen.setCosmetic(True)
+                pen.setWidth(4)
+            else:
+                sx, sy = to_scene(a["x"], a["y"])
+                caminho.moveTo(sx, sy)
+                caminho.lineTo(*to_scene(b["x"], b["y"]))
+                pen = QPen(QColor(120, 120, 120, 180), 0)
+                pen.setCosmetic(True)
+                pen.setWidth(2)
+                pen.setStyle(Qt.DashLine)
+            item = QGraphicsPathItem(caminho)
+            item.setPen(pen)
+            self._prev_add(item, 40)
+
+        # --- os destinos, numerados na ordem de execucao ---
+        cores = {
+            "pose_inicial":   QColor(255, 255, 255),
+            "curso":          QColor(0, 120, 255),
+            "park":           QColor(160, 60, 220),
+            "final_goal":     QColor(255, 200, 0),
+            "curso_quebrado": QColor(220, 40, 40),
+        }
+        n_navegacao = 0
+        for p in passos:
+            sx, sy = to_scene(p["x"], p["y"])
+            cor = cores.get(p["tipo"], QColor(0, 120, 255))
+            rad = 9
+
+            dot = QGraphicsEllipseItem(sx - rad, sy - rad, rad * 2, rad * 2)
+            dot.setBrush(QBrush(cor))
+            dot.setPen(QPen(Qt.black, 0))
+            self._prev_add(dot, 45)
+
+            lx = sx + 26 * math.cos(p["theta"])
+            ly = sy - 26 * math.sin(p["theta"])
+            seta = QGraphicsLineItem(sx, sy, lx, ly)
+            pen = QPen(cor.darker(140), 0)
+            pen.setCosmetic(True)
+            pen.setWidth(3)
+            seta.setPen(pen)
+            self._prev_add(seta, 44)
+
+            if p["tipo"] != "pose_inicial":
+                n_navegacao += 1
+                marca = str(n_navegacao)
+            else:
+                marca = "S"     # start
+            txt = QGraphicsTextItem(marca + ((" " + p["rotulo"]) if p["rotulo"] else ""))
+            txt.setDefaultTextColor(cor.darker(160))
+            f = txt.font(); f.setBold(True); f.setPointSize(10); txt.setFont(f)
+            txt.setPos(sx + rad, sy - rad - 18)
+            self._prev_add(txt, 46)
+
+            if p["tipo"] == "curso_quebrado":
+                aviso = QGraphicsTextItem("go after set course to: task quebrada")
+                aviso.setDefaultTextColor(QColor(220, 40, 40))
+                fa = aviso.font(); fa.setBold(True); aviso.setFont(fa)
+                aviso.setPos(sx + rad, sy + rad)
+                self._prev_add(aviso, 46)
+
+        if not self.chk_show_mission.isChecked():
+            for it in self.mission_preview_items:
+                it.setVisible(False)
+
+        msg = f"Missão: {n_navegacao} destino(s) no mapa."
+        if naoresolvidos:
+            nomes = ", ".join(f"{n} (linha {i})" for i, n in naoresolvidos)
+            msg += f"  Place sem coordenada: {nomes} — abra o arquivo de anotações."
+        if passos and not self.original_rddf_data and not self.graph_nodes:
+            msg += "  (rota em linha reta: carregue o grafo (.gr) ou o RDDF para ver o traçado real)"
+        elif passos and self.graph_nodes:
+            msg += "  Rota traçada pelo grafo."
+        self.status.showMessage(msg)
+
+    def mission_choose_dir(self):
+        d = QFileDialog.getExistingDirectory(self, "Pasta das missões (missoes/)")
+        if not d:
+            return
+        self.mission_set_dir(d)
+
+    def mission_set_dir(self, d):
+        self.mission_dir = d
+        self.lbl_mission_dir.setText(d)
+        self.mission_scan_dir()
+
+    def mission_scan_dir(self):
+        self.combo_mission.blockSignals(True)
+        self.combo_mission.clear()
+        self.combo_mission.addItem("-- Nova missão --", None)
+        if self.mission_dir and os.path.isdir(self.mission_dir):
+            for f in sorted(glob.glob(os.path.join(self.mission_dir, "*.txt"))):
+                self.combo_mission.addItem(os.path.basename(f), f)
+        self.combo_mission.blockSignals(False)
+
+    def _mission_confirm_discard(self):
+        if not self.mission_dirty or not self.edit_mission.toPlainText().strip():
+            return True
+        r = QMessageBox.question(self, "Descartar alterações?",
+                                 "A missão aberta tem alterações não salvas. Descartar?",
+                                 QMessageBox.Yes | QMessageBox.No)
+        return r == QMessageBox.Yes
+
+    def on_combo_mission_changed(self, index):
+        path = self.combo_mission.itemData(index)
+        if path is None:
+            return
+        if not self._mission_confirm_discard():
+            return
+        try:
+            with open(path, 'r') as f:
+                self.edit_mission.setPlainText(f.read())
+            self.current_mission_path = path
+            self.mission_dirty = False
+            self.mission_render_preview()
+            self.status.showMessage(f"Missão aberta: {os.path.basename(path)}")
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Não consegui abrir:\n{e}")
+
+    def mission_new(self):
+        if not self._mission_confirm_discard():
+            return
+        self.edit_mission.setPlainText(self.MISSION_TEMPLATE)
+        self.current_mission_path = None
+        self.mission_dirty = True
+        self.mission_render_preview()
+        self.combo_mission.blockSignals(True)
+        self.combo_mission.setCurrentIndex(0)
+        self.combo_mission.blockSignals(False)
+        self.status.showMessage("Missão nova. Use 'Salvar como...' para gravar em missoes/.")
+
+    def mission_insert_template(self):
+        self.edit_mission.insertPlainText(self.MISSION_TEMPLATE)
+
+    def mission_refresh_places(self):
+        """Preenche o combo de places com o que estiver carregado nas anotações."""
+        self.combo_mission_place.clear()
+        nomes = []
+        for node in self.place_nodes:
+            nomes.append(node.name)
+        for raw in self.original_annotations:
+            parts = raw.split()
+            if len(parts) >= 7:
+                try:
+                    if int(parts[1]) == 13:
+                        nomes.append(parts[0])
+                except ValueError:
+                    pass
+        for n in sorted(set(nomes)):
+            self.combo_mission_place.addItem(n)
+        if not nomes:
+            self.combo_mission_place.addItem("(nenhum place carregado)")
+
+    def mission_insert_place(self):
+        nome = self.combo_mission_place.currentText()
+        if not nome or nome.startswith("("):
+            QMessageBox.warning(self, "Aviso",
+                                "Nenhum local carregado. Abra o arquivo de anotações no modo "
+                                "'Editar Locais' primeiro.")
+            return
+        # O task_manager casa o nome exatamente como esta' na primeira coluna do annotations.txt
+        self.edit_mission.insertPlainText(f"set course to place {nome}\ngo\n")
+        self.mission_dirty = True
+
+    def mission_start_pick_goal(self):
+        if self.current_mode != 3:
+            self.combo_mode.setCurrentIndex(3)
+        if not self.maps:
+            QMessageBox.warning(self, "Aviso", "Carregue a pasta do ambiente primeiro.")
+            return
+        self.pending_mission_goal = True
+        self.view.setDragMode(QGraphicsView.NoDrag)
+        self.view.viewport().setCursor(Qt.CrossCursor)
+        self.status.showMessage("Clique no mapa onde o robô deve chegar e ARRASTE para definir a orientação.")
+
+    def mission_insert_goal(self, gx, gy, theta):
+        self.edit_mission.insertPlainText(
+            f"set course to {gx:.3f} {gy:.3f} {theta:.6f}\ngo\n")
+        self.mission_dirty = True
+        self.status.showMessage(f"Destino inserido: {gx:.3f} {gy:.3f} {theta:.6f}")
+
+    def mission_validate(self):
+        """Procura as armadilhas que fazem a missao falhar em silencio."""
+        txt = self.edit_mission.toPlainText()
+        if not txt.strip():
+            QMessageBox.information(self, "Verificação", "A missão está vazia.")
+            return
+
+        probs = []
+        avisos = []
+        linhas = txt.split("\n")
+        tem_navegacao = False
+        tem_stop = False
+
+        for i, ln in enumerate(linhas, start=1):
+            if not ln.strip():
+                continue
+            if ln[0] in (" ", "\t"):
+                probs.append(f"linha {i}: começa com espaço/tab — o interpretador IGNORA essa linha.")
+                continue
+            corpo = ln.split("#", 1)[0].rstrip()
+            if not corpo:
+                continue
+            if corpo.startswith("go after set course to"):
+                probs.append(f"linha {i}: 'go after set course to' é uma task quebrada — "
+                             "não publica o destino. Use 'set course to' + 'go'.")
+            if corpo.startswith("set course to") or corpo.startswith("park at"):
+                tem_navegacao = True
+            if corpo == "stop":
+                tem_stop = True
+            # virgula dentro do nome da task (vira um espaco a mais e o strncmp nao bate)
+            m = re.match(r"^([A-Za-z][A-Za-z_ ]*?),", corpo)
+            if m and not re.match(r"^set (pose|local pose)", corpo):
+                probs.append(f"linha {i}: vírgula dentro do nome da task — "
+                             "ela vira um espaço a mais e a task deixa de ser reconhecida.")
+            if corpo.startswith("execute task at label ") and "#" in ln:
+                avisos.append(f"linha {i}: comentário na mesma linha de "
+                              "'execute task at label' (já corrigido no task_manager, "
+                              "mas ainda quebra no astro).")
+
+        if not txt.endswith("\n"):
+            probs.append("o arquivo não termina com quebra de linha — "
+                         "o último caractere é comido pelo interpretador.")
+
+        if tem_stop and not tem_navegacao:
+            probs.append("tem 'stop' mas nenhuma navegação: o 'stop' espera o "
+                         "model_predictive_planner confirmar, e ele só publica depois de ter "
+                         "um goal. A missão TRAVA para sempre.")
+
+        # labels usados x definidos
+        definidos = set()
+        for ln in linhas:
+            t = ln.strip()
+            if t.endswith(":") and " " not in t[:-1] and "\t" not in t[:-1] and t[:-1]:
+                definidos.add(t[:-1])
+        for i, ln in enumerate(linhas, start=1):
+            m = re.search(r"execute task at label\s+(\S+)", ln.split("#", 1)[0])
+            if m and m.group(1) not in definidos:
+                probs.append(f"linha {i}: label '{m.group(1)}' não existe — "
+                             "label não encontrado mata a missão com exit(1).")
+
+        if probs:
+            QMessageBox.warning(self, "Problemas encontrados",
+                                "\n\n".join("• " + p for p in probs) +
+                                (("\n\nAvisos:\n" + "\n".join("• " + a for a in avisos)) if avisos else ""))
+        elif avisos:
+            QMessageBox.information(self, "Avisos", "\n".join("• " + a for a in avisos))
+        else:
+            QMessageBox.information(self, "Verificação", "Nenhuma armadilha encontrada.")
+
+    def _mission_normalize(self, txt):
+        """Garante a quebra de linha final, que o interpretador exige."""
+        if not txt.endswith("\n"):
+            txt += "\n"
+        return txt
+
+    def mission_save(self):
+        if not self.current_mission_path:
+            return self.mission_save_as()
+        try:
+            with open(self.current_mission_path, 'w') as f:
+                f.write(self._mission_normalize(self.edit_mission.toPlainText()))
+            self.mission_dirty = False
+            self.status.showMessage(f"Missão salva: {self.current_mission_path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Erro ao salvar:\n{e}")
+
+    def mission_save_as(self):
+        base = self.mission_dir or ""
+        path, _ = QFileDialog.getSaveFileName(self, "Salvar missão",
+                                              os.path.join(base, "minha_missao.txt"),
+                                              "Text Files (*.txt)")
+        if not path:
+            return
+        if not path.endswith(".txt"):
+            path += ".txt"
+        try:
+            with open(path, 'w') as f:
+                f.write(self._mission_normalize(self.edit_mission.toPlainText()))
+            self.current_mission_path = path
+            self.mission_dirty = False
+            if not self.mission_dir:
+                self.mission_set_dir(os.path.dirname(path))
+            else:
+                self.mission_scan_dir()
+            idx = self.combo_mission.findData(path)
+            if idx >= 0:
+                self.combo_mission.blockSignals(True)
+                self.combo_mission.setCurrentIndex(idx)
+                self.combo_mission.blockSignals(False)
+            self.status.showMessage(f"Missão salva: {path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Erro ao salvar:\n{e}")
+
+    def mission_delete(self):
+        path = self.current_mission_path
+        if not path or not os.path.exists(path):
+            QMessageBox.warning(self, "Aviso", "Nenhuma missão salva selecionada.")
+            return
+        r = QMessageBox.question(self, "Excluir missão?",
+                                 f"Apagar definitivamente\n{path}?",
+                                 QMessageBox.Yes | QMessageBox.No)
+        if r != QMessageBox.Yes:
+            return
+        try:
+            os.remove(path)
+            self.current_mission_path = None
+            self.edit_mission.clear()
+            self.mission_dirty = False
+            self.mission_scan_dir()
+            self.mission_clear_preview()
+            self.status.showMessage("Missão excluída.")
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Erro ao excluir:\n{e}")
+
     def clear_rddf(self):
+        self._rddf_xy_cache_len = None
         self.original_rddf_data.clear()
         for node in self.rddf_nodes: self.scene.removeItem(node)
         for item in self.rddf_path_items: self.scene.removeItem(item)
@@ -1338,6 +2432,10 @@ class MapEditor(QMainWindow):
         if unsaved > 0:
             if QMessageBox.question(self, "Sair?", "Mapas modificados. Salvar?", QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
                 self.save_all()
+        if self.mission_dirty and self.edit_mission.toPlainText().strip():
+            if QMessageBox.question(self, "Sair?", "A missão tem alterações não salvas. Salvar?",
+                                    QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+                self.mission_save()
         event.accept()
 
     def load_folder(self):
@@ -1351,6 +2449,12 @@ class MapEditor(QMainWindow):
         self.maps.clear()
         self.current_rddf_filepath = None
         self.current_annotations_filepath = None
+        self.graph_items = []       # a cena foi limpa, os itens ja' se foram
+        self.graph_nodes = []
+        self.graph_edges = []
+        self._graph_xy = None
+        self.current_graph_filepath = None
+        self.mission_preview_items = []
         
         prog = QProgressDialog("Montando Mapas...", "Cancelar", 0, len(files), self)
         prog.setWindowModality(Qt.WindowModal); prog.show()
@@ -1393,8 +2497,46 @@ class MapEditor(QMainWindow):
             for af in ann_files: 
                 self.combo_ann.addItem(os.path.basename(af), af)
             self.combo_ann.blockSignals(False)
+
+            self.combo_graph.blockSignals(True); self.combo_graph.clear()
+            self.combo_graph.addItem("-- Selecione o Grafo --", None)
+            gr_files = []
+            for base in (folder, os.path.dirname(folder)):
+                if not base or not os.path.isdir(base):
+                    continue
+                for d in os.listdir(base):
+                    if d.lower() in ("graphs", "graph", "grafo", "grafos"):
+                        cand = os.path.join(base, d)
+                        if os.path.isdir(cand):
+                            gr_files.extend(glob.glob(os.path.join(cand, "*.gr")))
+            gr_files.extend(glob.glob(os.path.join(folder, "*.gr")))
+            gr_files.extend(glob.glob(os.path.join(os.path.dirname(folder), "*.gr")))
+            for gf in sorted(set(gr_files)):
+                self.combo_graph.addItem(os.path.basename(gf), gf)
+            self.combo_graph.blockSignals(False)
+
+            # Missoes: procura uma pasta 'missoes'/'missions' aqui ou um nivel acima
+            mis_dir = None
+            for base in (folder, os.path.dirname(folder), os.path.dirname(os.path.dirname(folder))):
+                if not base or not os.path.isdir(base):
+                    continue
+                for d in os.listdir(base):
+                    if d.lower() in ("missoes", "missions", "missao", "missions_folder"):
+                        cand = os.path.join(base, d)
+                        if os.path.isdir(cand):
+                            mis_dir = cand
+                            break
+                if mis_dir:
+                    break
+            if mis_dir:
+                self.mission_set_dir(mis_dir)
+            else:
+                self.mission_scan_dir()
             
-            self.status.showMessage(f"Ambiente carregado. Mapas: {len(self.maps)} | RDDFs: {self.combo_rddf.count()-1} | Anotações: {self.combo_ann.count()-1}")
+            self.status.showMessage(
+                f"Ambiente carregado. Mapas: {len(self.maps)} | RDDFs: {self.combo_rddf.count()-1} "
+                f"| Grafos: {self.combo_graph.count()-1} "
+                f"| Anotações: {self.combo_ann.count()-1} | Missões: {self.combo_mission.count()-1}")
             
         else: QMessageBox.warning(self, "Aviso", "Nenhum mapa válido.")
 

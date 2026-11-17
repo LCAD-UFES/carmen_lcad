@@ -1,0 +1,11 @@
+# Binarios gerados pelo make (os .o/.a/Makefile.depend ja caem no .gitignore da raiz).
+pi_nit_client_driver
+pi_nit_link_test
+pi_nit_camera_publisher
+
+# Pesos das redes (~147 MB) e o venv do lado Python: baixados, nunca versionados.
+# Ver pi_nit_server/download_model.sh.
+*.pt
+*.hef
+*.onnx
+venv/

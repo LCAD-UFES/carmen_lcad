@@ -6,8 +6,13 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/glu.h>
+#include <GL/freeglut_ext.h>	// glutStrokeString, como no viewer do fork
 
 #include "trajectory_drawer.h"
+
+
+// o contorno do goal fica um centimetro abaixo do plano do caminho, como no fork
+#define GOAL_Z_OFFSET	-0.01
 
 
 trajectory_drawer *
@@ -23,6 +28,8 @@ create_trajectory_drawer(double r, double g, double b, carmen_vector_3D_t robot_
 
 	t_drawer->goals = NULL;
 	t_drawer->goals_size = 0;
+	t_drawer->first_goal_velocity = 0.0;
+	t_drawer->force_draw = 0;
 	
 	t_drawer->r = r;
 	t_drawer->g = g;
@@ -164,86 +171,132 @@ add_path_goals_and_annotations_message(trajectory_drawer *t_drawer, carmen_behav
 	}
 //	fclose(arq);
 
-	t_drawer->goals = (carmen_pose_3D_t *) realloc(t_drawer->goals, message->goal_list_size * sizeof(carmen_pose_3D_t));
+	t_drawer->goals = (carmen_robot_and_trailers_pose_t *) realloc(t_drawer->goals, message->goal_list_size * sizeof(carmen_robot_and_trailers_pose_t));
 	t_drawer->goals_size = message->goal_list_size;
 
 	for (int i = 0; i < t_drawer->goals_size; i++)
 	{
-		t_drawer->goals[i].position.x = message->goal_list[i].x;
-		t_drawer->goals[i].position.y = message->goal_list[i].y;
-		t_drawer->goals[i].position.z = 0.0;
+		t_drawer->goals[i].x = message->goal_list[i].x;
+		t_drawer->goals[i].y = message->goal_list[i].y;
+		t_drawer->goals[i].theta = message->goal_list[i].theta;
+		t_drawer->goals[i].num_trailers = message->goal_list[i].num_trailers;
 
-		t_drawer->goals[i].orientation.roll = 0.0;
-		t_drawer->goals[i].orientation.pitch = 0.0;
-		t_drawer->goals[i].orientation.yaw = message->goal_list[i].theta;
+		for (size_t z = 0; z < MAX_NUM_TRAILERS; z++)
+			t_drawer->goals[i].trailer_theta[z] = message->goal_list[i].trailer_theta[z];
 	}
+
+	t_drawer->first_goal_velocity = (t_drawer->goals_size > 0) ? message->goal_list[0].v : 0.0;
 
 	t_drawer->availability_timestamp = carmen_get_time();
 }
 
 
+// Como no viewer do fork (astro/src/viewer_3D/trajectory_drawer.cpp:279): desenha SO O GOAL
+// CORRENTE, e como contorno. O original percorria todos os goals e pintava cada um como um
+// GL_POLYGON amarelo opaco do tamanho do carro -- numa rota com 20 goals sao 20 caixas macicas,
+// cada uma cobrindo os quatro metros seguintes de rota.
 void
-draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
+draw_goals_outline(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int semi_trailer_engaged)
 {
 	if (!t_drawer->goals || (t_drawer->goals_size == 0))
 		return;
+
+	if (!t_drawer->force_draw && (carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
+		return;		// soh desenha novamente se chegar nova mensagem
 
 	double length_x = t_drawer->robot_size.x;
 	double length_y = t_drawer->robot_size.y;
 	double car_middle_to_rear_wheels = length_x / 2.0 - t_drawer->distance_between_rear_car_and_rear_wheels;
 
-	for(int i = 0; i < t_drawer->goals_size; i++)
+	for (int i = 0; (i < 1) && (i < t_drawer->goals_size); i++)	// (i < 1): so o goal corrente
 	{
 		glDisable(GL_LIGHTING);
 		glPushMatrix();
 
-			glColor3f(1.0f, 1.0f, 0.0f);
-			glTranslated(t_drawer->goals[i].position.x - offset.x, t_drawer->goals[i].position.y - offset.y, t_drawer->goals[i].position.z - offset.z);
-			glRotated(carmen_radians_to_degrees(t_drawer->goals[i].orientation.yaw), 0.0f, 0.0f, 1.0f);
-			glRotated(carmen_radians_to_degrees(t_drawer->goals[i].orientation.pitch), 0.0f, 1.0f, 0.0f);
-			glRotated(carmen_radians_to_degrees(t_drawer->goals[i].orientation.roll), 1.0f, 0.0f, 0.0f);
+			glTranslatef(t_drawer->goals[i].x - offset.x, t_drawer->goals[i].y - offset.y, GOAL_Z_OFFSET);
+			glRotatef(carmen_radians_to_degrees(t_drawer->goals[i].theta), 0.0, 0.0, 1.0);
 
-			glBegin(GL_POLYGON);
+			glColor3f(1.0f, 1.0f, 0.0f);
+			glBegin(GL_LINE_STRIP);
 				glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
 				glVertex3d(car_middle_to_rear_wheels + length_x/2, -length_y/2, 0);
 				glVertex3d(car_middle_to_rear_wheels + length_x/2, length_y/2, 0);
 				glVertex3d(car_middle_to_rear_wheels - length_x/2, length_y/2, 0);
-				//glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
+				glVertex3d(car_middle_to_rear_wheels - length_x/2, -length_y/2, 0);
 			glEnd();
+
+			// os semi-reboques do goal, encadeados como no draw_path() logo abaixo (o fork usa
+			// convert_theta1_to_beta(), que nao existe aqui; a formulacao com d e M e' a que o
+			// proprio carmen ja usa para o caminho, entao o goal fica igual ao resto do desenho)
+			if (semi_trailer_engaged)
+			{
+				for (int semi_trailer_id = 1; semi_trailer_id <= t_drawer->semi_trailer_config.num_semi_trailers; semi_trailer_id++)
+				{
+					glPushMatrix();
+						glRotatef(-carmen_radians_to_degrees(t_drawer->goals[i].trailer_theta[semi_trailer_id-1]), 0.0, 0.0, 1.0);
+						glTranslatef(-t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].d - t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M * cos(t_drawer->goals[i].trailer_theta[semi_trailer_id-1]),
+									 -t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].M * sin(t_drawer->goals[i].trailer_theta[semi_trailer_id-1]),
+									 0.0);
+
+						glBegin(GL_LINE_STRIP);
+							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+							glVertex3f(t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, -t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+							glVertex3f(t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_front, t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+							glVertex3f(-t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].distance_between_axle_and_back, -t_drawer->semi_trailer_config.semi_trailers[semi_trailer_id-1].width / 2, 0);
+						glEnd();
+					glPopMatrix();
+				}
+			}
+
+			// a velocidade pedida no goal, escrita dentro do contorno (fork:369)
+			{
+				double text_height = 0.65;
+				double text_pos_x = car_middle_to_rear_wheels - length_x / 2;
+				double text_pos_y = (length_y / 2) - text_height;
+				char text[64];
+
+				glPushMatrix();
+					glColor3f(0.0f, 0.0f, 0.0f);
+					glTranslatef(text_pos_x, text_pos_y, 0.0);
+					glScalef(0.0045f, 0.0045f, 1.0f);
+					sprintf(text, "%5.1fkm/h", 3.6 * t_drawer->first_goal_velocity);
+					glutStrokeString(GLUT_STROKE_MONO_ROMAN, (const unsigned char *) text);
+				glPopMatrix();
+			}
 
 		glPopMatrix();
 		glEnable(GL_LIGHTING);
 	}
-
-	if ((carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
-		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
 
 void
-draw_goals(trajectory_drawer *t_drawer, carmen_vector_3D_t offset)
+draw_goals(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int semi_trailer_engaged)
 {
+	if (!t_drawer->force_draw && (carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
+		return;		// soh desenha novamente se chegar nova mensagem
+
 	glPushMatrix();
 
 		glColor3f(1.0f, 1.0f, 0.0f);
-	
-		glBegin(GL_LINES);	
 
-			for (int i = 0; i < t_drawer->goals_size; i++)
+		glBegin(GL_LINES);
+
+			for (int i = 0; (i < 1) && (i < t_drawer->goals_size); i++)	// (i < 1): so o goal corrente
 			{
-				double sinTheta = sin(t_drawer->goals[i].orientation.yaw);
-				double cosTheta = cos(t_drawer->goals[i].orientation.yaw);
+				double sinTheta = sin(t_drawer->goals[i].theta);
+				double cosTheta = cos(t_drawer->goals[i].theta);
 
-				glVertex3d(t_drawer->goals[i].position.x - offset.x, t_drawer->goals[i].position.y - offset.y, t_drawer->goals[i].position.z - offset.z);
-				glVertex3d(t_drawer->goals[i].position.x - offset.x + 2.0*cosTheta, t_drawer->goals[i].position.y - offset.y + 2.0*sinTheta, t_drawer->goals[i].position.z - offset.z);														
+				glVertex3d(t_drawer->goals[i].x - offset.x, t_drawer->goals[i].y - offset.y, 0.0);
+				glVertex3d(t_drawer->goals[i].x - offset.x + 2.0 * cosTheta, t_drawer->goals[i].y - offset.y + 2.0 * sinTheta, 0.0);
 			}
 
 		glEnd();
 
 	glPopMatrix();
 
-	if ((carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
-		t_drawer->goals_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
+	draw_goals_outline(t_drawer, offset, semi_trailer_engaged);
 }
 
 
@@ -251,6 +304,12 @@ static void
 draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag, int draw_robot_waypoints_flag, int semi_trailer_engaged)
 {
 	if (!t_drawer->path || (t_drawer->path_size == 0))
+		return;
+
+	// O teste vem AQUI, e so' impede o desenho -- como no fork. No original ele ficava no fim da
+	// funcao e fazia t_drawer->path_size = 0, ou seja, APAGAVA o caminho: um unico quadro
+	// atrasado alem do persistence_time e a rota so' voltava com a proxima mensagem.
+	if (!t_drawer->force_draw && (carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
 		return;
 
 	if (draw_robot_waypoints_flag)
@@ -327,16 +386,17 @@ draw_path(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypo
 
 		glPopMatrix();
 	}
-
-	if ((carmen_get_time() - t_drawer->availability_timestamp) > t_drawer->persistence_time)
-		t_drawer->path_size = 0;	// Depois daqui, soh desenha novamente se chegar nova mensagem
 }
 
 
 void
-draw_trajectory(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag, int draw_robot_waypoints_flag, int semi_trailer_engaged)
+draw_trajectory(trajectory_drawer *t_drawer, carmen_vector_3D_t offset, int draw_waypoints_flag, int draw_robot_waypoints_flag, int semi_trailer_engaged, int force_draw)
 {
+	if (t_drawer == NULL)
+		return;
+
+	t_drawer->force_draw = force_draw;
+
 	draw_path(t_drawer, offset, draw_waypoints_flag, draw_robot_waypoints_flag, semi_trailer_engaged);
-//	draw_goals(t_drawer, offset);
-	draw_goals_outline(t_drawer, offset);
+	draw_goals(t_drawer, offset, semi_trailer_engaged);
 }

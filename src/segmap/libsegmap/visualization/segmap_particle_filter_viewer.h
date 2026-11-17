@@ -4,7 +4,7 @@
 
 #include <vector>
 #include <Eigen/Core>
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <carmen/segmap_grid_map.h>
 #include <carmen/segmap_particle_filter.h>
 #include <pcl/point_cloud.h>

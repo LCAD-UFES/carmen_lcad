@@ -5,10 +5,19 @@ MODULE_COMMENT = tracker_opentld/3rdparty
 
 LINK = g++
 
-CXXFLAGS += 
-CFLAGS += 
-IFLAGS += `pkg-config --cflags opencv` -I cvblobs  
-LFLAGS += `pkg-config --libs opencv`
+# Migração Ubuntu 26.04: o libconfig vendorizado usa dynamic exception specifications
+# (`throw(ParseException)` nas assinaturas), removidas do C++17 — que é o padrão default do
+# GCC 15. Este diretório é código de terceiros congelado; compilar em C++14 (onde isso é só
+# deprecated) evita reescrever a lib inteira.
+CXXFLAGS += -std=gnu++14
+# Migração Ubuntu 26.04: o libconfig vendorizado aqui tem código gerado por bison/flex com
+# protótipos no estilo K&R (`int f()` = "argumentos não especificados"). O GCC 15 usa C23 por
+# padrão, onde `f()` passou a significar `f(void)` — e chamar com argumentos virou erro
+# ("too many arguments to function"). Compilar este diretório em C17 mantém a semântica
+# antiga sem precisar regenerar o parser.
+CFLAGS += -std=gnu17
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -I cvblobs  
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 SUBDIRS += 
 
 SOURCES = cvblobs/BlobContour.cpp \

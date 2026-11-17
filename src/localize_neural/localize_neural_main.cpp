@@ -10,8 +10,8 @@
 #include <carmen/base_ackerman_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/localize_ackerman_interface.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
 #include <string>
@@ -366,7 +366,7 @@ find_more_synchronized_pose(const vector<pair<carmen_pose_3D_t, double> > &poses
 void
 read_image_file (carmen_localize_neural_imagepos_message *message, string imagename)
 {
-	cv::Mat img = cv::imread (imagename.c_str(), CV_LOAD_IMAGE_COLOR);
+	cv::Mat img = cv::imread (imagename.c_str(), cv::IMREAD_COLOR);
 
 	message->height = img.rows;
 	message->width = img.cols;

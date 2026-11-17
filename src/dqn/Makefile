@@ -1,6 +1,11 @@
 
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 # Module name and description
 MODULE_NAME = DQN
 MODULE_COMMENT = Deep Q-Network
@@ -31,9 +36,9 @@ IFLAGS += -I/usr/include/eigen3
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv` -lmapper_interface -lrddf_interface \
+LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lmapper_interface -lrddf_interface \
 	-llocalize_ackerman_interface -lrobot_ackerman_interface -lrddf_index -lprob_models -lmap_server_interface \
-	-lcollision_detection -lmap_interface -lrotation_geometry -lgrid_mapping -lmap_io -lboost_system -lglog -lcaffe -lprotobuf
+	-lcollision_detection -lmap_interface -lrotation_geometry -lgrid_mapping -lmap_io -lglog -lcaffe -lprotobuf
 CFLAGS += -Wall -Wno-write-strings -Wno-sign-compare -std=c++0x #-fopenmp -pg
 CXXFLAGS += -Wall -Wno-write-strings -Wno-sign-compare -std=c++0x #-fopenmp -pg
 

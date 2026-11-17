@@ -24,7 +24,7 @@
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/features2d.hpp>
 #include <opencv2/video/tracking.hpp>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 #include <carmen/shared_memory_test_interface.h>
 

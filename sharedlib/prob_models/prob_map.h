@@ -114,6 +114,17 @@ typedef struct _sensor_parameters
 
 	FILE *save_calibration_file;
 	float ***calibration_table;
+
+	// Desvio de azimute de cada canal dentro do shot (graus), vindo de
+	// lidar<N>_horizontal_angles. NULL para sensor sem essa correcao -- e' o
+	// default, e as funcoes que consomem tratam NULL como "todos os deltas = 0".
+	// Fica no fim do struct de proposito: os offsets dos campos antigos nao mudam.
+	double *horizontal_angles_deltas;
+
+	// Piso da banda de altura aceita deste sensor, em metros acima do chao. O teto
+	// e' o unsafe_height_above_ground la' em cima. Ponto fora da banda nao vira
+	// obstaculo. Ver carmen_prob_models_unaceptable_height_band().
+	double safe_height_from_ground;
 } sensor_parameters_t;
 
 
@@ -202,6 +213,24 @@ int map_grid_is_valid(carmen_map_t* map, int x, int y);
 
 #ifdef __cplusplus
 int carmen_prob_models_unaceptable_height(double obstacle_height, double highest_sensor, double safe_range_above_sensors, double safe_height_from_ground = -20.0);
+
+/*
+ * Banda ABSOLUTA de altura, em metros acima do chao: aceita o ponto quando
+ * safe_height_from_ground <= obstacle_height <= unsafe_height_above_ground.
+ *
+ * E' o criterio usado hoje pelo mapper e pelo localize, no lugar do
+ * carmen_prob_models_unaceptable_height() acima, cujo teto era
+ * "highest_sensor + safe_range_above_sensors" -- amarrado a ONDE O SENSOR ESTA
+ * MONTADO. Com o teto colado no sensor, mudar o LiDAR de altura mudava,
+ * silenciosamente, o que o mapa considera obstaculo; e nao havia como dar bandas
+ * diferentes a dois LiDARs do mesmo carro. A banda vem por sensor
+ * (sensor_parameters_t), alimentada por lidar<N>_safe_height_from_ground e
+ * lidar<N>_unsafe_height_above_ground.
+ *
+ * A funcao antiga continua existindo para quem nao tem sensor_parameters_t em
+ * maos (neural_mapper_io.cpp).
+ */
+int carmen_prob_models_unaceptable_height_band(double obstacle_height, double safe_height_from_ground, double unsafe_height_above_ground);
 #endif
 
 double carmen_prob_models_compute_expected_delta_ray(double ray_size, int ray_index, double *vertical_correction, double sensor_height);

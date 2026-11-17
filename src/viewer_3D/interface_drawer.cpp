@@ -37,6 +37,25 @@ static int test_mouse_over_button(button b, int x, int y);
 static void draw_button(button b);
 static void drawText(float x, float y, const char* msg, int font_help ...);
 
+// Deslocamento vertical (em pixels) aplicado a todos os botoes de menu, para que eles nao
+// fiquem escondidos embaixo de um painel colado na base da janela (o viewer_3D_dash). Vale 0
+// no viewer_3D, entao o layout dele nao muda.
+static double button_bottom_offset = 0.0;
+
+void
+interface_drawer_set_bottom_offset(double offset)
+{
+	button_bottom_offset = (offset > 0.0) ? offset : 0.0;
+}
+
+
+double
+interface_drawer_get_bottom_offset(void)
+{
+	return (button_bottom_offset);
+}
+
+
 interface_drawer*
 create_interface_drawer(int window_width, int window_height)
 {
@@ -196,6 +215,10 @@ init_buttons(interface_drawer* i_drawer, int window_width, int window_height)
 			i_drawer->butt[i].visible = 1;
 		}
 	}
+
+	// os botoes 82/83 (Help) moram no canto superior direito e nao sofrem o deslocamento
+	for (i = 0; i < i_drawer->num_buttons && i < 82; i++)
+		i_drawer->butt[i].y += button_bottom_offset;
 
 	i_drawer->butt[0].text =									BUTTON0_TEXT;
 	i_drawer->butt[DRAW_CAR_BUTTON_CODE].text =					DRAW_CAR_BUTTON_TEXT;
@@ -435,6 +458,10 @@ update_buttons_size(interface_drawer* i_drawer, int window_width, int window_hei
 			i_drawer->butt[i].height = 220;
 		}
 	}
+
+	// os botoes 82/83 (Help) moram no canto superior direito e nao sofrem o deslocamento
+	for (i = 0; i < i_drawer->num_buttons && i < 82; i++)
+		i_drawer->butt[i].y += button_bottom_offset;
 }
 
 

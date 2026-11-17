@@ -2,6 +2,10 @@
 #include <carmen/tlight_vgram.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+/* Migração Ubuntu 26.04: as constantes antigas de conversão de cor (CV_BGR2YCrCb,
+   CV_YCrCb2BGR) saíram dos headers C++ do OpenCV 4 e ficaram só no imgproc/types_c.h,
+   que este header inclui. */
+#include <carmen/opencv_c_compat.h>
 
 #include <map>
 

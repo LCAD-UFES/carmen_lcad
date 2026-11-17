@@ -1,7 +1,7 @@
 
 include $(CARMEN_HOME)/src/Makefile.conf
 
-CXXFLAGS += -Wno-write-strings -std=c++0x -Wno-sign-compare `pkg-config --cflags opencv`
+CXXFLAGS += -Wno-write-strings -std=c++0x -Wno-sign-compare `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ \
 	 -I/usr/local/include/ -I$(CARMEN_HOME)/sharedlib/prob_models $(G2O_IFLAGS) \
@@ -13,9 +13,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol -fopenmp
 LFLAGS +=  -L$(CARMEN_HOME)/sharedlib/prob_models -lprob_models -llocalize_ackerman_interface -lrobot_ackerman_interface -lbehavior_selector_interface \
 	-lobstacle_avoider_interface -lcollision_detection -lobstacle_distance_mapper_interface \
 	-L$(CARMEN_HOME)/sharedlib/prob_models -lparam_interface -lrobot_ackerman_interface \
-	-llaser_interface `pkg-config --libs opencv` -lparam_interface \
+	-llaser_interface `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lparam_interface \
 	-lsimulator_ackerman -lcontrol -lcarmodel -lfann -lgsl -lgslcblas -lgeometry -lrddf_interface \
-	-lnavigator_ackerman_interface -lmapper_interface -lsimulator_ackerman_interface -lbase_ackerman_interface -lboost_filesystem -lboost_system \
+	-lnavigator_ackerman_interface -lmapper_interface -lsimulator_ackerman_interface -lbase_ackerman_interface -lboost_filesystem \
 	-lrotation_geometry -lmap_interface -lipc -lglobal -lgrid_mapping -lmap_io
 
 MODULE_NAME = carmen_comm

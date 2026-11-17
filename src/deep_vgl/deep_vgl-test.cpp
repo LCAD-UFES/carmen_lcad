@@ -10,7 +10,7 @@
 #include "image.h"
 #include <sys/time.h>
 #include <gflags/gflags.h>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/version.hpp>

@@ -1,7 +1,8 @@
 #ifndef VISUAL_MEMORY_UTILS_H_
 #define VISUAL_MEMORY_UTILS_H_
 
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <mae.h>
 
 int

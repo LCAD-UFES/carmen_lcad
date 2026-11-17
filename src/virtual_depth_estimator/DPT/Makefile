@@ -1,24 +1,24 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
-CFLAGS += -std=c++11
+CFLAGS += -std=c++14
 CXXFLAGS += -std=gnu++11
 
 MODULE_NAME = DPT Neural Network
 MODULE_COMMENT = Depth Estimation with Intel DPT
 
 IFLAGS += -I/usr/include/python3.7 -I/usr/include/python3.6m
-LFLAGS += `python3.7-config --libs`
+LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 
 UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -lglobal -lipc -lparam_interface -lvelodyne_interface -lbumblebee_basic_interface -lvisual_tracker_interface \
-		  `pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-		  -lboost_thread-mt -lrt -lboost_signals -lboost_system  -lvelodyne_camera_calibration
+		  `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -ltf -lpthread -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
+		  -lboost_thread -lrt  -lvelodyne_camera_calibration
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt
 
 SOURCES = libdpt.cpp
  

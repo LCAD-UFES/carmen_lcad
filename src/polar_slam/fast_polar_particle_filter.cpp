@@ -10,8 +10,8 @@
 #include <stdlib.h>
 
 // TODO: Retirar quando terminar de debugar
-//#include <opencv/cv.h>
-//#include <opencv/highgui.h>
+//#include <opencv2/core.hpp>
+//#include <opencv2/highgui.hpp>
 #include <carmen/carmen.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/fast_polar_slam_interface.h>

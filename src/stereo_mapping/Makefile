@@ -8,13 +8,13 @@ CFLAGS += -std=c++11
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
-IFLAGS += `pkg-config --cflags opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 LFLAGS += -L/usr/local/lib
 LFLAGS += -lglobal -lparam_interface -lipc -lprob_models \
 		-ltime_profile -lbumblebee_basic_interface -lmap_interface -lroad_finding  -lgsl \
 		-lGL -lGLU -lglut -lm -lgslcblas -fopenmp \
 		-lstereo_interface -lxsens_interface -lvisual_odometry_interface -lfused_odometry_interface \
-		-lv_disparity -fopenmp `pkg-config --libs opencv` -lrotation_geometry
+		-lv_disparity -fopenmp `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lrotation_geometry
 			
 MODULE_NAME = STEREO_MAPPING
 MODULE_COMMENT = Generate a Map based on Computer Vision 

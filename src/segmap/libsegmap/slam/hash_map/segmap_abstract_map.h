@@ -3,7 +3,7 @@
 #define __SEGMAP_MAP_INTERFACE_H__
 
 #include <vector>
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 

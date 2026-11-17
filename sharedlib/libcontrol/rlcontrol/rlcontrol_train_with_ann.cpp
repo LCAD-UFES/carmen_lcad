@@ -10,8 +10,8 @@
 #include <cstdlib>
 #include <deque>
 #include <math.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <car_neural_model.h>
 #include "rlcontrol_interface.h"
 #include "RLControllerFactory.h"

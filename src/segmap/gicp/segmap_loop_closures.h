@@ -2,7 +2,7 @@
 #ifndef __SEGMAP_LOOP_CLOSURES_H__
 #define __SEGMAP_LOOP_CLOSURES_H__
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include "g2o/types/slam2d/se2.h"

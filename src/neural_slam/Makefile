@@ -13,7 +13,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/u
 # Required default libraries to comunicate with Carmen Core
 LFLAGS += -L/usr/local/lib -L/home/lcad/tplib/pcl/build/lib -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/lib64
 LFLAGS += -lparam_interface -lipc -lglobal -lmap_interface -lfused_odometry_interface -llocalize_ackerman_interface -lekf_odometry_interface -lbumblebee_basic_interface -lglm -ljpeg -lGL -lGLU -lglut -ltf -lBulletDynamics \
-	  -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
+	  -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread -lrt \
 	  -lopencv_core -lopencv_highgui -lopencv_ml -lopencv_imgproc
 
 CFLAGS += -Wno-unknown-pragmas

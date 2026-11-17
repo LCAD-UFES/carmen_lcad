@@ -27,7 +27,12 @@ typedef enum OFFROAD_PLANNER_FEEDBACK
 	OBSTACLE_DISTANCE_MAP_NOT_AVAILABLE,
 	COULD_NOT_COMPUTE_GOAL_DISTANCE_MAP,
 	COULD_NOT_FIND_SUITABLE_GOAL_POSE,
-	OFFROAD_PLANNER_TEST
+	OFFROAD_PLANNER_TEST,
+	/* Existe na copia do carmen (include/carmen/offroad_planner_messages.h), usado pelo
+	   nlp_mat_planner. Adicionado aqui NO FIM do enum para o header exportado por este
+	   modulo ser um superconjunto -- assim o `make` daqui nao quebra o nlp_mat_planner.
+	   No fim do enum e' ABI-seguro: nenhum valor existente muda. */
+	DEACTIVATE
 } carmen_offroad_planner_feedback_t;
 
 #define print_offroad_planner_feedback(x) ( \
@@ -41,7 +46,9 @@ typedef enum OFFROAD_PLANNER_FEEDBACK
 	(x == OBSTACLE_DISTANCE_MAP_NOT_AVAILABLE)? "OBSTACLE_DISTANCE_MAP_NOT_AVAILABLE": \
 	(x == COULD_NOT_COMPUTE_GOAL_DISTANCE_MAP)? "COULD_NOT_COMPUTE_GOAL_DISTANCE_MAP": \
 	(x == COULD_NOT_FIND_SUITABLE_GOAL_POSE)? "COULD_NOT_FIND_SUITABLE_GOAL_POSE": \
-	(x == OFFROAD_PLANNER_TEST)? "OFFROAD_PLANNER_TEST": "" \
+	(x == OFFROAD_PLANNER_TEST)? "OFFROAD_PLANNER_TEST": \
+	(x == DEACTIVATE)? "": \
+	"" \
 	)
 
 

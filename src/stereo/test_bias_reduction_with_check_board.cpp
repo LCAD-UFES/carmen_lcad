@@ -4,8 +4,8 @@
 #include <carmen/carmen.h>
 #include <carmen/stereo_util.h>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 using namespace std;
 

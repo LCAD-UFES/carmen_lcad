@@ -5,7 +5,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 
 
 class PointCloudViewer

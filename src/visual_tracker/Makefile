@@ -8,8 +8,8 @@ LINK = g++
 
 IFLAGS += -I/usr/include/QtCore -I/usr/include/QtGui
 IFLAGS += -I./libtld/include
-IFLAGS += `pkg-config --cflags opencv` #-I$(OPENCV_HOME)/include
-LFLAGS += `pkg-config --libs opencv` #-L$(OPENCV_HOME)/lib
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` #-I$(OPENCV_HOME)/include
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` #-L$(OPENCV_HOME)/lib
 LFLAGS += -L./libtld
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface
 LFLAGS += -lopencv_video -lopencv_imgproc #-lopencv_core -lopencv_highgui

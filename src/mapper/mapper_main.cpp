@@ -315,7 +315,7 @@ get_occupancy_log_odds_of_each_ray_target(sensor_parameters_t *sensor_params, se
 
 	r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
-	change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[scan_index].horizontal_angle);
+	change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[scan_index]);
 
 	carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, scan_index, robot_interpolated_position.position,
 			sensor_params->sensor_support_pose, r_matrix_car_to_global, sensor_params->support_to_car_matrix,

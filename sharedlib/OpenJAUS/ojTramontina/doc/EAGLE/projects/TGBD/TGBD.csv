@@ -1,0 +1,53 @@
+Qty,Value,Device,Package,Parts,Description,ARROW_PART_NUMBER,ARROW_PRICE-STOCK,AVAILABILITY,DESCRIPTION,HEIGHT,MANUFACTURER,MANUFACTURER_NAME,MANUFACTURER_PART_NUMBER,MF,MOUSER_PART_NUMBER,MOUSER_PRICE-STOCK,MP,MPN,OC_FARNELL,OC_NEWARK,PACKAGE,POPULARITY,PRICE,PURCHASE-URL,SPICEPREFIX
+1,100,R-US_R0603,R0603,R75,NPN Transistror,,,,,,,,,,,,,,,,,0,,,
+16,133,R-US_R0603,R0603,"R30, R32, R34, R36, R38, R40, R42, R44, R47, R50, R52, R57, R59, R61, R63, R67",DIODE,,,,,,,,,,,,,,,,,22,,,
+7,890,R-US_R0603,R0603,"R9, R14, R18, R21, R23, R25, R27",LED,,,,,,,,,,,,,,,,,28,,,
+3,100k,R-US_R0402,R0402,"R53, R54, R55",,,,,,,,,,,,,,,unknown,unknown,,3,,,
+14,100n,C-EUC0402,C0402,"C1, C6, C8, C9, C10, C14, C17, C18, C22, C23, C24, C25, C26, C27",,,,,,,,,,,,,,,unknown,unknown,,1,,,
+1,100u,"CPOL-EUUD-6,3X7,7","UD-6,3X7,7_NICHICON",C5,NPN TRANSISTOR,,,,,,,,,,,,,,,,,0,,,
+1,10K,R-US_R0603,R0603,R2,PIN HEADER,,,,,,,,,,,,,,,,,64,,,
+2,10k,R-US_R0603,R0603,"R90, R93",PIN HEADER,,,,,,,,,,,,,,,,,67,,,
+2,10n,C-EUC0402,C0402,"C15, C16","RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+4,10u,CPOL-EUA/3216-18R,A/3216-18R,"C2, C3, C7, C19","RESISTOR, American symbol",,,,,,,,,,,,,,,,,34,,,R
+4,12k,R-US_R0603,R0603,"R69, R97, R106, R115","CAPACITOR, European symbol",,,,,,,,,,,,,,,,,18,,,C
+2,1K,R-US_R0402,R0402,"R5, R6","POLARIZED CAPACITOR, European symbol",,,,,,,,,,,,,,,,,1,,,C
+27,1k,R-US_R0402,R0402,"R1, R29, R31, R33, R35, R37, R39, R41, R43, R46, R48, R51, R56, R58, R60, R62, R66, R71, R73, R74, R81, R82, R84, R85, R100, R109, R118","RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+2,1kpF,C-EUC0402,C0402,"C11, C12",POTENTIOMETER,,,,,,,,,,,,,,,,,5,,,
+1,1N4007,DIODE-SOD123,SOD123,D3,PIN HEADER,,,,,,,,,,,,,,unknown,unknown,,48,,,
+23,1N4148WS,1N4148WS,SODFL2512X100N,"D1, D2, D4, D5, D6, D8, D10, D12, D14, D15, D16, D17, D18, D19, D20, D21, D23, D25, D27, D29, D31, D33, GND","RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+1,1uF,CPOL-EUA/3216-18R,A/3216-18R,C13,"CAPACITOR, European symbol",,,,,,,,,,,,,,,,,18,,,C
+2,"3,9n",C-EUC0402,C0402,"C20, C21","POLARIZED CAPACITOR, European symbol",,,,,,,,,,,,,,,,,1,,,C
+1,3.3k,R-US_R0402,R0402,R3,"RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+18,33k,R-US_R0402,R0402,"R68, R70, R72, R76, R77, R78, R79, R80, R83, R96, R98, R99, R105, R107, R108, R114, R116, R117","RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+2,3k3,R-US_R0402,R0402,"R91, R94","RESISTOR, American symbol",,,,,,,,,,,,,,,,,34,,,R
+4,4.7k,R-US_R0402,R0402,"R45, R49, R64, R65",DIODE,,,,,,,,,,,,,,,,,22,,,
+1,4016D,4016D,SO14,IC9,1N4148WS Series 75 V 300 mA Surface Mount Small Signal Diodes - SOD-323F,,,,,,Fairchild Semiconductor,,,,,,,,,,,,,,
+16,4k7,R-US_R0402,R0402,"R86, R87, R88, R89, R101, R102, R103, R104, R110, R111, R112, R113, R119, R120, R121, R122","RESISTOR, American symbol",,,,,,,,,,,,,,,,,34,,,R
+10,5.6K,R-US_R0603,R0603,"R10, R11, R12, R13, R15, R16, R17, R19, R20, R22","CAPACITOR, European symbol",,,,,,,,,,,,,,,,,18,,,C
+5,5.6k,R-US_R0603,R0603,"R4, R8, R24, R26, R28","POLARIZED CAPACITOR, European symbol",,,,,,,,,,,,,,,,,1,,,C
+1,56k,R-US_R0603,R0603,R123,"CAPACITOR, European symbol",,,,,,,,,,,,,,,,,18,,,C
+2,5k6,R-US_R0603,R0603,"R92, R95","RESISTOR, American symbol",,,,,,,,,,,,,,,,,34,,,R
+1,74HC04D,74HC04D,SO14,IC11,"RESISTOR, American symbol",,,,,,,,,,,,,,,,,34,,,R
+1,74HC08D,74HC08D,SO14,IC10,"RESISTOR, American symbol",,,,,,,,,,,,,,,,,34,,,R
+2,74HC166D,74HC166D,SO16,"IC3, IC4","RESISTOR, American symbol",,,,,,,,,,,,,,,,,34,,,R
+1,74HC595D,74HC595D,SO16,IC5,Quad bilateral ANALOG SWITCH,,,,,,,,,,,,,,,,,0,,,
+2,7805TV,7805TV,TO220V,"IC2, IC7","RESISTOR, American symbol",,,,,,,,,,,,,,,,,34,,,R
+1,9k1,R-US_R0603,R0603,R124,"RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+2,BC547,BC547,TO92,"T1, T2","RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+2,BC548,S9013,TO92,"Q8, Q12","RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+16,G5LE,G5LE,G5LE,"K1, K2, K3, K4, K5, K6, K7, K8, K11, K12, K13, K14, K15, K16, K17, K18","RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+1,LM324D,LM324D,SO14,IC8,Hex INVERTER,,,,,,,,,,,,,,,,,0,,,
+1,LM6142BIN,LM6142BIN,DIP254P762X508-8,IC6,Quad 2-input AND gate,,,,,,,,,,,,,,,,,0,,,
+16,LTV816S,LTV816S,DIL4-SMD,"OK1, OK2, OK3, OK4, OK5, OK6, OK7, OK8, OK9, OK10, OK11, OK12, OK13, OK14, OK15, OK16",8-bit parallel load SHIFT REGISTER,,,,,,,,,,,,,,,,,0,,,
+3,MCP2551-I/SN,MCP2551-I/SN,SOIC127P599X175-8N,"IC1, IC14, IC15","8-bit SHIFT REGISTER, output latch",,,,,,,,,,,,,,,,,21,,,
+16,,-NPN-TO92,TO92,"Q19, Q20, Q21, Q22, Q23, Q24, Q25, Q26, Q27, Q28, Q29, Q30, Q31, Q32, Q33, Q34",Positive VOLTAGE REGULATOR,,,,,,,,,,,,,,,,,57,,,
+1,,DIODE-SOD123,SOD123,D7,"RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+16,,LEDCHIPLED_0603,CHIPLED_0603,"LED1, LED2, LED3, LED4, LED5, LED6, LED7, LED8, LED9, LED10, LED11, LED12, LED13, LED14, LED15, LED16","RESISTOR, American symbol",,,,,,,,,,,,,,,,,77,,,R
+,,,,,NPN TRANSISTOR,,,,,,,,,,,,,,,,,43,,,
+,,,,,NPN Transistor,,,,,,,,,,,,,,,,,0,,,
+16,,NPN-TRANSISTOR_SOT23,SOT23,"Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q9, Q10, Q11, Q13, Q14, Q15, Q16, Q17, Q18",,,,,,,,,,,,,,,,,,,,,
+,,,,,RELAY,,,,,,,,,,,,,,unknown,unknown,,13,,,
+,,,,,OP AMP,,,,,,,,,,,,,,,,,1,,,
+,,,,,OP Amps,LM6142BIN,,,OP Amps,mm,,Texas Instruments,LM6142BIN,,926-LM6142BIN,https://www.mouser.com/Search/Refine.aspx?Keyword=926-LM6142BIN,,,,,,,,,
+,,,,,OPTO COUPLER,,,,,,,,,,,,,,,,,0,,,
+,,,,,Check availability,,,In Stock, 1/1 Transceiver Half CANbus 8-SOIC ,,,,,Microchip,,,MCP2551-I/SN,,,,SOIC-8 Microchip,,None,https://pricing.snapeda.com/search/part/MCP2551-I/SN/?ref=eda,

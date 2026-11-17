@@ -7,10 +7,11 @@
 #  define signals signals
 #endif
 
-#include <boost/signal.hpp>
+#include <boost/signals2.hpp>
 namespace boost
 {
-  namespace signalslib = signals;
+  namespace signals = signals2;
+  namespace signalslib = signals2;
 }
 
 #if defined(signals) && defined(QOBJECTDEFS_H) && \

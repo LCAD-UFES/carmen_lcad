@@ -1,4 +1,4 @@
-//#include <opencv/cv.h>
+//#include <opencv2/core.hpp>
 #include "tracker_filters.h"
 #include "tracker_user_functions.h"
 

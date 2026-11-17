@@ -8,8 +8,8 @@ LINK = g++
 CXXFLAGS += -O3 -fopenmp
 LFLAGS += -fopenmp
 
-CFLAGS += `pkg-config opencv --cflags`
-LFLAGS += `pkg-config opencv --libs` 
+CFLAGS += `pkg-config opencv4 --cflags 2>/dev/null || pkg-config opencv --cflags`
+LFLAGS += `pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs` 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libminoru
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libminoru -lminoru

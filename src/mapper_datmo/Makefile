@@ -8,7 +8,7 @@ MODULE_COMMENT = Creates maps using velodyne and camera image segmentation for d
 #CFLAGS += -Wall -std=c99 -O4 -mfpmath=sse -msse2 -msse4.2
 #CXXFLAGS += -Wall -O4 -mfpmath=sse -msse2 -msse4.2
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++17
 #CFLAGS += -g -pg
 LINK = g++
 
@@ -33,24 +33,24 @@ LFLAGS += -lefficientdet
 #UBUNTU_VERSION ="$(shell cat /etc/issue | grep Ubuntu | cut -c8-12)"
 ##$(warning now we reached ifeq UBUNTU_VERSION=$(UBUNTU_VERSION))
 #ifeq ($(UBUNTU_VERSION),"16.04")
-#	LFLAGS += `python3.5-config --libs`
+#	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 #else
-#	LFLAGS += `python3.6-config --libs`
+#	LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs`
 #endif
 
 # Deeplab
-IFLAGS += -I/usr/include/python2.7
-LFLAGS += `python2.7-config --libs` -ldeeplab 
+IFLAGS += `pkg-config --cflags python3 2>/dev/null || python3-config --includes`
+LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -ldeeplab 
 
 # SqueezeSeg
-LFLAGS += `python2.7-config --libs` -lsqueeze_seg
+LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -lsqueeze_seg
 
 # SalsaNet
-LFLAGS += `python2.7-config --libs` -lsalsanet
+LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs` -lsalsanet
 
 #OPENCV
 IFLAGS += -DUSE_OPENCV
-LFLAGS += `pkg-config opencv --libs` `pkg-config --cflags opencv` `pkg-config --libs opencv`
+LFLAGS += `pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs` `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lprob_models -lm -lz -lglobal 		\
@@ -59,20 +59,20 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
 	-lbumblebee_basic_interface -lvelodyne_camera_calibration -ldarknet		\
-	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
+	`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
 	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils -lmoving_objects_interface
 
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt
 
 # Application specific include directories.
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC))
 
 ifeq ($(UBUNTU_VERSION),"16.04")
-	LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+	LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_thread -lrt
 else
-	LFLAGS +=  -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+	LFLAGS +=  -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_thread -lrt
 endif
 LFLAGS +=  -lrddf_util -lcollision_detection -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 

@@ -1,9 +1,13 @@
 #include <carmen/carmen.h>
 #include <carmen/web_cam_interface.h>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include "opencv2/videoio/videoio_c.h"
+/* OpenCV 4: os headers opencv/cv.h e opencv/highgui.h não existem mais. A API C usada
+   aqui (IplImage, cvQueryFrame, cvShowImage, ...) continua existindo, só mudou de lugar.
+   Migração Ubuntu 26.04. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/videoio/videoio_c.h>
 
 //#define __CARMEN_WEB_CAM_VIEW_DEBUG_INFO
 

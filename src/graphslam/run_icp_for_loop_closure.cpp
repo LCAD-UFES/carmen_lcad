@@ -189,7 +189,7 @@ perform_icp(pcl::PointCloud<pcl::PointXYZRGB>::Ptr i_pointcloud, pcl::PointCloud
 		Eigen::Matrix<double, 4, 4> forward_transform;
 		Eigen::Matrix<double, 4, 4> backward_transform;
 
-		gicp.setInputCloud(i_pointcloud);
+		gicp.setInputSource(i_pointcloud);
 		gicp.setInputTarget(j_pointcloud);
 		gicp.align(out_pcl_pointcloud);
 		if (gicp.hasConverged())
@@ -200,7 +200,7 @@ perform_icp(pcl::PointCloud<pcl::PointXYZRGB>::Ptr i_pointcloud, pcl::PointCloud
 		}
 		else
 			return (0);
-		gicp.setInputCloud(j_pointcloud);
+		gicp.setInputSource(j_pointcloud);
 		gicp.setInputTarget(i_pointcloud);
 		gicp.align(out_pcl_pointcloud);
 		if (gicp.hasConverged())
@@ -347,9 +347,9 @@ add_icp_restriction(int i, int j)
 
 	if (is_first)
 	{
-		i_pointcloud = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
-		j_pointcloud = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
-		i_pointcloud_in_j_coordinate_system = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
+		i_pointcloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+		j_pointcloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+		i_pointcloud_in_j_coordinate_system = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 		is_first = 0;
 	}

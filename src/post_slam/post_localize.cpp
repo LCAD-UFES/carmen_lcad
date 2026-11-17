@@ -5,7 +5,7 @@
  *      Author: filipe
  */
 #include "post_localize.h"
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 namespace post_slam
 {

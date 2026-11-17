@@ -1,5 +1,11 @@
 #include "vertRetangulo.h"
 #include "time.h"
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 //Fun��es Internas ao Arquivo
 void mouseCallBack(int event, int x, int y, int flags, void* param);
 

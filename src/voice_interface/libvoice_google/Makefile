@@ -5,8 +5,8 @@ MODULE_NAME = LIB VOICE GOOGLE
 MODULE_COMMENT = Library to Synthesize Voice using Google API
 
 SOURCES = main_teste.cpp voice_functions.cpp
-IFLAGS += -I/usr/include/python2.7/
-LFLAGS += -lpython2.7
+IFLAGS += `pkg-config --cflags python3 2>/dev/null || python3-config --includes`
+LFLAGS += `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs`
 
 TARGETS = main_teste
 

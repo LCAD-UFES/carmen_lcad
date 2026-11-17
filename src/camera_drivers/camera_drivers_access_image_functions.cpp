@@ -42,7 +42,10 @@ int initialize_ffmpeg(av_ffmpeg *afp, char* ip_address)
         return 2;
     }
     // find primary video stream
-    AVCodec *vcodec = nullptr;
+    /* Migração Ubuntu 26.04: no FFmpeg atual (8.x) av_find_best_stream() e
+       avcodec_find_decoder() trabalham com `const AVCodec *` — o ponteiro só é lido aqui,
+       então basta declarar como const. */
+    const AVCodec *vcodec = nullptr;
     ret = av_find_best_stream(inctx, AVMEDIA_TYPE_VIDEO, -1, -1, &vcodec, 0);
     if (ret < 0)
     {
@@ -75,7 +78,7 @@ int initialize_ffmpeg(av_ffmpeg *afp, char* ip_address)
     }
 
     // open video decoder context
-    AVCodec *pCodec = avcodec_find_decoder(vstrm->codecpar->codec_id);
+    const AVCodec *pCodec = avcodec_find_decoder(vstrm->codecpar->codec_id);
     AVCodecContext *avctx = avcodec_alloc_context3(pCodec);
     avcodec_parameters_to_context(avctx, vstrm->codecpar);
 

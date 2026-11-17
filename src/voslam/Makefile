@@ -5,16 +5,16 @@ LINK = g++
 MODULE_NAME = VOSLAM 
 MODULE_COMMENT = A Visual Odometry Based 6D SLAM
 
-IFLAGS += -I../../sharedlib/libtf/src -I../../sharedlib/libviso2.3/src -I/usr/local/include/bullet/ -I/usr/local/cuda/include -I/home/lcad/NVIDIA_GPU_Computing_SDK/C/common/inc `pkg-config --cflags opencv`
+IFLAGS += -I../../sharedlib/libtf/src -I../../sharedlib/libviso2.3/src -I/usr/local/include/bullet/ -I/usr/local/cuda/include -I/home/lcad/NVIDIA_GPU_Computing_SDK/C/common/inc `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 		  
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC))
 
 
 LFLAGS += -L/usr/lib64 -L../../sharedlib/libtf/src -L../../sharedlib/libviso2.3/src -L/usr/local/cuda/lib64/ -L/usr/local/lib/
-LFLAGS += -lglobal -lipc -lparam_interface -lstereo_interface -lvisual_odometry_interface -lGL -lGLU -lglut `pkg-config --libs opencv` \
-          -ltf -lviso -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -lglobal -lipc -lparam_interface -lstereo_interface -lvisual_odometry_interface -lGL -lGLU -lglut `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` \
+          -ltf -lviso -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread -lrt
 LFLAGS += -lvtkCommon -lvtkFiltering -lvtkRendering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization 
 LFLAGS += -lfused_odometry_interface -llocalize_ackerman_interface
 

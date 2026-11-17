@@ -81,6 +81,34 @@ void
 variable_scan_update_points_with_remission_check(carmen_velodyne_variable_scan_message *msg,int vertical_resolution, spherical_point_cloud *points,
 		unsigned char *intensity, int *ray_order, double *vertical_correction, double range_max, double range_division_factor, double timestamp, int use_remission);
 
+/*
+ * Alguns LiDARs (os Hesai de 128 canais) disparam cada canal com um desvio proprio
+ * de azimute dentro do mesmo shot. Sem corrigir, os aneis saem girados uns em
+ * relacao aos outros e a nuvem borra -- ate' ~4 m de erro lateral a 50 m.
+ *
+ * needs_horizontal_correction() diz se o modelo precisa dessa correcao; o desvio
+ * de cada canal vem de lidar<N>_horizontal_angles (carmen_lidar_config).
+ */
+int
+needs_horizontal_correction(const char *model);
+
+/*
+ * Mesma coisa que as duas funcoes acima, mais o desvio de azimute por canal.
+ *
+ * horizontal_angles_deltas pode ser NULL (ou todo zero): nesse caso o resultado
+ * e' bit a bit igual ao das versoes sem correcao -- que, alias, sao so' wrappers
+ * destas passando NULL. Nenhum chamador antigo precisa mudar.
+ */
+void
+carmen_velodyne_partial_scan_update_points_with_horizontal_correction(carmen_velodyne_partial_scan_message *velodyne_message,
+		int vertical_resolution, spherical_point_cloud *points, double *horizontal_angles_deltas, unsigned char *intensity,
+		int *ray_order, double *vertical_correction, double range_max, double timestamp, int use_remission);
+
+void
+variable_scan_update_points_with_horizontal_correction(carmen_velodyne_variable_scan_message *msg, int vertical_resolution,
+		spherical_point_cloud *points, double *horizontal_angles_deltas, unsigned char *intensity, int *ray_order,
+		double *vertical_correction, double range_max, double range_division_factor, double timestamp, int use_remission);
+
 double
 carmen_velodyne_estimate_shot_time(double sensor_last_timestamp, double sensor_timestamp, int shot_index, int number_of_shots);
 

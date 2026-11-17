@@ -1,6 +1,10 @@
 #include "ml_road_finding.h"
 #ifndef NO_CUDA
 #include "ml_road_finding_GPU.h"
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
 #endif
 
 inline gsl_vector *get_standard_deviation_vector(rgb_gaussian *gaussian)

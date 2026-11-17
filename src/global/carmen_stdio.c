@@ -81,7 +81,7 @@ int carmen_fgetc(carmen_FILE *fp)
   if(!fp->compressed)
     return fgetc(fp->fp);
   else
-    return gzgetc((gzFile)fp->comp_fp);
+    return gzgetc(fp->comp_fp);
 #else
   return fgetc(fp->fp);
 #endif
@@ -178,7 +178,7 @@ int carmen_fflush(carmen_FILE *fp)
   if(!fp->compressed)
     return fflush(fp->fp);
   else
-    return gzflush(fp->fp, Z_FINISH);
+    return gzflush(fp->comp_fp, Z_FINISH);
 #else
   return fflush(fp->fp);
 #endif

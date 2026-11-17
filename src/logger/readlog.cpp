@@ -706,12 +706,28 @@ char *carmen_string_to_robot_ackerman_laser_message(char *string,
 	return current_pos;
 }
 
+// O proximo campo da linha comeca com letra? Usado para distinguir os dois layouts
+// do NMEAGGA sem precisar contar campos. Nao consome nada.
+static int
+next_field_is_alphabetic(const char *pos)
+{
+	if (pos == NULL)
+		return (0);
+
+	while (*pos == ' ' || *pos == '\t')
+		pos++;
+
+	return ((*pos >= 'A' && *pos <= 'Z') || (*pos >= 'a' && *pos <= 'z'));
+}
+
+
 char *carmen_string_to_gps_gpgga_message(char *string,
 		carmen_gps_gpgga_message *gps_msg)
 {
 	char *current_pos = string;
 
-	if (strncmp(current_pos, "NMEAGGA ", 8) == 0)
+	// "NMEAGGA " ou "NMEAGGA<n> ": ha' logs que numeram o GPS no proprio nome.
+	if (strncmp(current_pos, "NMEAGGA", 7) == 0)
 		current_pos = carmen_next_word(current_pos);
 
 	gps_msg->nr               = CLF_READ_INT(&current_pos);
@@ -735,9 +751,37 @@ char *carmen_string_to_gps_gpgga_message(char *string,
 	gps_msg->num_satellites   = CLF_READ_INT(&current_pos);
 	gps_msg->hdop             = CLF_READ_DOUBLE(&current_pos);
 	gps_msg->sea_level        = CLF_READ_DOUBLE(&current_pos);
-	gps_msg->altitude         = CLF_READ_DOUBLE(&current_pos);
-	gps_msg->geo_sea_level    = CLF_READ_DOUBLE(&current_pos);
-	gps_msg->geo_sep          = CLF_READ_DOUBLE(&current_pos);
+
+	// Depois da altitude ha' dois layouts em circulacao:
+	//
+	//   CARMEN  ... hdop sea_level altitude geo_sea_level geo_sep data_age ...
+	//   outro   ... hdop altitude  'M'      geo_sep       'M'     data_age ...
+	//
+	// O segundo guarda a UNIDADE do GPGGA ('M' de metros) depois de cada altitude,
+	// como no proprio NMEA. Distinguir pelo conteudo e' seguro: naquela posicao um
+	// e' sempre numero e o outro sempre letra.
+	//
+	// Isto NAO era um erro barulhento: CLF_READ_DOUBLE e' strtod, que numa letra
+	// devolve 0.0 e NAO avanca o ponteiro. Um 'M' inesperado travava a leitura ali
+	// e todo o resto da linha -- inclusive o timestamp -- saía zerado, calado.
+	if (next_field_is_alphabetic(current_pos))
+	{
+		gps_msg->altitude = gps_msg->sea_level;		// mesma grandeza, nomes diferentes
+		current_pos = carmen_next_word(current_pos);
+		CLF_READ_CHAR(&current_pos);			// unidade da altitude
+
+		gps_msg->geo_sea_level = CLF_READ_DOUBLE(&current_pos);
+		gps_msg->geo_sep       = gps_msg->geo_sea_level;
+		current_pos = carmen_next_word(current_pos);
+		CLF_READ_CHAR(&current_pos);			// unidade da separacao geoidal
+	}
+	else
+	{
+		gps_msg->altitude         = CLF_READ_DOUBLE(&current_pos);
+		gps_msg->geo_sea_level    = CLF_READ_DOUBLE(&current_pos);
+		gps_msg->geo_sep          = CLF_READ_DOUBLE(&current_pos);
+	}
+
 	gps_msg->data_age         = CLF_READ_INT(&current_pos);
 	gps_msg->timestamp        = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&gps_msg->host, &current_pos);
@@ -1627,9 +1671,37 @@ char* carmen_string_to_ford_escape_estatus_message(char* string, carmen_ford_esc
 }
 
 
+// Numero de campos separados por espaco na linha. E' o que distingue as duas versoes da
+// GLOBALPOS_ACK que circulam por aqui (ver carmen_string_to_globalpos_message).
+static int
+count_message_arguments(char *string)
+{
+	int count = 1;
+
+	for (size_t i = 0; string[i]; i++)
+		if (string[i] == ' ')
+			count++;
+
+	return (count);
+}
+
+
+// Existem DUAS versoes da linha GLOBALPOS_ACK:
+//
+//  - a que o carmen_logger_write_globalpos() desta arvore escreve: 24 campos + host, sem nada
+//    de semi-reboque;
+//  - a dos logs gravados com semi-reboque (os do tramontina, por exemplo): 32 campos + host,
+//    com um bloco de 6 (num_trailers + trailer_theta[0..4]) logo depois de globalpos.theta e
+//    outro de 2 (semi_trailer_type, semi_trailer_engaged) depois de converged.
+//
+// Ler a segunda com o layout da primeira desloca TUDO em 6 campos: msg->v acaba recebendo o
+// pose.position.x, que e' a coordenada UTM. Foi assim que o painel do viewer_3D_dash mostrou
+// 27.928.443,6 km/h no playback do tramontina -- 7757901 m/s, que e' a northing da pose.
+// Nao da' para decidir pelo cabecalho do log, so' pela contagem de campos.
 char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_globalpos_message* msg)
 {
 	char *current_pos = string;
+	int n_args = count_message_arguments(string);
 
 	if (strncmp(current_pos, "GLOBALPOS_ACK", 13) == 0)
 		current_pos += 13;
@@ -1637,6 +1709,12 @@ char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_
 	msg->globalpos.x = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos.y = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos.theta = CLF_READ_DOUBLE(&current_pos);
+	if (n_args > 26)
+	{
+		msg->num_trailers = CLF_READ_INT(&current_pos);
+		for (int i = 0; i < 5 && i < MAX_NUM_TRAILERS; i++)
+			msg->trailer_theta[i] = CLF_READ_DOUBLE(&current_pos);
+	}
 	msg->globalpos_std.x = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos_std.y = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos_std.theta = CLF_READ_DOUBLE(&current_pos);
@@ -1656,6 +1734,11 @@ char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_
 	msg->phi = CLF_READ_DOUBLE(&current_pos);
 	msg->globalpos_xy_cov = CLF_READ_DOUBLE(&current_pos);
 	msg->converged = CLF_READ_INT(&current_pos);
+	if (n_args > 26)
+	{
+		msg->semi_trailer_type = CLF_READ_INT(&current_pos);
+		msg->semi_trailer_engaged = CLF_READ_INT(&current_pos);
+	}
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);
 
@@ -1836,7 +1919,12 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 	{
 		char host[128];
 		CLF_READ_STRING(host, &string);
-		msg->host = (char*) malloc (strlen(host) * sizeof (char));
+		// +1 para o '\0': o strcpy abaixo escreve strlen(host)+1 bytes. Sem ele
+		// o playback aborta com "*** buffer overflow detected ***" na primeira
+		// CAMERA<N>_MESSAGE do log -- o _FORTIFY_SOURCE do toolchain do 26.04
+		// pega o estouro que antes passava batido na folga do malloc.
+		// O mesmo bug ja tinha sido corrigido no fork de onde veio o sc_lio_sam.
+		msg->host = (char*) malloc ((strlen(host) + 1) * sizeof (char));
 		strcpy(msg->host, host);
 
 		for (int i = 0; i < msg->number_of_images; i++)
@@ -1870,7 +1958,7 @@ camera_drivers_read_camera_message_from_log(char* string, camera_message* msg)
 		if (compress_image)
 		{
 			sprintf(path_with_extension, "%s.png", path);
-			img = imread(path_with_extension, CV_LOAD_IMAGE_COLOR);
+			img = imread(path_with_extension, cv::IMREAD_COLOR);
 			msg->images[i].raw_data = img.data;
 		}
 		else

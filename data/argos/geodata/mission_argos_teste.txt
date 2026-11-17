@@ -1,0 +1,42 @@
+# Missao minima do ARGOS (Unitree Go2).
+#
+# ATENCAO: linha que comeca com ESPACO e' ignorada pelo task_manager, igual a comentario.
+# Nao indente por estetica.
+#
+# Requisitos para esta missao rodar (todos verificados em 2026-08-21):
+#   1. /opt/ros/noetic/lib no LD_LIBRARY_PATH  -- senao o binario nem comeca
+#   2. um roscore no ar                        -- o task_manager tambem e' no ROS
+#   3. localizacao publicando globalpos        -- sem isso ele fica em silencio, parado
+#
+# A postura no fim depende do argos_unitree_driver com -posture on (default):
+#   set parking brake on   -> -park_posture       (default stand_down)
+#   set engine off         -> -engine_off_posture (default damp)
+#   set parking brake off  -> RecoveryStand, o robo levanta e volta a aceitar comando
+
+announce "Missao ARGOS iniciada"
+
+start_mission:
+
+# --- Etapa 0: so' prova que a cadeia esta' viva, sem sair do lugar ---
+wait for 3 seconds
+
+# --- Etapa 1: anda ate' a pose alvo e fica nesta tarefa ate' terminar o curso ---
+# Troque X, Y, THETA pela pose de destino no referencial do mapa.
+go after set course to 1005.00, 1000.00, 0.000
+if previous task failed, execute task at label falhou
+
+# Tira do modo autonomo antes de mexer na postura.
+stop
+
+# --- Etapa 2: pousa o robo ---
+announce "Chegou. Deitando."
+set parking brake on
+
+mission completed
+
+
+falhou:
+announce "Nao consegui chegar."
+stop
+set engine off
+mission completed

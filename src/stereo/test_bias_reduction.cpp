@@ -3,8 +3,12 @@
 #include <carmen/stereo_interface.h>
 #include <carmen/bumblebee_basic_interface.h>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage/CV_RGB da API C não existem mais
+   no OpenCV 4 — este header os reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 char *left_image_filename, *right_image_filename;
 double baseline, focal_length;
@@ -41,8 +45,8 @@ parse_arguments(int argc, char **argv)
 		bias_std_deviation = atof(argv[6]);
 
 		// try open the images
-		left_image = cvLoadImage(left_image_filename, CV_LOAD_IMAGE_COLOR);
-		right_image = cvLoadImage(right_image_filename, CV_LOAD_IMAGE_COLOR);
+		left_image = cvLoadImage(left_image_filename, cv::IMREAD_COLOR);
+		right_image = cvLoadImage(right_image_filename, cv::IMREAD_COLOR);
 
 		if (left_image == NULL)
 			exit(printf("image '%s' not found", left_image_filename));

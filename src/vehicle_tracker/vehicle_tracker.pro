@@ -17,7 +17,7 @@ LIBS += \
 	-lCGAL_Qt5 -lCGAL -lCGAL_Core -lgmp \
 	-L$(CARMEN_HOME)/lib -llocalize_ackerman_interface -lmap_server_interface -lvirtual_scan_interface -lvelodyne_interface -lparam_interface -lipc -lglobal \
 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf \
-	-lboost_signals -lboost_system
+	
 
 FORMS += \
 	vehicle_tracker_gui.ui

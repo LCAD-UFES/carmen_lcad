@@ -3,7 +3,7 @@
 #define __SEGMAP_SENSORS_H__
 
 #include <string>
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <carmen/synchronized_data_package.h>
 
 

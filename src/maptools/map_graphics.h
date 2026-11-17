@@ -39,7 +39,7 @@ extern "C" {
 
 #include <carmen/global_graphics.h>
 
-typedef struct {
+typedef struct carmen_gtk_map_viewer {
   carmen_map_t * internal_map;
   int draw_flags;
   carmen_world_point_t centre;
@@ -64,11 +64,16 @@ typedef struct {
   GtkAdjustment *x_scroll_adj;
   GtkAdjustment *y_scroll_adj;
   int button_two_down;
-  void (*user_draw_routine)();
-  void (*motion_handler)();
-  void (*button_release_handler)();
-  void (*button_press_handler)();
-  void (*keyboard_press_handler)();
+  /* Migração Ubuntu 26.04: estes 5 campos eram declarados no estilo K&R (pré-ANSI),
+     "()" = argumentos não especificados. Até o GCC 13 chamar/atribuir com qualquer
+     assinatura era só aviso; a partir do GCC 14 é erro. As assinaturas reais abaixo
+     são as mesmas dos typedefs carmen_graphics_mapview_*_t declarados mais adiante
+     neste arquivo (não dá para usar os typedefs aqui porque vêm depois). */
+  void (*user_draw_routine)(struct carmen_gtk_map_viewer *map_view);
+  void (*motion_handler)(struct carmen_gtk_map_viewer *map_view, carmen_world_point_p world_point, GdkEvent *event);
+  void (*button_release_handler)(struct carmen_gtk_map_viewer *map_view, carmen_world_point_p world_point, GdkEvent *event);
+  void (*button_press_handler)(struct carmen_gtk_map_viewer *map_view, carmen_world_point_p world_point, GdkEvent *event);
+  void (*keyboard_press_handler)(struct carmen_gtk_map_viewer *map_view, GdkEvent *event);
 } GtkMapViewer;
 
 typedef void (*carmen_graphics_mapview_drawing_func_t)(GtkMapViewer *map_view);

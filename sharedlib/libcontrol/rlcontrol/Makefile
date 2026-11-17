@@ -17,11 +17,11 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
 
 CXXFLAGS += -Wall -Wno-sign-compare -Wno-write-strings -Wno-unused-result -std=c++0x -Wno-ignored-qualifiers
 CFLAGS += -Wall -Wno-sign-compare -Wno-write-strings -Wno-unused-result -std=c++0x -Wno-ignored-qualifiers
-IFLAGS += -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/src/ -I $(CAFFE_HOME)/build/include -I /usr/local/cuda/include `pkg-config --cflags opencv`
-LFLAGS += -L $(CAFFE_HOME)/build/lib -lcaffe -L /usr/local/cuda/lib64 `pkg-config --libs opencv` -lglog -lboost_system -lm 
+IFLAGS += -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/src/ -I $(CAFFE_HOME)/build/include -I /usr/local/cuda/include `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += -L $(CAFFE_HOME)/build/lib -lcaffe -L /usr/local/cuda/lib64 `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lglog -lm 
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv` -lmapper_interface -lrddf_interface \
+LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lmapper_interface -lrddf_interface \
 	-llocalize_ackerman_interface -lrobot_ackerman_interface -lrddf_index -lprob_models -lgrid_mapping -lmap_io -lmap_server_interface \
 	-lcollision_detection -lmap_interface -lrotation_geometry -lbase_ackerman_interface -lfused_odometry_interface -lnavigator_ackerman_interface \
 	-lbase_ackerman_interface -lfann -lcarneuralmodel -lpid

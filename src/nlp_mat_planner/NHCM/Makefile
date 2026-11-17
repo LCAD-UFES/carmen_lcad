@@ -21,7 +21,7 @@ LFLAGS += -L$(ASTRO_HOME)/sharedlib/prob_models -L$(ASTRO_HOME)/sharedlib/libcar
 LFLAGS += -lglobal -lipc -lparam_interface -llocalize_ackerman_interface -lrddf_interface -lobstacle_distance_mapper_interface \
     -lrobot_ackerman_interface -lsimulator_ackerman_interface -lbase_ackerman_interface \
 	-lmap_server_interface -lgrid_mapping -lmap_io -lmap_interface -lcollision_detection -lnavigator_ackerman_interface \
-	-lcarmodel `pkg-config --libs opencv` -lmapper_interface -lgsl -lgslcblas -loffroad_planner_interface -lroute_planner_interface \
+	-lcarmodel `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lmapper_interface -lgsl -lgslcblas -loffroad_planner_interface -lroute_planner_interface \
 	-ltask_manager_interface -lastro_util
 
 CASADI_DIR=$(shell /usr/bin/env python3 -c "import casadi; print(casadi.__path__[0])")

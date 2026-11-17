@@ -7,9 +7,9 @@ IFLAGS += -I$CARMEN_HOME/include
 LFLAGS += -lipc -lglobal -lglobal_graphics -lmulticentral -lparam_interface -lstdc++ \
 		-llocalize_ackerman_interface -lbumblebee_basic_interface -ldc1394 -lrddf_interface \
 		-ltraffic_light_interface
-#		`pkg-config --libs opencv` -lflycapture \
+#		`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lflycapture \
 #		-lGL -lGLU -lglut -ltime_profile \
-#		`pkg-config --libs opencv` \
+#		`pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` \
 		
 
 #ifndef NO_GRAPHICS

@@ -2,8 +2,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <opencv/cv.hpp>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 
 using namespace cv;
 using namespace std;

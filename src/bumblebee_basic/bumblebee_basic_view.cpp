@@ -3,7 +3,10 @@
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/user_preferences.h>
-#include <opencv/cv.h>
+/* Migração Ubuntu 26.04: opencv/cv.h não existe mais. Este arquivo usa a API C
+   (cvPoint/cvScalar/CV_FONT_*), que continua no OpenCV 4 nos headers *_c.h. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/version.hpp>

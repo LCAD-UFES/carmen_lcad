@@ -17,7 +17,8 @@
 #include <opencv2/core/core.hpp>
 
 //#include <opencv2/legacy/legacy.hpp>
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -25,6 +26,20 @@
 #include "TLD.h"
 #include "Trajectory.h"
 #include "Gui.h"
+
+/* Migração Ubuntu 26.04: no OpenCV 4 o CV_RGB() que sobra é o do imgproc.hpp (C++), que
+   devolve cv::Scalar e não converte para CvScalar; e cv::Rect::tl()/br() devolvem
+   cv::Point, que também deixou de converter implicitamente para CvPoint. Este arquivo
+   desenha via API C (cvRectangle), então redefino CV_RGB para a versão C e converto os
+   pontos explicitamente com cvPoint(). */
+#if CV_MAJOR_VERSION >= 4
+#include <opencv2/imgproc/imgproc_c.h>
+#undef CV_RGB
+#define CV_RGB(r, g, b)  cvScalar((b), (g), (r), 0)
+#define CARMEN_CVPOINT(p)  cvPoint((p).x, (p).y)
+#else
+#define CARMEN_CVPOINT(p)  (p)
+#endif
 
 using namespace cv;
 //using namespace std;
@@ -218,7 +233,7 @@ process_TLD_detection(IplImage * img, double time_stamp)
 		if (g_tld_track->currBB != NULL)
 		{
 			CvScalar rectangleColor = (confident) ? blue : yellow;
-			cvRectangle(img, g_tld_track->currBB->tl(), g_tld_track->currBB->br(), rectangleColor, 8, 8, 0);
+			cvRectangle(img, CARMEN_CVPOINT(g_tld_track->currBB->tl()), CARMEN_CVPOINT(g_tld_track->currBB->br()), rectangleColor, 8, 8, 0);
 
 			if(showTrajectory)
 			{
@@ -248,7 +263,7 @@ process_TLD_detection(IplImage * img, double time_stamp)
 			for(size_t i = 0; i < g_tld_track->detectorCascade->detectionResult->fgList->size(); i++)
 			{
 				Rect r = g_tld_track->detectorCascade->detectionResult->fgList->at(i);
-				cvRectangle(img, r.tl(), r.br(), white, 1);
+				cvRectangle(img, CARMEN_CVPOINT(r.tl()), CARMEN_CVPOINT(r.br()), white, 1);
 			}
 
 		}

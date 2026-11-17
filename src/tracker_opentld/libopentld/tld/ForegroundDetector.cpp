@@ -26,6 +26,11 @@
 #include "ForegroundDetector.h"
 
 #include "BlobResult.h"
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 
 using namespace cv;
 
@@ -59,7 +64,14 @@ void ForegroundDetector::nextIteration(const Mat &img)
     absdiff(bgImg, img, absImg);
     threshold(absImg, threshImg, fgThreshold, 255, CV_THRESH_BINARY);
 
+#if CV_MAJOR_VERSION >= 4
+    /* Migração Ubuntu 26.04: o OpenCV 4 removeu o operador de conversão implícito
+       cv::Mat -> IplImage; o substituto oficial é cvIplImage() (mesma semântica: header
+       IplImage apontando para o buffer da Mat, sem cópia). */
+    IplImage im = cvIplImage(threshImg);
+#else
     IplImage im = (IplImage)threshImg;
+#endif
     CBlobResult blobs = CBlobResult(&im, NULL, 0);
 
     blobs.Filter(blobs, B_EXCLUDE, CBlobGetArea(), B_LESS, minBlobSize);

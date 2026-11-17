@@ -8,8 +8,8 @@ LINK = g++
 CXXFLAGS += -O3 -fopenmp
 LFLAGS += -fopenmp
 
-CFLAGS += `pkg-config opencv --cflags`
-LFLAGS += `pkg-config opencv --libs` 
+CFLAGS += `pkg-config opencv4 --cflags 2>/dev/null || pkg-config opencv --cflags`
+LFLAGS += `pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs` 
  
 SOURCES = libcam.cpp test_mono.cpp test_stereo.cpp
 TARGETS = libminoru.a test_mono test_stereo

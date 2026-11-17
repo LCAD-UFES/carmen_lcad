@@ -2,7 +2,7 @@
 #include "DqnUtil.h"
 #include "DqnNet.h"
 #include "DqnParams.h"
-#include <opencv/highgui.h>
+#include <opencv2/highgui.hpp>
 
 
 template<typename Dtype>

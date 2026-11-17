@@ -1,7 +1,7 @@
 
 #include "tlight_vgram.h"
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <vector>
 #include <cstdio>
 #include <cstdlib>

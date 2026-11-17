@@ -7,6 +7,9 @@
 #include <carmen/carmen.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+// OpenCV 4: initUndistortRectifyMap/getOptimalNewCameraMatrix saíram do imgproc e ficam
+// só no módulo calib3d (no OpenCV 2/3 vinham por inclusão transitiva). Migração Ubuntu 26.04.
+#include <opencv2/calib3d.hpp>
 
 #include <vector>
 #include "camera_drivers_messages.h"

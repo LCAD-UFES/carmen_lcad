@@ -59,6 +59,24 @@ void
 carmen_imu_publish_imu_message(carmen_imu_message* msg);
 
 
+/* IMU embarcada em um lidar. O nome da mensagem IPC leva o id do lidar
+   (CARMEN_IMU_MESSAGE_NAME "_lidar_<id>"), de modo que cada sensor tem a sua. */
+
+void
+carmen_imu_subscribe_imu_lidar_message(carmen_imu_message* msg,
+				 carmen_handler_t handler,
+				 carmen_subscribe_t subscribe_how,
+				 int id);
+void
+carmen_imu_unsubscribe_imu_lidar_message(carmen_handler_t handler, int id);
+
+void
+carmen_imu_define_imu_lidar_message(int id);
+
+void
+carmen_imu_publish_imu_lidar_message(carmen_imu_message* msg, int id);
+
+
 /* alive message */
 
 void

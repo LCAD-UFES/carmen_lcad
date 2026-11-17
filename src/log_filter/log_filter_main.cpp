@@ -1,8 +1,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 #include <carmen/carmen.h>
 #include <carmen/gps_nmea_interface.h>
@@ -19,6 +20,9 @@
 #include <carmen/kinect_util.h>
 
 #include <tf.h>
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage (API C) foram removidas do OpenCV 4;
+   este header as reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 static char* output_dir_name;
 static char* gps_gpgga_output_filename = (char*)"gps.txt";

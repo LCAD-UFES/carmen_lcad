@@ -5,16 +5,16 @@ LINK = g++
 MODULE_NAME = ll_mapper 
 MODULE_COMMENT = Life Long Mapper
 
-IFLAGS += -I../../sharedlib/libtf/src -I../../sharedlib/libviso2.3/src -I/usr/local/include/bullet/ -I/usr/local/cuda/include `pkg-config --cflags opencv`
+IFLAGS += -I../../sharedlib/libtf/src -I../../sharedlib/libviso2.3/src -I/usr/local/include/bullet/ -I/usr/local/cuda/include `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 		  
 IFLAGS += -I/usr/local/include/pcl-1.8/  -I/usr/include/vtk-6.3/
 
 IFLAGS += -I/usr/include/eigen3
 
-LFLAGS += -lgps_nmea_interface -lxsens_interface -lgtsam -lboost_system -lboost_filesystem  -lvelodyne_interface
-LFLAGS += -lglobal -lipc -lparam_interface -lstereo_interface -lvisual_odometry_interface -lGL -lGLU -lglut `pkg-config --libs opencv` -ltbb
+LFLAGS += -lgps_nmea_interface -lxsens_interface -lgtsam -lboost_filesystem  -lvelodyne_interface
+LFLAGS += -lglobal -lipc -lparam_interface -lstereo_interface -lvisual_odometry_interface -lGL -lGLU -lglut `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -ltbb
 LFLAGS += -L/usr/lib64 -L../../sharedlib/libtf/src -L../../sharedlib/libviso2.3/src -L/usr/local/cuda/lib64/ -L/usr/local/lib/
-LFLAGS += -ltf -lviso -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath  -lboost_thread-mt -lrt -lboost_signals 
+LFLAGS += -ltf -lviso -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath  -lboost_thread -lrt 
 LFLAGS += -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  
 LFLAGS += -lfused_odometry_interface -llocalize_ackerman_interface -lm -lpthread
 LFLAGS += -lceres -lglog -lgflags  -lcudart -lcublas -lcholmod -lccolamd -lcamd -lcolamd -lamd -llapack -lcxsparse -lrt -lcusolver 

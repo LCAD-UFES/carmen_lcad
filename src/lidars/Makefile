@@ -6,15 +6,15 @@ MODULE_COMMENT = Velodyne2 LIDAR Module for variable_message
 LINK = g++
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++14
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvelodyne2
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/local/carmen_boost/include
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne2 -L/usr/local/carmen_boost/lib
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvelodyne2
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface -lvelodyne2 -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody \
-          -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -pthread
+          -lLinearMath -lboost_thread -lrt -pthread
 
 SOURCES = lidars_main.cpp robosense_RSLiDAR16.cpp
 

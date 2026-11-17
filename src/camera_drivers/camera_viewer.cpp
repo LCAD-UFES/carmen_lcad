@@ -1,5 +1,14 @@
 #include "camera_drivers.h"
 #include "camera_drivers_process_image.hpp"
+/* Migração Ubuntu 26.04: cvScalar/CV_RGB2BGR/cvDestroyAllWindows continuam existindo no
+   OpenCV 4, mas nos headers da API C — antes chegavam por inclusão transitiva do
+   opencv/cv.h. */
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
 
 int image_index_to_show = 0;
 double resize_factor = 1.0;
@@ -197,7 +206,11 @@ main(int argc, char **argv)
 
     if (argc > 2)
     {
-        camera_name = (char*) malloc(sizeof(char)*strlen(argv[1]));
+        // +1 para o '\0'. Sem ele o strcpy estoura o buffer em UM byte e o
+        // _FORTIFY_SOURCE do toolchain do 26.04 aborta com
+        // "*** buffer overflow detected ***" (SIGABRT) -- o proccontrol so' via
+        // "exited due to SIGNAL (code = 6)" e respawnava em loop.
+        camera_name = (char*) malloc(sizeof(char)*(strlen(argv[1]) + 1));
         strcpy(camera_name, argv[1]);
         camera_id = atoi(argv[2]);
     }

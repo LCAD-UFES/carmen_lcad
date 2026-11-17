@@ -1,5 +1,25 @@
 #include "qx_csbp.h"
 
+/* Definição única das variáveis globais declaradas (extern) em qx_csbp.h — ver comentário
+   lá sobre -fno-common (migração Ubuntu 26.04). */
+short  *disp;
+int *m_h_pyramid;
+int *m_w_pyramid;
+int *m_iteration;
+int *m_max_nr_plane_pyramid;
+int m_cost_max_discontinuity;
+int m_max_nr_message;
+int m_nr_scale;
+int m_nr_neighbor;
+int *m_message;
+int *m_selected_disparity_pyramid;
+int *m_data_cost;
+int *m_temp3;
+int *m_temp4;
+int *m_data_cost_selected;
+
+struct timeval inicioTotal, fim, tempoDec;
+
 
 /*extern short  *disp;
 extern int *m_h_pyramid;

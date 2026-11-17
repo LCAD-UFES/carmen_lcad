@@ -220,8 +220,11 @@ regenerate_map_pixmap(GtkMapViewer *map_view)
 	x_render_size = map_view->rescale_size*config.x_size;
 	y_render_size = map_view->rescale_size*config.y_size;
 
+	/* GDK_INTERP_TILES custava 32 ms para ampliar 1050x1050 -> 2100x2100 a cada mensagem de
+	   mapa; NEAREST custa 6 ms e, num grid de ocupacao ampliado, e' o resultado desejado
+	   (celula quadrada, sem borrar). */
 	final_image = gdk_pixbuf_scale_simple(rotated_image, x_render_size,
-			y_render_size, GDK_INTERP_TILES);
+			y_render_size, GDK_INTERP_NEAREST);
 	map_view->current_pixbuf = final_image;
 
 	g_object_unref(rotated_image);
@@ -426,7 +429,7 @@ static gint motion_event (GtkWidget *widget __attribute__ ((unused)),
 		carmen_map_graphics_adjust_scrollbars(map_view, &(map_view->centre));
 	} else if (map_view->motion_handler) {
 		screen_to_world(&screen_point, &world_point, map_view);
-		(map_view->motion_handler)(map_view, &world_point, event);
+		(map_view->motion_handler)(map_view, &world_point, (GdkEvent *) event);
 	}
 
 	return TRUE;
@@ -439,7 +442,7 @@ static int keyboard_press_event(GtkWidget *widget __attribute__ ((unused)),
 		return TRUE;
 
 	if (map_view->keyboard_press_handler) {
-		(map_view->keyboard_press_handler)(map_view, event);
+		(map_view->keyboard_press_handler)(map_view, (GdkEvent *) event);
 	}
 
 	return TRUE;
@@ -463,7 +466,7 @@ static int button_release_event(GtkWidget *widget __attribute__ ((unused)),
 		map_view->button_two_down = 0;
 		map_view->centre = point;
 	} else if (map_view->button_release_handler) {
-		(map_view->button_release_handler)(map_view, &point, event);
+		(map_view->button_release_handler)(map_view, &point, (GdkEvent *) event);
 	}
 
 	return TRUE;
@@ -487,7 +490,7 @@ static int button_press_event(GtkWidget *widget __attribute__ ((unused)),
 		map_view->button_two_down = 1;
 		carmen_map_graphics_adjust_scrollbars(map_view, &point);
 	} else if (map_view->button_press_handler) {
-		(map_view->button_press_handler)(map_view, &point, event);
+		(map_view->button_press_handler)(map_view, &point, (GdkEvent *) event);
 	}
 
 	return TRUE;

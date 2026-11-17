@@ -1,6 +1,6 @@
 #include "loader_alov.h"
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 

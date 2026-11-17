@@ -23,8 +23,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libminorucalib
 IFLAGS += 
 LFLAGS += -lminoru -lminorucalib
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 # Source code files (.c, .cpp) 
 SOURCES = minoru_main.cpp minoru_interface.c

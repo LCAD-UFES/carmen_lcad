@@ -27,7 +27,8 @@
 #ifndef LK_H_
 #define LK_H_
 
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 
 /**
  * Need before start of trackLK and at the end of the program for cleanup.

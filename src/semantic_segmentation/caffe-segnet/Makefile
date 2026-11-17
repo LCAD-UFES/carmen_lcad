@@ -368,7 +368,7 @@ LINKFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
 
 USE_PKG_CONFIG ?= 0
 ifeq ($(USE_PKG_CONFIG), 1)
-	PKG_CONFIG := $(shell pkg-config opencv --libs)
+	PKG_CONFIG := $(shell pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs)
 else
 	PKG_CONFIG :=
 endif

@@ -327,7 +327,7 @@ accumulate_clouds(carmen_velodyne_partial_scan_message *velodyne_message, char *
 	if (first_iteraction)
 	{
 		memset(&zero_pose, 0, sizeof(carmen_pose_3D_t));
-		source_pointcloud = boost::shared_ptr< pcl::PointCloud<pcl::PointXYZRGB> >(new pcl::PointCloud<pcl::PointXYZRGB>);
+		source_pointcloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, zero_pose.orientation);
 		first_iteraction = 0;
 	}

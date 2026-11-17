@@ -1,4 +1,5 @@
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include "visual_memory_user_functions.h"
 #include "visual_memory_utils.h"
 #include "visual_memory_filters.h"

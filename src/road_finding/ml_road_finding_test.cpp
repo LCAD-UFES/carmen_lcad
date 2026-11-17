@@ -1,6 +1,9 @@
 #include "ml_road_finding.h"
 #include "image_utils.h"
 #include "time_profile.h"
+/* Migração Ubuntu 26.04: cvLoadImage/cvSaveImage (API C) foram removidas do OpenCV 4;
+   este header as reimplementa em cima da API C++. */
+#include <carmen/opencv_c_compat.h>
 
 vector<CvPoint> image_points_selected;
 
@@ -106,7 +109,7 @@ void get_gaussians(char *filename)
     if (imageName[0] == '#')
       continue;
 
-    IplImage *src_image = cvLoadImage(imageName, CV_LOAD_IMAGE_COLOR);
+    IplImage *src_image = cvLoadImage(imageName, cv::IMREAD_COLOR);
 //    cvSetImageROI(src_image, cvRect(0, 0.4 * src_image->height, src_image->width, 0.6 * src_image->height));
 //
 //    IplImage *image = cvCreateImage(cvSize(src_image->width, 0.6 * src_image->height), src_image->depth, src_image->nChannels);

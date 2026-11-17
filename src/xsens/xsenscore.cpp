@@ -83,7 +83,31 @@ inline int isnum(int c)
   return mtCount;
 }*/
 
-int doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[], char* xsens_dev)
+//////////////////////////////////////////////////////////////////////////
+// baudrate_to_termios
+//
+// No Linux a libcmt repassa o baudrate direto para cfsetispeed()/cfsetospeed(),
+// entao ele precisa ser a constante B* do termios, nao o numero em bps.
+static uint32_t baudrate_to_termios(int baudrate)
+{
+	switch (baudrate)
+	{
+		case 9600:   return B9600;
+		case 19200:  return B19200;
+		case 38400:  return B38400;
+		case 57600:  return B57600;
+		case 115200: return B115200;
+		case 230400: return B230400;
+		case 460800: return B460800;
+		case 921600: return B921600;
+		default:
+			carmen_die("Unsupported xsens_mti_baudrate = %d (use 9600, 19200, 38400, 57600, 115200, 230400, 460800 ou 921600)\n", baudrate);
+	}
+	return B115200;
+}
+
+
+int doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[], char* xsens_dev, int baudrate)
 {
 	XsensResultValue res;
 	List<CmtPortInfo> portInfo;
@@ -121,7 +145,8 @@ int doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[], char* xsens_dev)
 	//open the port which the device is connected to and connect at the device's baudrate.
 	//for(int p = 0; p < (int)portCount; p++){
 		//res = cmt3.openPort(portInfo[p].m_portName, portInfo[p].m_baudrate);
-		res = cmt3.openPort(xsens_dev, B460800); //B230400
+		printf("port %s at %d baud...", xsens_dev, baudrate);
+		res = cmt3.openPort(xsens_dev, baudrate_to_termios(baudrate));
 		EXIT_ON_ERROR(res,"doHardwareScan() call to cmt3.OpenPort (is the baudrate correct?)");  
 
 		if(res == XRV_OK)
@@ -260,7 +285,8 @@ void doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode, CmtOutputSettings &set
 // initializeXsens
 //
 // Inicializa o Xsens
-void initializeXsens(xsens::Cmt3& cmt3, CmtOutputMode& mode, CmtOutputSettings& settings, unsigned long& mtCount, char* portName)
+void initializeXsens(xsens::Cmt3& cmt3, CmtOutputMode& mode, CmtOutputSettings& settings, unsigned long& mtCount, char* portName,
+        int baudrate)
 {
   
   CmtDeviceId deviceIds[256];
@@ -268,11 +294,10 @@ void initializeXsens(xsens::Cmt3& cmt3, CmtOutputMode& mode, CmtOutputSettings& 
   
   // Perform hardware scan
   if(portName == NULL){
-    mtCount = doHardwareScan(cmt3, deviceIds, portName);
+    mtCount = doHardwareScan(cmt3, deviceIds, portName, baudrate);
   } else {
     //mtCount = doHardwareScan_Manual(cmt3, deviceIds, portName); //This function is not available at the libcmt that came with MTiG
-	printf("port ok!\n");
-	mtCount = doHardwareScan(cmt3, deviceIds, portName);
+	mtCount = doHardwareScan(cmt3, deviceIds, portName, baudrate);
   }
   
   if (mtCount == 0) {

@@ -1109,7 +1109,11 @@ publish_offroad_plan(carmen_robot_and_trailers_traj_point_t *offroad_plan, int m
 	plan.poses = offroad_plan;
 	plan.pose_id = merge_pose_in_current_route_index;
 	plan.transition_pose = transition_pose;
-	plan.time_to_plan = time_to_plan;
+	/* Migracao Ubuntu 26.04: time_to_plan saiu de carmen_offroad_planner_plan_message
+	   para o header voltar a casar com o binario bin/offroad_planner (ver o comentario
+	   em offroad_planner_messages.h). O parametro fica na assinatura porque ninguem
+	   lia o campo -- so' era escrito aqui. */
+	(void) time_to_plan;
 	if (offroad_plan)
 		plan.goal_pose = offroad_plan[merged_plan_size - 1];
 	else

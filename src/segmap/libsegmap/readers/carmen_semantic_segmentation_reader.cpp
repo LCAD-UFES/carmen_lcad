@@ -3,7 +3,7 @@
 #include <vector>
 #include <boost/filesystem/operations.hpp>
 
-#include <opencv/highgui.h>
+#include <opencv2/highgui.hpp>
 
 #include <carmen/carmen_semantic_segmentation_reader.h>
 #include <carmen/util_strings.h>

@@ -1,7 +1,8 @@
 #include <carmen/carmen.h>
 #include <carmen/grid_mapping.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #include <string.h>
 //./slice_map 150.0 512 /media/My\ Passport/parte_final.png 0 0 0 0 ../../data/google_block_map/ 7756300 -365250
 

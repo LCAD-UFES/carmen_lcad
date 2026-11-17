@@ -6,11 +6,11 @@ MODULE_COMMENT = Functions for reading sensors data
 
 LINK = g++ 
 
-CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++11 
+CXXFLAGS += -Wno-deprecated -Wno-write-strings -Wno-unused-result -Wno-sign-compare -std=c++17 
 # Just to prevent the process that generates the Makefile.depend from complaining we're not using C++11
-IFLAGS += -std=c++11
+IFLAGS += -std=c++17
 
-IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv`
+IFLAGS += -I /usr/local/include/pcl-1.8 -I /usr/include/eigen3/ -I /usr/include/vtk-5.10/ `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 
 SOURCES = carmen_image_reader.cpp carmen_lidar_reader.cpp carmen_semantic_segmentation_reader.cpp # segmap_pose_reader.cpp
 PUBLIC_INCLUDES = carmen_image_reader.h carmen_lidar_reader.h carmen_semantic_segmentation_reader.h # segmap_pose_reader.h

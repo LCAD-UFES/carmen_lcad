@@ -1,5 +1,10 @@
 include ../Makefile.conf
 
+# Migração Ubuntu 26.04: o módulo linkava contra o OpenCV mas nunca pedia os -I dele.
+# No Ubuntu 20.04 os headers ficavam em /usr/include/opencv2 (path padrão); o pacote do
+# 26.04 põe tudo em /usr/include/opencv4, que exige -I explícito.
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+
 # voice commands
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvoice
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
@@ -12,7 +17,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -lglobal -lgeometry -lparam_interface -lipc -llocalize_ackerman_interface -lmap_interface -lrobot_ackerman_interface \
 		-lmap_server_interface -lconventional_ackerman -lbase_ackerman_interface -lbehavior_selector_interface -lgrid_mapping \
 		-lmap_io -lmap_util -lmap_interface -lmapper_interface -lprob_models  -llocalize_ackerman_interface -lrotation_geometry \
-		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface `pkg-config --libs opencv`
+		-lcarmodel -lm -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 		
 CFLAGS += -std=c99 # -O4
 

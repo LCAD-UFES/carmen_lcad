@@ -12,13 +12,13 @@ IFLAGS += -I/usr/local/include/bullet/ -I/usr/include/eigen3 -I$(CARMEN_HOME)/sh
 
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5*)
-IFLAGS += -I/usr/include/eigen3 -I $(PCL_INC) -I $(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) $(addprefix -I,$(VTK_INC))
 
 # Required default libraries to comunicate with Carmen Core
 LFLAGS += -L/usr/local/lib -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/cuda/lib64/lib
 LFLAGS += -lparam_interface -lipc -lglobal -lcvis_interface -lstereo_interface -lvelodyne_interface -lkinect_interface -lfused_odometry_interface -ljoystick_interface -lGL -lGLU -lglut\
-		  -ltf -lBulletDynamics -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
-		  `pkg-config --libs opencv`
+		  -ltf -lBulletDynamics -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread -lrt \
+		  `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 CFLAGS += -Wno-unknown-pragmas
 CXXFLAGS += -Wno-unknown-pragmas
 CUDAFLAGS += -I$(CARMEN_HOME)/include

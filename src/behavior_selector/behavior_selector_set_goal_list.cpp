@@ -959,10 +959,22 @@ set_goal_list(int &current_goal_list_size, carmen_robot_and_trailers_traj_point_
 					   (behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S1)
 					  )
 					) ||
+					// O guarda `> 0` existe para nao criar um goal em cima da propria pose do
+					// carro enquanto ele roda solto -- ai' o goal no indice 0 o faria parar.
+					// Mas nos estados ..._S2 o carro JA' ESTA' parado em cima do ponto de
+					// inversao, e e' justamente esse goal que o faz arrancar de novo. Com o
+					// `> 0` valendo tambem para eles, dava deadlock: o S2 so' sai se o carro
+					// andar (behavior_selector_state_machine.cpp:1235) e o carro so' anda se
+					// receber este goal. Toda manobra com inversao de marcha -- ou seja, todo
+					// estacionamento de re -- travava no primeiro cusp.
 					((next_pose_change_direction_index == rddf_pose_index) && (next_pose_change_direction_index > 0) &&
 					  (
 					   (behavior_selector_state_message.low_level_state == Free_Reverse_Running) ||
-					   (behavior_selector_state_message.low_level_state == Free_Running) ||
+					   (behavior_selector_state_message.low_level_state == Free_Running)
+					  )
+					) ||
+					((next_pose_change_direction_index == rddf_pose_index) &&
+					  (
 					   (behavior_selector_state_message.low_level_state == Stopped_At_Reverse_S2) ||
 					   (behavior_selector_state_message.low_level_state == Stopped_At_Go_Forward_S2)
 					  )

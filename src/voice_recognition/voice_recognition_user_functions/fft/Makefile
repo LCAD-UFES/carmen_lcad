@@ -1,6 +1,7 @@
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
 all:
 	g++ -g -c -Wall wav_decoder.c wav_io.c wav2txt.c fftw3_util.c spectogram.c
-	g++ -g -o wav2txt wav_decoder.o wav_io.o wav2txt.o fftw3_util.o spectogram.o -lm -lfftw3 `pkg-config --libs opencv`
+	g++ -g -o wav2txt wav_decoder.o wav_io.o wav2txt.o fftw3_util.o spectogram.o -lm -lfftw3 `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 teste_fft:
 	g++ -g -c -Wall fft3_util.c teste_fft.c wav_decoder.cpp
 	g++ -g -o teste_fft fft3_util.o teste_fft.o wav_decoder.o -lm -lfftw3

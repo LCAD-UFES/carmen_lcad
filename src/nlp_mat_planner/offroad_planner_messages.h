@@ -5,8 +5,8 @@
  *      Author: Alberto
  */
 
-#ifndef NLP_MAT_PLANNER_MESSAGES_H_
-#define NLP_MAT_PLANNER_MESSAGES_H_
+#ifndef OFFROAD_PLANNER_MESSAGES_H_
+#define OFFROAD_PLANNER_MESSAGES_H_
 
 #include <carmen/carmen.h>
 
@@ -28,6 +28,10 @@ typedef enum OFFROAD_PLANNER_FEEDBACK
 	COULD_NOT_COMPUTE_GOAL_DISTANCE_MAP,
 	COULD_NOT_FIND_SUITABLE_GOAL_POSE,
 	OFFROAD_PLANNER_TEST,
+	/* Existe na copia do carmen (include/carmen/offroad_planner_messages.h), usado pelo
+	   nlp_mat_planner. Adicionado aqui NO FIM do enum para o header exportado por este
+	   modulo ser um superconjunto -- assim o `make` daqui nao quebra o nlp_mat_planner.
+	   No fim do enum e' ABI-seguro: nenhum valor existente muda. */
 	DEACTIVATE
 } carmen_offroad_planner_feedback_t;
 
@@ -57,13 +61,12 @@ typedef struct
 	carmen_robot_and_trailers_traj_point_t transition_pose;
 	carmen_robot_and_trailers_traj_point_t goal_pose;
 
-	double time_to_plan;
     double timestamp;
     char *host;
 } carmen_offroad_planner_plan_message;
 
 #define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_NAME	"carmen_offroad_planner_plan_message"
-#define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_FMT		"{int, int, <{double, double, double, int, [double:5], double, double}:2>, int, {double, double, double, int, [double:5], double, double}, {double, double, double, int, [double:5], double, double}, double, double, string}"
+#define		CARMEN_OFFROAD_PLANNER_PLAN_MESSAGE_FMT		"{int, int, <{double, double, double, int, [double:5], double, double}:2>, int, {double, double, double, int, [double:5], double, double}, {double, double, double, int, [double:5], double, double}, double, string}"
 
 #ifdef __cplusplus
 }

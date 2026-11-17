@@ -1,7 +1,7 @@
 CC = g++
 
-CFLAGS = -W -Wall `pkg-config --cflags opencv` -O4
-LFLAGS = `pkg-config --libs opencv`
+CFLAGS = -W -Wall `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -O4
+LFLAGS = `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 build: haar training testing result crop_roi fp fn image_gray split_channels
 	@echo Done

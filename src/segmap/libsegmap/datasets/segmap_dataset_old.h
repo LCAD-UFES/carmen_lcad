@@ -11,7 +11,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 
 #include <carmen/synchronized_data_package.h>
 #include <carmen/odom_calib_data.h>

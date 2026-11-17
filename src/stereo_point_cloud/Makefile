@@ -2,7 +2,7 @@ include ../Makefile.conf
 
 CFLAGS +=
 IFLAGS += 
-LFLAGS += -lglobal -lipc -lparam_interface -lstereo_interface -lm `pkg-config --libs opencv` -pthread
+LFLAGS += -lglobal -lipc -lparam_interface -lstereo_interface -lm `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -pthread
 
 MODULE_NAME = stereo_point_cloud
 MODULE_COMMENT = This module transforms the disparity information in a point cloud.

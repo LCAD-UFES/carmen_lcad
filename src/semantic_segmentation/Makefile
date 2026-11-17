@@ -7,9 +7,9 @@ MODULE_COMMENT = Semantic Segmentation
 
 LINK = g++
 
-IFLAGS += -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/src/ -I /usr/local/cuda/include `pkg-config --cflags opencv` 
+IFLAGS += -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/src/ -I /usr/local/cuda/include `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` 
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -L $(CAFFE_HOME)/build/lib -lcaffe \
-	-L /usr/local/cuda/lib64 `pkg-config --libs opencv` -lglog -lprotobuf -L/usr/local/lib -lboost_thread -lboost_system
+	-L /usr/local/cuda/lib64 `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lglog -lprotobuf -L/usr/local/lib -lboost_thread
 CFLAGS += -Wall 
 CXXFLAGS += -Wall -std=c++0x
 

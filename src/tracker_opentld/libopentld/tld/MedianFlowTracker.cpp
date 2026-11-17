@@ -29,6 +29,10 @@
 #include <cmath>
 
 #include "FBTrack.h"
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/core/core_c.h>
 
 using namespace cv;
 
@@ -63,8 +67,16 @@ void MedianFlowTracker::track(const Mat &prevMat, const Mat &currMat, Rect *prev
         float bb_tracker[] = {prevBB->x, prevBB->y, prevBB->width + prevBB->x - 1, prevBB->height + prevBB->y - 1};
         float scale;
 
+#if CV_MAJOR_VERSION >= 4
+        /* Migração Ubuntu 26.04: a conversão implícita cv::Mat -> IplImage saiu do
+           OpenCV 4; cvIplImage() é o substituto (sem cópia). O const_cast é porque
+           cvIplImage() recebe cv::Mat& e aqui as Mats chegam como const. */
+        IplImage prevImg = cvIplImage(const_cast<cv::Mat &>(prevMat));
+        IplImage currImg = cvIplImage(const_cast<cv::Mat &>(currMat));
+#else
         IplImage prevImg = prevMat;
         IplImage currImg = currMat;
+#endif
 
         int success = fbtrack(&prevImg, &currImg, bb_tracker, bb_tracker, &scale);
 

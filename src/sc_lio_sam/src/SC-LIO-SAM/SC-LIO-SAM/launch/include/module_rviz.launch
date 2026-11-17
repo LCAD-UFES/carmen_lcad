@@ -1,0 +1,15 @@
+<launch>
+
+    <arg name="project" default="lio_sam"/>
+
+    <!--- Run Rviz-->
+    <node pkg="rviz" type="rviz" name="$(arg project)_rviz" args="-d $(find lio_sam)/launch/include/config/rviz_alberto.rviz">
+        <!-- Sessao Wayland (Ubuntu 26.04): sem isto o Qt5 usa o plugin 'wayland' e o
+             handle de janela que o rviz passa ao OGRE nao e' uma janela X11, entao o
+             render system GLX recusa com "Invalid parentWindowHandle (wrong server or
+             screen)", tenta 100 vezes e o processo morre com SIGSEGV. Forcando 'xcb' o
+             Qt vai pelo XWayland e o GLX recebe um handle valido. -->
+        <env name="QT_QPA_PLATFORM" value="xcb"/>
+    </node>
+
+</launch>

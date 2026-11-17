@@ -20,8 +20,8 @@ LFLAGS +=  -lgrid_mapping -lprob_models -lz -lmap_io -lmap_util -lmap_interface 
 CFLAGS += -fopenmp -std=c99 
 CXXFLAGS += -Wno-write-strings
 
-IFLAGS += `pkg-config --cflags opencv` 
-LFLAGS += `pkg-config --libs opencv` 
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` 
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` 
 
 # Source code files (.c, .cpp) 
 SOURCES = map_server_main.cpp map_server_interface.c slice_map.cpp

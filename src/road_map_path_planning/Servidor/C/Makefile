@@ -11,10 +11,10 @@ CXXFLAGS = -std=c++11
 IFLAGS += -I/usr/include/python3.5
 IFLAGS += -I$(CARMEN_HOME)/src/road_map_path_planning
 
-LFLAGS += -lglobal -lipc -lparam_interface -lvoice_interface_interface `python3.5-config --libs` -lroad_map_path_planning_utils -lgps_xyz_interface -lnavigator_ackerman_interface -lrddf_interface
-#LFLAGS += `pkg-config --libs opencv` -lparam_interface -lglobal -lbumblebee_basic_interface -lipc
-#CFLAGS += -Wall `pkg-config --cflags opencv`
-#CXXFLAGS += -Wall `pkg-config --cflags opencv` -std=c++11
+LFLAGS += -lglobal -lipc -lparam_interface -lvoice_interface_interface `pkg-config --libs python3-embed 2>/dev/null || python3-config --embed --libs 2>/dev/null || python3-config --libs` -lroad_map_path_planning_utils -lgps_xyz_interface -lnavigator_ackerman_interface -lrddf_interface
+#LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lparam_interface -lglobal -lbumblebee_basic_interface -lipc
+#CFLAGS += -Wall `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+#CXXFLAGS += -Wall `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -std=c++11
 
 SOURCES = call_iara_app_main.cpp
 PUBLIC_INCLUDES = call_iara_app_messages.h road_map_path_planning_utils.h

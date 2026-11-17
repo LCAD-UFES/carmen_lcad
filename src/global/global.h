@@ -178,6 +178,12 @@ typedef struct
 #define MAX_NUM_TRAILERS 5
 
 
+/* Migracao Ubuntu 26.04: mesmo typedef existe em route_planner_messages.h, e o compilador
+   trata dois typedef de struct anonima como tipos DISTINTOS -- quem incluisse os dois levava
+   "conflicting types for 'edge_t'". A macro e' compartilhada com aquele header: o primeiro a
+   ser incluido define, o segundo pula. */
+#ifndef CARMEN_EDGE_T_DEFINED
+#define CARMEN_EDGE_T_DEFINED
 typedef struct
 {
 	int u;
@@ -186,6 +192,7 @@ typedef struct
 	int v_ref;
 	double cost;
 } edge_t;
+#endif
 
 
 typedef enum {CREATE_ACTION, READ_ACTION, UPDATE_ACTION, DELETE_ACTION} crud_t;
@@ -197,10 +204,17 @@ typedef struct
 	char *annotation_description;
 	int annotation_type;
 	int annotation_code;
-	int annotation_id;
-	int size;
-	double *x_points;
-	double *y_points;
+	/* NAO acrescentar campos aqui sem atualizar o CARMEN_RDDF_ANNOTATION_MESSAGE_FMT em
+	   rddf_messages.h -- e sem recompilar TODOS os modulos que publicam/assinam a mensagem,
+	   inclusive os binarios pre-compilados de bin/ (task_manager, offroad_planner...).
+
+	   Havia aqui `int annotation_id; int size; double *x_points; double *y_points;`, sem uso
+	   em lugar nenhum da arvore. Eles levavam sizeof(carmen_annotation_t) a 72 bytes, mas o
+	   FMT descreve so' os 5 primeiros campos = 48 bytes. O marshaller do IPC anda pelo array
+	   de 48 em 48; a partir do SEGUNDO elemento ele lia desalinhado e pegava o `y` (um double)
+	   onde esperava o char* annotation_description -- strlen() nesse valor => SIGSEGV.
+	   Por isso so' quebrava com 2+ anotacoes na janela. Removidos para a struct voltar a casar
+	   com o formato. */
 } carmen_annotation_t;
 
 

@@ -5,8 +5,8 @@
 #include "voslam_opengl_interface.h"
 #include "voslam_keyframes.h"
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 class VoslamOpenGLThread {
         public:

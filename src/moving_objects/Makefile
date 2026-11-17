@@ -24,14 +24,14 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libstereovgram
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libelas
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lelas -lstereovgram -lstereo -lstdc++ -fopenmp -lm
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/ -I/usr/local/carmen_boost/include
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -L/usr/local/carmen_boost/lib
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I/usr/include/bullet/
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 CFLAGS += -Wall -fopenmp
 CFLAGS += -w # -msse3
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++17
 
 # Required for debugging:
 #CXXFLAGS += -g -pg -Wall -fopenmp
@@ -39,18 +39,18 @@ CXXFLAGS += -std=c++11
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lgrid_mapping -lparam_interface -lipc -lglobal -lmapper_interface -lmoving_objects_interface -lmap_server_interface -lfused_odometry_interface -llocalize_ackerman_interface -llaser_interface -lrotation_geometry -lmap_io -lmap_util \
 -lmap_interface -llocalize_ackerman_core -lvelodyne_interface -lstereo_velodyne_interface -lstereo_velodyne -lstereo_interface \
--ltf -lBulletDynamics -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
+-ltf -lBulletDynamics -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread -lrt \
 -llocalize_ackerman_motion -lprob_models -lgl_plotter -lmap_interface 
 
 # C++11 flag
-LFLAGS += -std=c++11
+LFLAGS += -std=c++17
 
-IFLAGS += `pkg-config --cflags opencv`
-LFLAGS += `pkg-config --libs opencv`
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv`
 
 PCL_INC = $(wildcard /usr/local/include/pcl-*)
 VTK_INC = $(wildcard /usr/local/include/vtk-5* /usr/include/vtk-5* /usr/include/vtk-6*)
-IFLAGS += -I/usr/include/eigen3 -I$(PCL_INC) # -I$(VTK_INC)
+IFLAGS += -I/usr/include/eigen3 $(addprefix -I,$(PCL_INC)) # $(addprefix -I,$(VTK_INC))
 
 #LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_search -lpcl_segmentation
 #LFLAGS += -lvtkRendering -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
@@ -59,7 +59,6 @@ LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registrati
 			-lpcl_segmentation
 
 # Boost flag
-LFLAGS += -I/usr/local/carmen_boost/include
 
 # Source code files (.c, .cpp) 
 SOURCES = moving_objects_main.cpp moving_objects_interface.c moving_objects.cpp monte_carlo_moving_objects_tracking.cpp

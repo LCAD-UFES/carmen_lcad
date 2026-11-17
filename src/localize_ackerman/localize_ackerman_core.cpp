@@ -3067,15 +3067,34 @@ sort_ray_order_by_vertical_correction_angles(sensor_parameters_t params)
 
 
 static void
+/*
+ * Reordena as tabelas por ray_order, para que o indice i passe a significar "o i-esimo raio
+ * em ordem de elevacao" -- que e' como o resto do modulo consome (distance[ray_order[i]]).
+ *
+ * O horizontal_angles_deltas TEM que vir junto. Ele e' indexado pelo mesmo i, entao se
+ * ficar na ordem crua do .ini enquanto vertical_correction e ray_order sao permutados, cada
+ * anel passa a receber o desvio de azimute de OUTRO anel. No OT-128 da IARA, cujos
+ * vertical_angles sao estritamente decrescentes, o sort ascendente transforma ray_order na
+ * reversao total [n-1..0]: o anel i recebe o desvio do anel n-1-i. Isso nao gera erro
+ * nenhum -- compila, roda, e a nuvem sai girada por anel.
+ *
+ * Sensor sem correcao horizontal tem horizontal_angles_deltas == NULL, e o memcpy estouraria:
+ * por isso as duas guardas.
+ */
 sort_vertical_correction_angles(sensor_parameters_t params)
 {
 	double aux[params.vertical_resolution];
+	double aux2[params.vertical_resolution];
 
 	memcpy(aux, params.vertical_correction, params.vertical_resolution * sizeof(double));
+	if (params.horizontal_angles_deltas != NULL)
+		memcpy(aux2, params.horizontal_angles_deltas, params.vertical_resolution * sizeof(double));
 
 	for (int i = 0; i < params.vertical_resolution; i++)
 	{
 		params.vertical_correction[i] = aux[params.ray_order[i]];
+		if (params.horizontal_angles_deltas != NULL)
+			params.horizontal_angles_deltas[i] = aux2[params.ray_order[i]];
 	}
 }
 
@@ -3144,6 +3163,7 @@ get_alive_LIDARs_and_their_parameters(int argc, char **argv, int correction_type
 			{(char *) "localize_ackerman", ray_index_difference, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].ray_index_difference, 0, NULL},
 			{(char *) "localize_ackerman", use_index_difference, CARMEN_PARAM_ONOFF, &spherical_sensor_params[i].use_index_difference, 0, NULL},
 			{(char *) "localize_ackerman", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].unsafe_height_above_ground, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "safe_height_from_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].safe_height_from_ground, 0, NULL},
 		};
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
@@ -3165,10 +3185,35 @@ get_alive_LIDARs_and_their_parameters(int argc, char **argv, int correction_type
 			if (spherical_sensor_params[i].height > highest_sensor)
 				highest_sensor = spherical_sensor_params[i].height;
 
+			// Banda de altura DESTE LiDAR. Chaves opcionais; sem elas fica a global
+			// localize_ackerman_(safe_height_from_ground|unsafe_height_above_ground)
+			// que a param_list obrigatoria acima ja' carregou. Tem que casar com o
+			// mapper: se o localize aceita obstaculo que o mapa nao tem (ou o
+			// contrario), a nuvem nao encaixa na grade.
+			{
+				char safe_key[128], unsafe_key[128];
+				sprintf(safe_key, "lidar%d_safe_height_from_ground", i - 10);
+				sprintf(unsafe_key, "lidar%d_unsafe_height_above_ground", i - 10);
+
+				carmen_param_allow_unfound_variables(1);
+				carmen_param_t height_band_param_list[] =
+				{
+					{(char *) "localize_ackerman", safe_key, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].safe_height_from_ground, 0, NULL},
+					{(char *) "localize_ackerman", unsafe_key, CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].unsafe_height_above_ground, 0, NULL},
+				};
+				carmen_param_install_params(argc, argv, height_band_param_list,
+						sizeof(height_band_param_list) / sizeof(height_band_param_list[0]));
+				carmen_param_allow_unfound_variables(0);
+			}
+
 			spherical_sensor_params[i].sensor_type = VELODYNE;
 			spherical_sensor_params[i].vertical_resolution = lidar_config[i].shot_size;
 			spherical_sensor_params[i].ray_order = lidar_config[i].ray_order;
 			spherical_sensor_params[i].vertical_correction = lidar_config[i].vertical_angles;
+			// Tem que casar com o mapper: se um corrige o azimute e o outro nao, a
+			// nuvem do localize nao bate com o mapa que o mapper gravou.
+			if (needs_horizontal_correction(lidar_config[i].model))
+				spherical_sensor_params[i].horizontal_angles_deltas = lidar_config[i].horizontal_angles_deltas;
 			spherical_sensor_params[i].range_max = lidar_config[i].max_range;
 			spherical_sensor_params[i].current_range_max = spherical_sensor_params[i].range_max;
 			spherical_sensor_params[i].range_division_factor = lidar_config[i].range_division_factor;
@@ -3304,6 +3349,9 @@ get_alive_sensors(int argc, char **argv)
 			continue;
 
 		spherical_sensor_params[i].unsafe_height_above_ground = spherical_sensor_params[0].unsafe_height_above_ground;
+		// Piso da banda: -20.0 e' o valor que o localize sempre passou por omissao aos
+		// prob_models, entao velodyne e stereo seguem exatamente como antes.
+		spherical_sensor_params[i].safe_height_from_ground = -20.0;
 
 		spherical_sensor_data[i].ray_position_in_the_floor = (carmen_vector_2D_t **) calloc(number_of_threads ,sizeof(carmen_vector_2D_t *));
 		spherical_sensor_data[i].maxed = (int **) calloc(number_of_threads ,sizeof(int *));
@@ -3321,6 +3369,7 @@ get_alive_sensors(int argc, char **argv)
 		spherical_sensor_params[i].ray_order = NULL;
 		spherical_sensor_params[i].sensor_to_support_matrix = NULL;
 		spherical_sensor_params[i].vertical_correction = NULL;
+		spherical_sensor_params[i].horizontal_angles_deltas = NULL;	// so' os LiDARs da lista de needs_horizontal_correction() preenchem
 		spherical_sensor_params[i].vertical_resolution = 0;
 
 		for (int j = 0; j < number_of_threads; j++)

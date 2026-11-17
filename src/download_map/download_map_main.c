@@ -4,6 +4,17 @@
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgcodecs/imgcodecs_c.h>
+#elif CV_MAJOR_VERSION >= 4
+/* Migração Ubuntu 26.04: o OpenCV >= 4 removeu o imgcodecs_c.h (o header só dá #error) e
+   as funções cvLoadImage/cvSaveImage do binário. A API C de core/imgproc que o resto do
+   arquivo usa (IplImage etc.) continua nos headers *_c.h; ler/gravar imagem passa pela API
+   C++ (cv::imread/cv::imwrite). Estes .c são compilados com g++ (ver CC = g++ no Makefile
+   do módulo), então dá para usar as duas. */
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
 #else
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -51,7 +62,19 @@ download_map_from_google_maps (double latitude, double longitude)
 
 	get_image_from_gps (latitude, longitude, maptype, map_width, filename);
 
-	img = cvLoadImage (filename, CV_LOAD_IMAGE_COLOR);
+#if CV_MAJOR_VERSION >= 4
+	img = NULL;
+	{
+		cv::Mat img_mat = cv::imread(filename, cv::IMREAD_COLOR);
+		if (!img_mat.empty())
+		{
+			IplImage img_ipl = cvIplImage(img_mat);
+			img = cvCloneImage(&img_ipl);   /* o ponteiro é devolvido ao chamador */
+		}
+	}
+#else
+	img = cvLoadImage (filename, cv::IMREAD_COLOR);
+#endif
 
 	return img;
 }
@@ -129,7 +152,11 @@ save_map_image (IplImage *img, int origin_x, int origin_y)
 	char map_filename [1024];
 
 	format_map_path(origin_x, origin_y, map_filename);
+#if CV_MAJOR_VERSION >= 4
+	cv::imwrite(map_filename, cv::cvarrToMat(img));
+#else
 	cvSaveImage(map_filename, img, NULL);
+#endif
 }
 
 
@@ -140,7 +167,19 @@ find_map_from_data (int origin_x, int origin_y)
 	char map_filename [1024];
 
 	format_map_path(origin_x, origin_y, map_filename);
-	map = cvLoadImage (map_filename, CV_LOAD_IMAGE_ANYCOLOR);
+#if CV_MAJOR_VERSION >= 4
+	map = NULL;
+	{
+		cv::Mat map_mat = cv::imread(map_filename, cv::IMREAD_ANYCOLOR);
+		if (!map_mat.empty())
+		{
+			IplImage map_ipl = cvIplImage(map_mat);
+			map = cvCloneImage(&map_ipl);   /* o ponteiro é devolvido ao chamador */
+		}
+	}
+#else
+	map = cvLoadImage (map_filename, cv::IMREAD_ANYCOLOR);
+#endif
 
 	return map;
 }

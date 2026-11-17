@@ -28,7 +28,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 
 #include "EnsembleClassifier.h"
 

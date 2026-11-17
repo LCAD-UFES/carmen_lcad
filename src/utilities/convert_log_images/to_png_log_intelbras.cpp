@@ -1,5 +1,5 @@
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -46,7 +46,7 @@ process_intelbras(FILE *f, char *dir, bool show_image, char* log_filename)
 
 		char out_name[1024];
 		sprintf(out_name, "%s/%lf_camera%d_%d.png", dir, timestamp, camera_id, i);
-		imwrite(out_name, img, {CV_IMWRITE_PNG_COMPRESSION, 9});
+		imwrite(out_name, img, {cv::IMWRITE_PNG_COMPRESSION, 9});
 
 		if (show_image)
 		{

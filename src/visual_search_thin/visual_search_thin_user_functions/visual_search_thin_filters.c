@@ -1,4 +1,4 @@
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include "visual_search_thin_filters.h"
 
 /*

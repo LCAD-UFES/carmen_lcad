@@ -7,8 +7,8 @@ LINK = g++
 
 CXXFLAGS += 
 CFLAGS += 
-IFLAGS += `pkg-config --cflags opencv` -I 3rdparty/cvblobs -I libopentld/mftracker -I libopentld/tld -I libopentld/imacq -I main_utils -I 3rdparty/libconfig
-LFLAGS += `pkg-config --libs opencv` -lopentld  -l3rdparty -lopencv_video -lparam_interface -lipc -lglobal \
+IFLAGS += `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -I 3rdparty/cvblobs -I libopentld/mftracker -I libopentld/tld -I libopentld/imacq -I main_utils -I 3rdparty/libconfig
+LFLAGS += `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lopentld  -l3rdparty -lopencv_video -lparam_interface -lipc -lglobal \
 	 -lbumblebee_basic_interface -lvisual_tracker_interface -fopenmp
 SUBDIRS += libopentld 3rdparty
 

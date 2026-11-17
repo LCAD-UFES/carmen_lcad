@@ -5,7 +5,7 @@
 
 #include <map>
 #include <Eigen/Core>
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <pcl/point_types.h>
 #include <carmen/segmap_pose2d.h>
 #include <carmen/carmen_lidar_reader.h>

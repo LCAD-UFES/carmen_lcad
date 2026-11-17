@@ -2,7 +2,7 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
-CXXFLAGS += -Wno-write-strings -std=c++0x -Wno-sign-compare `pkg-config --cflags opencv` -Wno-missing-field-initializers 
+CXXFLAGS += -Wno-write-strings -std=c++0x -Wno-sign-compare `pkg-config --cflags opencv4 2>/dev/null || pkg-config --cflags opencv` -Wno-missing-field-initializers 
 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ \
 	 -I/usr/local/include/ -I$(CARMEN_HOME)/sharedlib/prob_models $(G2O_IFLAGS)
@@ -15,7 +15,7 @@ LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lrobot_ackerman_interfac
 	-lbehavior_selector_interface \
 	-lobstacle_avoider_interface -lcollision_detection -lobstacle_distance_mapper_interface \
 	-lparam_interface -lrobot_ackerman_interface \
-	-llaser_interface `pkg-config --libs opencv` -lparam_interface \
+	-llaser_interface `pkg-config --libs opencv4 2>/dev/null || pkg-config --libs opencv` -lparam_interface \
 	-lsimulator_ackerman -lcontrol -lcarmodel -lfann -lgsl -lgslcblas -lgeometry -lrddf_interface \
 	-lnavigator_ackerman_interface -lmapper_interface -lsimulator_ackerman_interface \
 	-lbase_ackerman_interface -lprob_models -lrotation_geometry

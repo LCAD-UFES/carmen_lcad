@@ -3,7 +3,7 @@
 #define _TLIGHT_VGRAM_H_
 
 #include <vector>
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <wnn/VgRamNeuron.h>
 #include <carmen/tlight_state_recog.h>
 

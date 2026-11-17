@@ -1,4 +1,5 @@
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
 #include "voice_recognition_filters.h"
 #include "voice_recognition_user_functions.h"
 #include "voice_recognition_utils.h"

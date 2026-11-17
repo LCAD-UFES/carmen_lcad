@@ -6,8 +6,8 @@ MODULE_COMMENT = Raspberry Pi Imu Driver Module
 LINK = g++
 CXXFLAGS += -std=c++0x
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcmt/ -I/usr/include/eigen3/ `pkg-config opencv --cflags`
-LFLAGS += `pkg-config opencv --libs`
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcmt/ -I/usr/include/eigen3/ `pkg-config opencv4 --cflags 2>/dev/null || pkg-config opencv --cflags`
+LFLAGS += `pkg-config opencv4 --libs 2>/dev/null || pkg-config opencv --libs`
 
 LFLAGS +=  -lparam_interface -lipc -lglobal -lm  -lglut -lGL -lGLU -lxsens_interface
 

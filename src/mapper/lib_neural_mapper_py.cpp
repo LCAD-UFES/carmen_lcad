@@ -10,7 +10,7 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include "lib_neural_mapper_py.h"
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 
 
 #define import_array_alberto() {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return; } }

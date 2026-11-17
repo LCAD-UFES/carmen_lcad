@@ -1,5 +1,5 @@
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -57,7 +57,7 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image, char* lo
 
 			char out_name_l[1024];
 			sprintf(out_name_l, "%s/%s-l.png", dir, timestamp);
-			imwrite(out_name_l, img_l, {CV_IMWRITE_PNG_COMPRESSION, 9});
+			imwrite(out_name_l, img_l, {cv::IMWRITE_PNG_COMPRESSION, 9});
 		}
 
 		if (camera_side == 1 || camera_side == INT_MAX)
@@ -67,7 +67,7 @@ process_bumblebee(FILE *f, char *dir, int camera_side, bool show_image, char* lo
 
 			char out_name_r[1024];
 			sprintf(out_name_r, "%s/%s-r.png", dir, timestamp);
-			imwrite(out_name_r, img_r, {CV_IMWRITE_PNG_COMPRESSION, 9});
+			imwrite(out_name_r, img_r, {cv::IMWRITE_PNG_COMPRESSION, 9});
 		}
 
 		if (show_image)

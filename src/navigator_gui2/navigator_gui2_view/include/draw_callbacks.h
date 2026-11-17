@@ -14,7 +14,10 @@
 
 #include <gtk/gtk.h>
 #include <gtk/gtkgl.h>
-#include <glade/glade.h>
+/* Migração Ubuntu 26.04: libglade (libglade2-dev) não existe mais no apt — foi
+   substituída pelo GtkBuilder há mais de uma década. Este include era lixo esquecido:
+   não há nenhum uso de GladeXML/glade_xml_* no módulo; o gtk_gui.cpp já lê o .glade
+   com gtk_builder_add_from_file(). */
 
 #include <gtk_gui.h>
 

@@ -9,7 +9,7 @@
 #include <carmen/segmap_args.h>
 #include <carmen/segmap_constructors.h>
 
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <carmen/util_io.h>
 #include <pcl/point_types.h>
 #include <Eigen/Core>

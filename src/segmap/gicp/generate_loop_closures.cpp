@@ -3,8 +3,8 @@
 #include <string>
 #include <algorithm>
 #include <Eigen/Core>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/transforms.h>
 

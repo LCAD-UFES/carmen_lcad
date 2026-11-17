@@ -1,6 +1,10 @@
 #include "gtk_gui.h"
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/rrt_node.h>
+/* Migração Ubuntu 26.04: símbolos da API C do OpenCV (IplImage, cvScalar,
+   CV_FONT_*, cvDestroyAllWindows, ...) continuam existindo no OpenCV 4, mas só nestes
+   headers *_c.h — antes chegavam por inclusão transitiva do opencv/cv.h. */
+#include <opencv2/imgproc/imgproc_c.h>
 
 #define PUBLISH_MAP_VIEW 0
 
@@ -27,8 +31,8 @@ int semi_trailer_being_oriented = 0;
 extern void
 mapper_handler(carmen_mapper_map_message *message);
 
-//extern void
-//carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message);
+extern void
+carmen_mapper_compact_map_message_handler(carmen_mapper_compact_map_message *message);
 
 
 GdkColor *
@@ -703,7 +707,18 @@ namespace View
 			return;
 
 		// Register idle function
-		g_idle_add (on_drawArea_idle, this);
+		// ATENCAO: aqui era g_idle_add(). Um idle source roda sempre que o main loop nao tem
+		// nada melhor a fazer, ou seja, o GLib nunca bloqueia no poll: ele fazia ppoll() com
+		// timeout zero e despachava on_drawArea_idle() dezenas de milhares de vezes por
+		// segundo. Como o proprio callback ja limita o redraw a ~11 Hz comparando o relogio
+		// (draw_callbacks.cpp), na esmagadora maioria das voltas ele so lia o relogio e
+		// retornava -- queimando um nucleo inteiro sem desenhar nada (medido: 99,8% de CPU
+		// com a GUI parada, sem nenhuma mensagem chegando).
+		//
+		// Com g_timeout_add(10, ...) o main loop volta a dormir entre as chamadas. A taxa de
+		// redraw NAO muda: continua governada pelo mesmo teste de 0.09 s dentro do callback,
+		// que agora e consultado 100x/s em vez de dezenas de milhares.
+		g_timeout_add (10, on_drawArea_idle, this);
 
 		// Show window. All other widgets are automatically shown by GtkBuilder
 		gtk_widget_show_all(controls_.main_window);
@@ -736,8 +751,10 @@ namespace View
 			; // Do nothing
 		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
 		{
-			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
-//			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			// O mapa completo do mapper e' de 1050x1050 doubles (8,4 MB por mensagem, ~30 MB/s):
+			// recebe-lo trava o main loop da GUI por 130-230 ms de cada vez. O mapa compacto tem
+			// a mesma informacao util (celulas com prob >= 0.5) em ~0,4 MB.
+			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 1);
 		}
 		else if (strcmp(nav_panel_config->superimposed_map, "Map Level1") == 0)
@@ -1767,8 +1784,8 @@ namespace View
 	{
 		if (strcmp(nav_panel_config->map, "Map") == 0)
 		{
-			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) (mapper_handler), CARMEN_SUBSCRIBE_LATEST);
-			//			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			// Ver comentario em ConfigureMapViewer(): o mapa completo custa 8,4 MB por mensagem.
+			carmen_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
 		}
 		else if (strcmp(nav_panel_config->map, "Map Level1") == 0)
@@ -2307,7 +2324,7 @@ namespace View
 //
 //		cv::cvtColor(image, bgr, CV_RGB2BGR);
 //
-//		params.push_back(CV_IMWRITE_JPEG_QUALITY);
+//		params.push_back(cv::IMWRITE_JPEG_QUALITY);
 //		params.push_back(50);
 //
 //		cv::imencode(".jpeg", bgr, img_buff, params);

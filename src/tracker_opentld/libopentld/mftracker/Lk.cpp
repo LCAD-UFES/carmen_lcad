@@ -29,8 +29,57 @@
 #include <cmath>
 #include <cstdio>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+
+#if CV_MAJOR_VERSION >= 4
+/* ---------------------------------------------------------------------------------------
+ * Migração Ubuntu 26.04: o OpenCV 4 removeu a API C do módulo video/tracking —
+ * cvCalcOpticalFlowPyrLK() e as flags CV_LKFLOW_* não existem mais (nem o header
+ * opencv2/video/tracking_c.h). O algoritmo continua o mesmo, só que na API C++
+ * (cv::calcOpticalFlowPyrLK). O adaptador abaixo mantém a assinatura em CvPoint2D32f
+ * usada pelo resto deste arquivo, para o porte ficar contido num lugar só.
+ *
+ * Diferença de comportamento a registrar: a versão C recebia as imagens da pirâmide
+ * (PYR[]) e as reaproveitava entre as duas chamadas (CV_LKFLOW_PYR_*_READY). A API C++
+ * constrói a pirâmide internamente a cada chamada — o resultado é o mesmo, só se perde
+ * esse cache. As duas chamadas continuam usando OPTFLOW_USE_INITIAL_FLOW, que é o
+ * equivalente de CV_LKFLOW_INITIAL_GUESSES.
+ * --------------------------------------------------------------------------------------- */
+#include <vector>
+#include <opencv2/core.hpp>
+#include <opencv2/video/tracking.hpp>
+
+static void
+carmen_calc_optical_flow_pyr_lk(IplImage *img_a, IplImage *img_b,
+		CvPoint2D32f *pts_a, CvPoint2D32f *pts_b, int count, int win_size, int level, char *status)
+{
+	cv::Mat mat_a = cv::cvarrToMat(img_a);
+	cv::Mat mat_b = cv::cvarrToMat(img_b);
+
+	std::vector<cv::Point2f> from(count), to(count);
+	for (int i = 0; i < count; i++)
+	{
+		from[i] = cv::Point2f(pts_a[i].x, pts_a[i].y);
+		to[i]   = cv::Point2f(pts_b[i].x, pts_b[i].y);
+	}
+
+	std::vector<uchar> st;
+	std::vector<float> err;
+	cv::calcOpticalFlowPyrLK(mat_a, mat_b, from, to, st, err,
+			cv::Size(win_size, win_size), level,
+			cv::TermCriteria(cv::TermCriteria::COUNT | cv::TermCriteria::EPS, 20, 0.03),
+			cv::OPTFLOW_USE_INITIAL_FLOW);
+
+	for (int i = 0; i < count; i++)
+	{
+		pts_b[i].x = to[i].x;
+		pts_b[i].y = to[i].y;
+		status[i] = (char) (i < (int) st.size() ? st[i] : 0);
+	}
+}
+#endif
 
 const int MAX_COUNT = 500;
 const int MAX_IMG = 2;
@@ -209,6 +258,13 @@ int trackLK(IplImage *imgI, IplImage *imgJ, float ptsI[], int nPtsI,
         points[2][i].y = ptsI[2 * i + 1];
     }
 
+#if CV_MAJOR_VERSION >= 4
+    //lucas kanade track
+    carmen_calc_optical_flow_pyr_lk(imgI, imgJ, points[0], points[1], nPtsI, win_size_lk, level, status);
+
+    //backtrack
+    carmen_calc_optical_flow_pyr_lk(imgJ, imgI, points[1], points[2], nPtsI, win_size_lk, level, statusBacktrack);
+#else
     //lucas kanade track
     cvCalcOpticalFlowPyrLK(imgI, imgJ, PYR[I], PYR[J], points[0], points[1],
                            nPtsI, cvSize(win_size_lk, win_size_lk), level, status, 0, cvTermCriteria(
@@ -220,6 +276,7 @@ int trackLK(IplImage *imgI, IplImage *imgJ, float ptsI[], int nPtsI,
                            nPtsI, cvSize(win_size_lk, win_size_lk), level, statusBacktrack, 0, cvTermCriteria(
                                CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.03),
                            CV_LKFLOW_INITIAL_GUESSES | CV_LKFLOW_PYR_A_READY | CV_LKFLOW_PYR_B_READY);
+#endif
 
     for(i = 0; i < nPtsI; i++)
     {

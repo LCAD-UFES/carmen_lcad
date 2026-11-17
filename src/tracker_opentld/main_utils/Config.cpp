@@ -338,7 +338,7 @@ int Config::init(int argc, char **argv)
         //const char * backgroundFrame = NULL;
         //config_lookup_string(&m_config, "backgroundFrame", &backgroundFrame);
         //if(backgroundFrame != NULL) {
-        //  classifier->background = imAcqLoadImg(imAcq, (char *)backgroundFrame, CV_LOAD_IMAGE_GRAYSCALE);
+        //  classifier->background = imAcqLoadImg(imAcq, (char *)backgroundFrame, cv::IMREAD_GRAYSCALE);
         //}
 
         // showOutput
