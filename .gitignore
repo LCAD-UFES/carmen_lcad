@@ -850,3 +850,12 @@ bin/pi_nit_camera_publisher
 # Python. Tudo baixado por script (COMO_TESTAR.md / download_model.sh), nada disso
 # entra no repositorio.
 /data/pi_nit/
+
+# Binarios de modulos privados: a copia versionada fica em prebuilt/ubuntu<NN>/ e o
+# `make` (alvo prebuilt do src/Makefile) copia a da versao do Ubuntu para bin/ e lib/.
+/bin/route_planner
+/bin/offroad_planner
+/bin/hesai_driver
+/bin/task_manager
+/bin/frenet_path_planner
+/lib/libtrailer_nlp.so

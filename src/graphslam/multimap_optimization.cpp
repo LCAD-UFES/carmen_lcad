@@ -368,9 +368,8 @@ int main(int argc, char **argv)
 	DlWrapper dlSolverWrapper;
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 	Factory* factory = Factory::instance();
-	/* Migração Ubuntu 26.04: Factory::registerType() do g2o 2023 recebe
-	   std::shared_ptr<AbstractHyperGraphElementCreator>, não mais um ponteiro cru. */
-	factory->registerType("EDGE_GPS", std::make_shared<HyperGraphElementCreator<EdgeGPS> >());
+	/* g2o_register_type (edge_gps_2D.h) compila com o g2o 2023 do 26.04 e com o fork do 20.04. */
+	g2o_register_type<HyperGraphElementCreator<EdgeGPS> >(factory, "EDGE_GPS");
 
 	optimizer = initialize_optimizer();
 	load_data_to_optimizer(optimizer);

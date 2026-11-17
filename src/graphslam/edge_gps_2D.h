@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
+#include <memory>
+#include <string>
 
 using namespace Eigen;
 
@@ -60,6 +62,29 @@ namespace g2o
 				return os.good();
 			}
 	};
+
+	/* Factory::registerType() recebe std::shared_ptr no g2o 2023 (apt do Ubuntu 26.04) e
+	   ponteiro cru no fork antigo do LCAD (Ubuntu 20.04, /usr/local). Escolhe em tempo de
+	   compilacao a forma que a versao instalada aceita. Uso:
+	   g2o_register_type<HyperGraphElementCreator<EdgeGPS> >(factory, "EDGE_GPS"); */
+	template <class Creator, class F>
+	auto g2o_register_type_impl(F *factory, const std::string &tag, int)
+		-> decltype(factory->registerType(tag, std::make_shared<Creator>()), void())
+	{
+		factory->registerType(tag, std::make_shared<Creator>());
+	}
+
+	template <class Creator, class F>
+	void g2o_register_type_impl(F *factory, const std::string &tag, long)
+	{
+		factory->registerType(tag, new Creator);
+	}
+
+	template <class Creator, class F>
+	void g2o_register_type(F *factory, const std::string &tag)
+	{
+		g2o_register_type_impl<Creator>(factory, tag, 0);
+	}
 }
 
 #endif

@@ -42,10 +42,14 @@ int initialize_ffmpeg(av_ffmpeg *afp, char* ip_address)
         return 2;
     }
     // find primary video stream
-    /* Migração Ubuntu 26.04: no FFmpeg atual (8.x) av_find_best_stream() e
-       avcodec_find_decoder() trabalham com `const AVCodec *` — o ponteiro só é lido aqui,
-       então basta declarar como const. */
+    /* av_find_best_stream() recebe `const AVCodec **` a partir do FFmpeg 5 (libavformat 59,
+       Ubuntu 26.04) e `AVCodec **` no FFmpeg 4 (libavformat 58, Ubuntu 20.04). O ponteiro
+       so' e' lido aqui; o resto (avcodec_open2 etc.) aceita const nas duas versoes. */
+#if LIBAVFORMAT_VERSION_MAJOR >= 59
     const AVCodec *vcodec = nullptr;
+#else
+    AVCodec *vcodec = nullptr;
+#endif
     ret = av_find_best_stream(inctx, AVMEDIA_TYPE_VIDEO, -1, -1, &vcodec, 0);
     if (ret < 0)
     {

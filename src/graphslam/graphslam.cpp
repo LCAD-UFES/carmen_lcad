@@ -567,10 +567,9 @@ graphslam(double gps_xy_std_multiplier, double gps_yaw_std,
 	loadStandardSolver(dlSolverWrapper, argc, argv);
 
 	Factory *factory = Factory::instance();
-	/* Migração Ubuntu 26.04: Factory::registerType() do g2o 2023 recebe
-	   std::shared_ptr<AbstractHyperGraphElementCreator>, não mais um ponteiro cru. */
-	factory->registerType("EDGE_GPS", std::make_shared<HyperGraphElementCreator<EdgeGPS> >());
-	factory->registerType("EDGE_GPS_NEW", std::make_shared<HyperGraphElementCreator<EdgeGPSNew> >());
+	/* g2o_register_type (edge_gps_2D.h) compila com o g2o 2023 do 26.04 e com o fork do 20.04. */
+	g2o_register_type<HyperGraphElementCreator<EdgeGPS> >(factory, "EDGE_GPS");
+	g2o_register_type<HyperGraphElementCreator<EdgeGPSNew> >(factory, "EDGE_GPS_NEW");
 
 	SparseOptimizer *optimizer = initialize_optimizer();
 	build_optimization_graph(optimizer, gps_xy_std_multiplier, gps_yaw_std, odom_xy_std, odom_orient_std, loop_xy_std, loop_orient_std, transformer);
