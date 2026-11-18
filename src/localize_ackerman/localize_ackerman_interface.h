@@ -138,16 +138,6 @@ carmen_localize_ackerman_publish_particles_message(carmen_localize_ackerman_part
 void
 carmen_localize_ackerman_publish_sensor_message(carmen_localize_ackerman_sensor_message *message);
 
-void
-carmen_localize_ackerman_subscribe_odometry_6d_message(carmen_localize_ackerman_odometry_6d_message *message,
-		carmen_handler_t handler, carmen_subscribe_t subscribe_how);
-
-void
-carmen_localize_ackerman_unsubscribe_odometry_6d_message(carmen_handler_t handler);
-
-void
-carmen_localize_ackerman_publish_odometry_6d_message(carmen_localize_ackerman_odometry_6d_message *message);
-
 
 #ifdef __cplusplus
 }

@@ -7,6 +7,7 @@
 #include <carmen/stereo_velodyne_interface.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/xsens_interface.h>
+#include <carmen/odometry_6d_interface.h>	/* predicao 4 */
 #include <carmen/car_model.h>
 #include <carmen/task_manager_interface.h>
 #include <carmen/task_manager_messages.h>
@@ -63,7 +64,6 @@ carmen_localize_ackerman_binary_map_t binary_map;
 carmen_robot_ackerman_laser_message front_laser;
 
 carmen_xsens_global_quat_message *xsens_global_quat_message = NULL;
-extern carmen_localize_ackerman_odometry_6d_message *odometry_6d_message;	// localize_ackerman_core.cpp (predicao 4)
 
 // variables read via read_parameters()
 carmen_robot_ackerman_config_t car_config;
@@ -1308,9 +1308,9 @@ fused_odometry_handler(carmen_fused_odometry_message *msg)
 
 
 static void
-odometry_6d_handler(carmen_localize_ackerman_odometry_6d_message *message)
+odometry_6d_handler(carmen_odometry_6d_message *message)
 {
-	odometry_6d_message = message;
+	carmen_localize_ackerman_accumulate_odometry_6d(filter, message);	// predicao 4: integra as velocidades
 }
 
 
@@ -1601,7 +1601,7 @@ subscribe_to_ipc_message()
         {
             carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
             carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) carmen_xsens_subscribe_xsens_global_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
-            carmen_localize_ackerman_subscribe_odometry_6d_message(NULL, (carmen_handler_t) odometry_6d_handler, CARMEN_SUBSCRIBE_LATEST);
+            carmen_odometry_6d_subscribe_message(NULL, (carmen_handler_t) odometry_6d_handler, CARMEN_SUBSCRIBE_ALL);	// todas: integra cada amostra
         }
 
         carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);

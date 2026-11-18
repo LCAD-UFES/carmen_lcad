@@ -883,3 +883,7 @@ bin/pi_nit_camera_publisher
 # viewer_3D_dash: executavel gerado pelo make (o fonte viewer_3D_dash.cpp e' versionado)
 /src/viewer_3D/viewer_3D_dash
 /bin/viewer_3D_dash
+
+# odometry_6d: publicador do Go2 gerado pelo make (o fonte e a interface sao versionados)
+/src/odometry_6d/odometry_6d_go2
+/bin/odometry_6d_go2
