@@ -856,8 +856,8 @@ public:
     // de startup que gera o erro de extrapolação no RViz/TF buffer.
     tf::TransformListener tfListener;
     tf::StampedTransform lidar2BaselinkTF;
-    gtsam::Pose3 lidar2Baselink = gtsam::Pose3::Identity();
-    gtsam::Pose3 baselink2Lidar = gtsam::Pose3::Identity();
+    gtsam::Pose3 lidar2Baselink = gtsam::Pose3();
+    gtsam::Pose3 baselink2Lidar = gtsam::Pose3();
     bool haveLidar2Baselink = false;
 
     AckermannPreintegration()
@@ -1323,8 +1323,8 @@ public:
     // sozinho (que já usa lidar2Baselink corretamente) funcionando bem.
     tf::TransformListener tfListener;
     tf::StampedTransform lidar2BaselinkTF;
-    gtsam::Pose3 lidar2Baselink = gtsam::Pose3::Identity();
-    gtsam::Pose3 baselink2Lidar = gtsam::Pose3::Identity();
+    gtsam::Pose3 lidar2Baselink = gtsam::Pose3();
+    gtsam::Pose3 baselink2Lidar = gtsam::Pose3();
     bool haveLidar2Baselink = false;
 
     void ensureLidar2Baselink()

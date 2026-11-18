@@ -75,6 +75,9 @@ int stop_map_update __attribute__((weak)) = 0;
 extern carmen_localize_ackerman_globalpos_message globalpos;
 
 extern carmen_behavior_selector_path_goals_and_annotations_message *behavior_selector_path_goals_and_annotations_message;
+/* ultima odometria 6D (predicao 4). Definida aqui, e nao no main, para quem linka este .a sem usar a
+   predicao 4 (mapper, planners...) nao precisar definir nada. O localize_ackerman_main preenche. */
+carmen_localize_ackerman_odometry_6d_message *odometry_6d_message = NULL;
 extern carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 extern carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
 
@@ -232,6 +235,92 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 	}
 }
 
+
+
+/* Predicao 4: odometria 6D do proprio robo (ex.: odometria das pernas do Go2).
+   Em vez de integrar v e giro, aplica em cada particula o DESLOCAMENTO medido pelo robo entre a
+   ultima predicao e agora, levado para o referencial do corpo (assim a deriva do referencial de
+   odometria do robo nao importa). O ruido e' proporcional ao que foi andado/girado: parado, as
+   particulas so' recebem o ruido de resolucao do mapa, e o lidar quase nao precisa corrigir.
+   Retorna 0 se nao deu para usar a odometria 6D (sem mensagem, velha ou saltou) -- o chamador cai
+   na predicao 3. */
+int
+carmen_localize_ackerman_incorporate_odometry_6d(carmen_localize_ackerman_particle_filter_p filter,
+		carmen_localize_ackerman_odometry_6d_message *odometry_6d, double timestamp)
+{
+	static double last_x = 0.0, last_y = 0.0, last_yaw = 0.0, last_odom_timestamp = -1.0;
+	static int have_last = 0;
+
+	if (!odometry_6d || fabs(timestamp - odometry_6d->timestamp) > filter->param->odom6d_timeout)
+	{
+		have_last = 0;
+		return 0;
+	}
+	if (!have_last || odometry_6d->timestamp < last_odom_timestamp)
+	{
+		/* primeira mensagem (ou relogio voltou): so' guarda a referencia, sem mover as particulas */
+		last_x = odometry_6d->x;
+		last_y = odometry_6d->y;
+		last_yaw = odometry_6d->yaw;
+		last_odom_timestamp = odometry_6d->timestamp;
+		have_last = 1;
+		return 1;
+	}
+
+	double dx_w = odometry_6d->x - last_x, dy_w = odometry_6d->y - last_y;
+	double dtheta = carmen_normalize_theta(odometry_6d->yaw - last_yaw);
+	double dt_odom = odometry_6d->timestamp - last_odom_timestamp;
+	last_x = odometry_6d->x;
+	last_y = odometry_6d->y;
+	last_yaw = odometry_6d->yaw;
+	last_odom_timestamp = odometry_6d->timestamp;
+
+	if (hypot(dx_w, dy_w) > filter->param->odom6d_max_step)
+	{
+		/* a odometria do robo resetou (sentou/levantou, troca de modo): nao e' movimento de verdade */
+		printf("localize_ackerman: odometria 6D saltou %.2f m -- ignorando este passo\n", hypot(dx_w, dy_w));
+		return 1;
+	}
+
+	/* deslocamento no corpo, no yaw da medida anterior */
+	double c = cos(odometry_6d->yaw - dtheta), s = sin(odometry_6d->yaw - dtheta);
+	double dx_b = c * dx_w + s * dy_w;
+	double dy_b = -s * dx_w + c * dy_w;
+	double ds = hypot(dx_b, dy_b);
+
+	filter->distance_travelled += ds;
+	double v = (dt_odom > 1e-3) ? (dx_b >= 0.0 ? ds : -ds) / dt_odom : 0.0;
+	double omega = (dt_odom > 1e-3) ? dtheta / dt_odom : 0.0;
+
+	double sigma_fwd = filter->param->odom6d_xy_noise * ds;
+	double sigma_lat = filter->param->odom6d_lateral_noise * ds;
+	double sigma_theta = filter->param->odom6d_theta_noise * fabs(dtheta) + filter->param->odom6d_theta_noise_per_meter * ds;
+
+	for (int i = 0; i < filter->param->num_particles; i++)
+	{
+		double ddx = dx_b, ddy = dy_b, ddtheta = dtheta;
+		if (i != 0)	/* particula 0 segue a odometria pura (elitismo, como nas outras predicoes) */
+		{
+			ddx += carmen_gaussian_random(0.0, sigma_fwd);
+			ddy += carmen_gaussian_random(0.0, sigma_lat);
+			ddtheta += carmen_gaussian_random(0.0, sigma_theta);
+		}
+		double th = filter->particles[i].theta;
+		filter->particles[i].x += cos(th) * ddx - sin(th) * ddy;
+		filter->particles[i].y += sin(th) * ddx + cos(th) * ddy;
+		filter->particles[i].theta = carmen_normalize_theta(th + ddtheta);
+		if (i != 0 && ds > 0.001)
+		{
+			filter->particles[i].x += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].y += carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
+			filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta +
+					carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+		}
+		filter->particles[i].v = v;
+		filter->particles[i].phi = omega;
+	}
+	return 1;
+}
 
 void
 carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_particle_filter_p filter,
@@ -2715,7 +2804,20 @@ carmen_localize_ackerman_velodyne_prediction(carmen_localize_ackerman_particle_f
 	if (!filter->initialized)
 		return;
 	
-	if (filter->param->prediction_type == 3)
+	if (filter->param->prediction_type == 4)
+	{
+		/* sem odometria 6D (ou velha): cai na predicao 3, ou na 1 se tambem nao houver IMU */
+		if (!carmen_localize_ackerman_incorporate_odometry_6d(filter, odometry_6d_message, velodyne_timestamp))
+		{
+			if (xsens_global_quat_message)
+				carmen_localize_ackerman_incorporate_IMU_odometry(filter, odometry->v, xsens_global_quat_message,
+						distance_between_front_and_rear_axles, velodyne_timestamp - filter->last_timestamp);
+			else
+				carmen_localize_ackerman_incorporate_velocity_odometry(filter, odometry->v, odometry->phi,
+						distance_between_front_and_rear_axles, velodyne_timestamp - filter->last_timestamp);
+		}
+	}
+	else if (filter->param->prediction_type == 3)
     carmen_localize_ackerman_incorporate_IMU_odometry(filter, odometry->v, xsens_global_quat_message, 
         distance_between_front_and_rear_axles, velodyne_timestamp - filter->last_timestamp);
 	else if (filter->param->prediction_type == 2)
@@ -3690,7 +3792,29 @@ carmen_localize_ackerman_read_parameters(int argc, char **argv, carmen_localize_
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
-	if (param->prediction_type == 3)
+	if (param->prediction_type == 4)
+	{
+		/* opcionais, com padrao: odometria de pernas desliza pouco em linha reta e um pouco mais no giro */
+		param->odom6d_xy_noise = 0.05;
+		param->odom6d_lateral_noise = 0.02;
+		param->odom6d_theta_noise = 0.05;
+		param->odom6d_theta_noise_per_meter = 0.01;
+		param->odom6d_max_step = 0.5;
+		param->odom6d_timeout = 0.5;
+		carmen_param_t odom6d_param_list[] =
+		{
+			{(char *) "localize_ackerman", (char *) "odom6d_xy_noise",              CARMEN_PARAM_DOUBLE, &(param->odom6d_xy_noise), 0, NULL},
+			{(char *) "localize_ackerman", (char *) "odom6d_lateral_noise",         CARMEN_PARAM_DOUBLE, &(param->odom6d_lateral_noise), 0, NULL},
+			{(char *) "localize_ackerman", (char *) "odom6d_theta_noise",           CARMEN_PARAM_DOUBLE, &(param->odom6d_theta_noise), 0, NULL},
+			{(char *) "localize_ackerman", (char *) "odom6d_theta_noise_per_meter", CARMEN_PARAM_DOUBLE, &(param->odom6d_theta_noise_per_meter), 0, NULL},
+			{(char *) "localize_ackerman", (char *) "odom6d_max_step",              CARMEN_PARAM_DOUBLE, &(param->odom6d_max_step), 0, NULL},
+			{(char *) "localize_ackerman", (char *) "odom6d_timeout",               CARMEN_PARAM_DOUBLE, &(param->odom6d_timeout), 0, NULL},
+		};
+		carmen_param_allow_unfound_variables(1);
+		carmen_param_install_params(argc, argv, odom6d_param_list, sizeof(odom6d_param_list) / sizeof(odom6d_param_list[0]));
+	}
+
+	if (param->prediction_type == 3 || param->prediction_type == 4)	/* a 4 usa a 3 quando falta a odometria 6D */
     {
         carmen_param_t gyro_param_list[] =
         {

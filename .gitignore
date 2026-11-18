@@ -871,3 +871,15 @@ bin/pi_nit_camera_publisher
 /lib/libroute_planner_utils.a
 /lib/libtask_manager_interface.a
 /lib/libuser_app_server_interface.a
+
+# carmen_server: binario gerado pelo make (o fonte e o app sao versionados)
+/src/carmen_server/carmen_server
+/bin/carmen_server
+/src/carmen_app/carmen_app
+/src/carmen_app/*.o
+/src/carmen_app/*.d
+/bin/carmen_app
+
+# viewer_3D_dash: executavel gerado pelo make (o fonte viewer_3D_dash.cpp e' versionado)
+/src/viewer_3D/viewer_3D_dash
+/bin/viewer_3D_dash
