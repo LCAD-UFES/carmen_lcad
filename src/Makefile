@@ -143,8 +143,31 @@ phase2:
 	$(ECHO) "       B I N A R I E S"
 	$(ECHO) "       ***************"
 	$(ECHO)
+	$(SILENT) $(MAKE) --no-print-directory prebuilt
 	$(RECURSE)
 	$(ECHO) "Done making binaries..."
+
+# Modulos privados (fonte fora do git: route_planner, offroad_planner, hesai...) sobem so'
+# como binario, um conjunto por versao do Ubuntu, em $(CARMEN_HOME)/prebuilt/ubuntu<NN>/{bin,lib}.
+# Este alvo copia o conjunto da versao desta maquina para bin/ e lib/. Se bin/<x> for um
+# symlink valido (voce tem o fonte e compilou localmente), o seu build e' mantido.
+UBUNTU_MAJOR := $(shell . /etc/os-release 2>/dev/null && echo $${VERSION_ID%%.*})
+PREBUILT_DIR := $(CARMEN_HOME)/prebuilt/ubuntu$(UBUNTU_MAJOR)
+
+prebuilt:
+	$(SILENT) if [ ! -d "$(PREBUILT_DIR)" ]; then \
+		echo "    ---- prebuilt: nao ha binarios para ubuntu$(UBUNTU_MAJOR) ($(PREBUILT_DIR))"; exit 0; fi; \
+	for sub in bin lib; do \
+		for f in "$(PREBUILT_DIR)/$$sub"/*; do \
+			[ -f "$$f" ] || continue; \
+			dst="$(CARMEN_HOME)/$$sub/$$(basename "$$f")"; \
+			if [ -L "$$dst" ] && [ -e "$$dst" ]; then \
+				echo "    ---- prebuilt: $$sub/$$(basename "$$f") mantido (build local)"; continue; fi; \
+			cmp -s "$$f" "$$dst" && continue; \
+			rm -f "$$dst" && cp -p "$$f" "$$dst" && \
+			echo "    ---- prebuilt: $$sub/$$(basename "$$f") <- ubuntu$(UBUNTU_MAJOR)"; \
+		done; \
+	done
 
 
 phase3:

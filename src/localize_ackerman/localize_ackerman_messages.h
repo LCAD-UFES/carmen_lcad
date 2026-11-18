@@ -153,6 +153,23 @@ typedef struct {
 #define CARMEN_LOCALIZE_ACKERMAN_MAP_NAME "carmen_localize_ackerman_map"
 #define CARMEN_LOCALIZE_ACKERMAN_MAP_FMT  "{<char:2>,int,{int,int,double,[byte:64],string, double, double},int,int,double,string}"
 
+/* Odometria 6D do proprio robo (ex.: a odometria das pernas do Unitree Go2, SportModeState).
+   Usada pela predicao 4 do localize_ackerman (localize_ackerman_prediction_type = 4): o filtro de
+   particulas aplica o deslocamento medido entre duas mensagens (no referencial do corpo), em vez de
+   integrar v e giro. x, y, z e roll, pitch, yaw estao no referencial de odometria do robo (que
+   deriva, por isso so' os DELTAS sao usados); vx, vy, vz no corpo. */
+typedef struct {
+  double x, y, z;
+  double roll, pitch, yaw;
+  double vx, vy, vz;
+  double yaw_rate;
+  double timestamp;
+  char *host;
+} carmen_localize_ackerman_odometry_6d_message;
+
+#define CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_NAME "carmen_localize_ackerman_odometry_6d"
+#define CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_FMT  "{double,double,double,double,double,double,double,double,double,double,double,string}"
+
 #define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME "carmen_localize_ackerman_globalpos_query"
 typedef carmen_default_message carmen_localize_ackerman_globalpos_query_message;
 

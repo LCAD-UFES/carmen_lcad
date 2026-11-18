@@ -461,3 +461,36 @@ carmen_localize_ackerman_publish_sensor_message(carmen_localize_ackerman_sensor_
 }
 
 
+
+
+void
+carmen_localize_ackerman_subscribe_odometry_6d_message(carmen_localize_ackerman_odometry_6d_message *message,
+		carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_NAME, CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_FMT,
+			message, sizeof(carmen_localize_ackerman_odometry_6d_message), handler, subscribe_how);
+}
+
+
+void
+carmen_localize_ackerman_unsubscribe_odometry_6d_message(carmen_handler_t handler)
+{
+	carmen_unsubscribe_message(CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_NAME, handler);
+}
+
+
+void
+carmen_localize_ackerman_publish_odometry_6d_message(carmen_localize_ackerman_odometry_6d_message *message)
+{
+	static int first = 1;
+	IPC_RETURN_TYPE err;
+
+	if (first)
+	{
+		err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_FMT);
+		carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_NAME);
+		first = 0;
+	}
+	err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_NAME, message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_ODOMETRY_6D_NAME);
+}

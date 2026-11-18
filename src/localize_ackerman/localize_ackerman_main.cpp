@@ -63,6 +63,7 @@ carmen_localize_ackerman_binary_map_t binary_map;
 carmen_robot_ackerman_laser_message front_laser;
 
 carmen_xsens_global_quat_message *xsens_global_quat_message = NULL;
+extern carmen_localize_ackerman_odometry_6d_message *odometry_6d_message;	// localize_ackerman_core.cpp (predicao 4)
 
 // variables read via read_parameters()
 carmen_robot_ackerman_config_t car_config;
@@ -1307,6 +1308,13 @@ fused_odometry_handler(carmen_fused_odometry_message *msg)
 
 
 static void
+odometry_6d_handler(carmen_localize_ackerman_odometry_6d_message *message)
+{
+	odometry_6d_message = message;
+}
+
+
+static void
 carmen_xsens_subscribe_xsens_global_quat_message_handler(carmen_xsens_global_quat_message *message)
 {
 	xsens_global_quat_message = message;
@@ -1588,6 +1596,12 @@ subscribe_to_ipc_message()
         {
             carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
             carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) carmen_xsens_subscribe_xsens_global_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
+        }
+        else if (filter->param->prediction_type == 4) // Odometria 6D do robo (cai na 3 se ela faltar)
+        {
+            carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+            carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) carmen_xsens_subscribe_xsens_global_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
+            carmen_localize_ackerman_subscribe_odometry_6d_message(NULL, (carmen_handler_t) odometry_6d_handler, CARMEN_SUBSCRIBE_LATEST);
         }
 
         carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);

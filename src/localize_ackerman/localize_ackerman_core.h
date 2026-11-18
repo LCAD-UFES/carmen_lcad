@@ -152,6 +152,14 @@ typedef struct {
 #ifndef OLD_MOTION_MODEL
   carmen_localize_ackerman_motion_model_t *motion_model;
 #endif  
+
+  /* predicao 4 (odometria 6D do robo): ruido proporcional ao deslocamento medido */
+  double odom6d_xy_noise;            // fracao do deslocamento (ex.: 0.05 = 5%)
+  double odom6d_lateral_noise;       // fracao do deslocamento que vira erro lateral
+  double odom6d_theta_noise;         // fracao da rotacao medida
+  double odom6d_theta_noise_per_meter; // rad de erro de yaw por metro andado
+  double odom6d_max_step;            // salto maior que isso (m) entre duas mensagens = odometria resetou, ignora
+  double odom6d_timeout;             // s sem odometria 6D -> cai na predicao 3 (odometria + IMU)
 } carmen_localize_ackerman_param_t, *carmen_localize_ackerman_param_p;
 
 typedef struct {
@@ -259,6 +267,9 @@ carmen_localize_ackerman_initialize_particles_placename(carmen_localize_ackerman
 void 
 carmen_localize_ackerman_incorporate_odometry(carmen_localize_ackerman_particle_filter_p filter,
 		double v, double phi, double L, double dt);
+
+int carmen_localize_ackerman_incorporate_odometry_6d(carmen_localize_ackerman_particle_filter_p filter,
+		carmen_localize_ackerman_odometry_6d_message *odometry_6d, double timestamp);
 
 void carmen_localize_ackerman_incorporate_IMU_odometry(carmen_localize_ackerman_particle_filter_p filter,
         double odom_v, carmen_xsens_global_quat_message *xsens_global_quat_message,
