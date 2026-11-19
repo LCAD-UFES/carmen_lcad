@@ -81,6 +81,14 @@ extern int mapping_mode;
 // modelo de bicicleta (v, phi), interpola entre as duas ultimas globalpos reais. Vale
 // so' em mapping_mode, onde as poses vem prontas de um SLAM e sao melhores que o modelo.
 int interpolate_by_globalpos = 0;
+// Cone traseiro (so' em -mapping_mode on): os raios do lidar que saem para tras do robo, num setor de
+// +-rear_cone_half_angle graus em volta de rear_cone_center (180 = atras), sao descartados. Tira do
+// mapa 2D quem anda atras do robo durante o mapeamento -- a mancha que depois tem que ser limpa a mao.
+// O que fica atras ja' foi visto de frente quando o robo passou, entao a cobertura nao se perde.
+//   -rear_cone_half_angle 30   (graus; 0 = desligado, padrao)
+//   -rear_cone_center 180      (graus, no referencial do carro; 0 = frente, 90 = esquerda)
+double rear_cone_half_angle = 0.0;
+double rear_cone_center = 180.0;
 int publish_diff_map = 0;
 double publish_diff_map_interval = 0.5;
 double mapper_velodyne_range_max;
@@ -275,6 +283,14 @@ change_sensor_rear_range_max(sensor_parameters_t *sensor_params, carmen_sphere_c
 			sensor_params->sensor_to_support_matrix, sensor_params->support_to_car_matrix);
 
 	double angle = carmen_normalize_theta(atan2(point_in_the_car.y, point_in_the_car.x));
+
+	/* cone traseiro: alcance 0 descarta o raio inteiro, igual ao clean_map_bellow_car acima */
+	if (mapping_mode && rear_cone_half_angle > 0.0 &&
+		fabs(carmen_normalize_theta(angle - carmen_degrees_to_radians(rear_cone_center))) < carmen_degrees_to_radians(rear_cone_half_angle))
+	{
+		sensor_params->current_range_max = 0.0;
+		return;
+	}
 
 	sensor_params->current_range_max = sensor_params->range_max;
 	for(int i = 0; i < mapper_range_max_factor_num_intervals; i++)
@@ -3313,6 +3329,8 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 		{(char *) "commandline", (char *) "pose_gate_max_delay", CARMEN_PARAM_DOUBLE, &pose_gate_max_delay, 0, NULL},
 		{(char *) "commandline", (char *) "pose_gate_jump", CARMEN_PARAM_DOUBLE, &pose_gate_jump, 0, NULL},
 		{(char *) "commandline", (char *) "pose_gate_settle", CARMEN_PARAM_INT, &pose_gate_settle, 0, NULL},
+		{(char *) "commandline", (char *) "rear_cone_half_angle", CARMEN_PARAM_DOUBLE, &rear_cone_half_angle, 0, NULL},
+		{(char *) "commandline", (char *) "rear_cone_center", CARMEN_PARAM_DOUBLE, &rear_cone_center, 0, NULL},
 		{(char *) "mapper", 	 (char *) "publish_diff_map",		   CARMEN_PARAM_ONOFF,  &publish_diff_map, 		    1, NULL},
 		{(char *) "mapper", 	 (char *) "publish_diff_map_interval", CARMEN_PARAM_DOUBLE, &publish_diff_map_interval, 1, NULL},
 		{(char *) "mapper", 	 (char *) "safe_height_from_ground_level1", CARMEN_PARAM_DOUBLE, &safe_height_from_ground_level, 0, NULL},
@@ -3327,6 +3345,10 @@ carmen_mapper_read_parameters(int argc, char **argv, carmen_map_config_t *map_co
 
 	if (clean_map_bellow_car)
 		update_and_merge_with_mapper_saved_maps = 1;
+
+	if (rear_cone_half_angle > 0.0)
+		printf("mapper: cone traseiro %s: descartando raios a %.0f +- %.0f graus (so' em -mapping_mode on)\n",
+				mapping_mode ? "LIGADO" : "ignorado (fora do mapping_mode)", rear_cone_center, rear_cone_half_angle);
 
 	// FILL THE sensor_params STRUCTURE VECTOR
 	carmen_mapper_get_sensors_param(argc, argv);

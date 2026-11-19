@@ -103,6 +103,8 @@ void carmen_logwrite_write_header(carmen_FILE *outfile)
 	carmen_fprintf(outfile,
 			"# XSENS_QUAT accelerationX accelerationY accelerationZ quaternion_q0 quaternion_q1 quaternion_q2 quaternion_q3 magneticfieldX magneticfieldY magneticfieldZ gyroX gyroY gyroZ\n");
 	carmen_fprintf(outfile,
+			"# ODOMETRY_6D vx vy vz wx wy wz alpha_x alpha_y alpha_z timestamp host logger_timestamp (src/odometry_6d)\n");
+	carmen_fprintf(outfile,
 			"# XSENS_MATRIX accelerationX accelerationY accelerationZ matrix_0-0 matrix_0-1 matrix_0-2 matrix_1-0 matrix_1-1 matrix_1-2 matrix_2-0 matrix_2-1 matrix_2-2s magneticfieldX magneticfieldY magneticfieldZ gyroX gyroY gyroZ\n");
 	carmen_fprintf(outfile,
 			"# XSENS_MTIG quaternion_q0 quaternion_q1 quaternion_q2 quaternion_q3 accelerationX accelerationY accelerationZ gyroX gyroY gyroZ magneticfieldX magneticfieldY magneticfieldZ velocityX velocityY velocityZ latitude longitude height gps_fix xkf_valid sensor_ID\n");
@@ -516,6 +518,15 @@ void carmen_logwrite_write_xsens_euler(carmen_xsens_global_euler_message* msg,
 
 	carmen_fprintf(outfile, "%lf %hu %lf %s %lf\n", msg->m_temp, msg->m_count,
 			msg->timestamp, msg->host, timestamp);
+}
+
+/* odometria 6D por velocidade (src/odometry_6d): vx vy vz wx wy wz alpha_x alpha_y alpha_z, no corpo */
+void carmen_logwrite_write_odometry_6d(carmen_odometry_6d_message* msg,
+		carmen_FILE *outfile, double timestamp)
+{
+	carmen_fprintf(outfile, "ODOMETRY_6D %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %s %lf\n",
+			msg->vx, msg->vy, msg->vz, msg->wx, msg->wy, msg->wz,
+			msg->alpha_x, msg->alpha_y, msg->alpha_z, msg->timestamp, msg->host, timestamp);
 }
 
 void carmen_logwrite_write_xsens_quat(carmen_xsens_global_quat_message* msg,

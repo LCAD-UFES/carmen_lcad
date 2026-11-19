@@ -38,6 +38,7 @@
 #include <carmen/base_ackerman_messages.h>
 #include <carmen/ultrasonic_filter_messages.h>
 #include <carmen/pi_imu_messages.h>
+#include <carmen/odometry_6d_messages.h>
 #include <carmen/camera_drivers_interface.h>
 #include <carmen/camera_drivers_messages.h>
 
@@ -229,6 +230,7 @@ char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_me
 char* carmen_string_to_xsens_euler_message(char* string, carmen_xsens_global_euler_message* msg);
 
 char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat_message* msg);
+char* carmen_string_to_odometry_6d_message(char* string, carmen_odometry_6d_message* msg);
 
 char* carmen_string_to_pi_imu_message(char* string, carmen_pi_imu_message_t* msg);
 

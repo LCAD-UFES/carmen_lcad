@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include "writelog.h"
+#include <carmen/odometry_6d_interface.h>
 #include "logger.h"
 
 char *log_filename = NULL;
@@ -55,6 +56,7 @@ static int log_xsens = 1;
 static int log_xsens_mtig = 1;
 static int log_imu_pi = 1;
 static int log_imu_lidar = 0;
+static int log_odometry_6d = 1;	// carmen_odometry_6d (src/odometry_6d); logger_odometry_6d off desliga
 static int log_bumblebee = 1;
 static int log_camera = 1;
 static int log_web_cam = 1;
@@ -114,6 +116,7 @@ get_logger_params(int argc, char** argv)
   carmen_param_t optional_param_list[] = {
 		{(char *) "logger",      (char *) "compact_map", 	    CARMEN_PARAM_ONOFF, &log_compact_map, 0, NULL},
 		{(char *) "logger",      (char *) "imu_lidar", 	        CARMEN_PARAM_ONOFF, &log_imu_lidar, 0, NULL},
+		{(char *) "logger",      (char *) "odometry_6d",        CARMEN_PARAM_ONOFF, &log_odometry_6d, 0, NULL},
   };
   carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list)/sizeof(optional_param_list[0])); 
  
@@ -393,6 +396,12 @@ void lidar_imu_handler14(carmen_imu_message *msg)
 void lidar_imu_handler15(carmen_imu_message *msg)
 {
   carmen_logwrite_write_lidar_imu(msg, 15, outfile, carmen_get_time() - logger_starttime);
+}
+
+void odometry_6d_handler(carmen_odometry_6d_message *msg)
+{
+  //fprintf(stderr, "o6");	// ~100 Hz: imprimir aqui inundaria o terminal
+  carmen_logwrite_write_odometry_6d(msg, outfile, carmen_get_time() - logger_starttime);
 }
 
 void xsens_quat_handler(carmen_xsens_global_quat_message *msg)
@@ -1249,6 +1258,9 @@ main(int argc, char **argv)
 
 	if (log_xsens_mtig)
 		carmen_xsens_mtig_subscribe_message(NULL, (carmen_handler_t) xsens_mtig_handler, CARMEN_SUBSCRIBE_ALL);
+
+	if (log_odometry_6d)
+		carmen_odometry_6d_subscribe_message(NULL, (carmen_handler_t) odometry_6d_handler, CARMEN_SUBSCRIBE_ALL);
 
 	if (log_web_cam)
 		carmen_web_cam_subscribe_message(NULL, (carmen_handler_t) carmen_web_cam_message_handler, CARMEN_SUBSCRIBE_ALL);

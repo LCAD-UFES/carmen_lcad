@@ -125,6 +125,7 @@ carmen_velodyne_gps_message velodyne_gps;
 
 carmen_xsens_global_euler_message xsens_euler;
 carmen_xsens_global_quat_message xsens_quat;
+carmen_odometry_6d_message odometry_6d;
 carmen_xsens_global_matrix_message xsens_matrix;
 carmen_xsens_mtig_message xsens_mtig;
 carmen_bumblebee_basic_stereoimage_message bumblebee_basic_stereoimage1, bumblebee_basic_stereoimage2, bumblebee_basic_stereoimage3, bumblebee_basic_stereoimage4, bumblebee_basic_stereoimage5, bumblebee_basic_stereoimage6, bumblebee_basic_stereoimage7, bumblebee_basic_stereoimage8, bumblebee_basic_stereoimage9, bumblebee_basic_stereoimage10, bumblebee_basic_stereoimage11, bumblebee_basic_stereoimage12, bumblebee_basic_stereoimage13;
@@ -1163,6 +1164,7 @@ static logger_callback_t logger_callbacks[] =
 	{(char *) "VELODYNE_GPS", (char *) CARMEN_VELODYNE_GPS_MESSAGE_NAME, (converter_func) carmen_string_to_velodyne_gps_message, &velodyne_gps, 0},
 	{(char *) "XSENS_EULER", (char *) CARMEN_XSENS_GLOBAL_EULER_NAME, (converter_func) carmen_string_to_xsens_euler_message, &xsens_euler, 0},
 	{(char *) "XSENS_QUAT", (char *) CARMEN_XSENS_GLOBAL_QUAT_NAME, (converter_func) carmen_string_to_xsens_quat_message, &xsens_quat, 0},
+	{(char *) "ODOMETRY_6D", (char *) CARMEN_ODOMETRY_6D_NAME, (converter_func) carmen_string_to_odometry_6d_message, &odometry_6d, 0},
 	{(char *) "PI_IMU", (char *) CARMEN_PI_IMU_NAME, (converter_func) carmen_string_to_pi_imu_message, &pi_imu_message, 0},
 	{(char *) "XSENS_MATRIX", (char *) CARMEN_XSENS_GLOBAL_MATRIX_NAME, (converter_func) carmen_string_to_xsens_matrix_message, &xsens_matrix, 0},
 	{(char *) "XSENS_MTIG", (char *) CARMEN_XSENS_MTIG_NAME, (converter_func) carmen_string_to_xsens_mtig_message, &xsens_mtig, 0},
@@ -2062,6 +2064,9 @@ define_ipc_messages(void)
 
 	err = IPC_defineMsg(CARMEN_XSENS_GLOBAL_QUAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_GLOBAL_QUAT_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_GLOBAL_QUAT_NAME);
+
+	err = IPC_defineMsg(CARMEN_ODOMETRY_6D_NAME, IPC_VARIABLE_LENGTH, CARMEN_ODOMETRY_6D_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_ODOMETRY_6D_NAME);
 
 	err = IPC_defineMsg(CARMEN_XSENS_MTIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_XSENS_MTIG_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_XSENS_MTIG_NAME);

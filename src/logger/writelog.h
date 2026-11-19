@@ -37,6 +37,7 @@
 #include <carmen/kinect_messages.h>
 #include <carmen/xsens_messages.h>
 #include <carmen/xsens_mtig_messages.h>
+#include <carmen/odometry_6d_messages.h>
 #include <carmen/robot_ackerman_messages.h>
 #include <carmen/simulator_ackerman_messages.h>
 #include <carmen/localize_ackerman_messages.h>
@@ -210,6 +211,10 @@ void carmen_logwrite_write_xsens_euler(carmen_xsens_global_euler_message* msg,
 
 
 void carmen_logwrite_write_xsens_quat(carmen_xsens_global_quat_message* msg,
+			       carmen_FILE *outfile,
+			       double timestamp);
+
+void carmen_logwrite_write_odometry_6d(carmen_odometry_6d_message* msg,
 			       carmen_FILE *outfile,
 			       double timestamp);
 

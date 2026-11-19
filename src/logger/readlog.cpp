@@ -1190,6 +1190,28 @@ char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat
 	return current_pos;
 }
 
+char* carmen_string_to_odometry_6d_message(char* string, carmen_odometry_6d_message* msg)
+{
+	char *current_pos = string;
+	if (strncmp(current_pos, "ODOMETRY_6D ", 12) == 0)
+		current_pos = carmen_next_word(current_pos);
+
+	msg->vx = CLF_READ_DOUBLE(&current_pos);
+	msg->vy = CLF_READ_DOUBLE(&current_pos);
+	msg->vz = CLF_READ_DOUBLE(&current_pos);
+	msg->wx = CLF_READ_DOUBLE(&current_pos);
+	msg->wy = CLF_READ_DOUBLE(&current_pos);
+	msg->wz = CLF_READ_DOUBLE(&current_pos);
+	msg->alpha_x = CLF_READ_DOUBLE(&current_pos);
+	msg->alpha_y = CLF_READ_DOUBLE(&current_pos);
+	msg->alpha_z = CLF_READ_DOUBLE(&current_pos);
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
 char* carmen_string_to_pi_imu_message(char* string, carmen_pi_imu_message_t* msg)
 {
 	char *current_pos = string;
